@@ -4,9 +4,13 @@
 ### (1) 来源
 #### a) 设备手册
 特点：公开可获取，简单、规模较小
+
 华为：https://support.huawei.com/hedex/hdx.do?docid=EDOC1100331626&id=ZH-CN_TASK_0172365881
+
 思科：https://www.cisco.com/c/zh_cn/support/routers/asr-9000-series-aggregation-services-routers/products-configuration-examples-list.html
+
 瞻博：https://www.juniper.net/documentation/cn/zh/software/junos/bgp/topics/topic-map/load-balancing-bgp-session.html
+
 (待补充)
 #### b) 培训资料、竞赛题目
 华为HCIE、HCIP实验手册：
