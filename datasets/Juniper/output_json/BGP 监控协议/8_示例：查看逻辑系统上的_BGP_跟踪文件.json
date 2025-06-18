@@ -1,0 +1,246 @@
+{
+  "title": "示例：查看逻辑系统上的 BGP 跟踪文件",
+  "sections": [
+    {
+      "title": "要求",
+      "level": 3,
+      "content": "您必须具有 view 逻辑系统的权限。 配置网络，例如示例中显示的 BGP 网络：在逻辑系统上配置内部 BGP 对等会话。 您必须具有 view 逻辑系统的权限。 配置网络，例如示例中显示的 BGP 网络：在逻辑系统上配置内部 BGP 对等会话。"
+    },
+    {
+      "title": "概述",
+      "level": 3,
+      "content": "逻辑系统在目录中创建了 /var/logical-systems/ logical-system-name 单独的目录结构。它包含以下子目录： /config —包含特定于逻辑系统的活动配置。 /log - 包含特定于逻辑系统的系统日志和跟踪文件。 为了保持日志文件与以前版本的 Junos OS 的向后兼容性，配置逻辑系统时会创建从 /var/logs/ logical-system-name 目录到 /var/logical-systems/ logical-system-name 目录的符号链接（符号链接）。 /tmp - 包含特定于逻辑系统的临时文件。 每个逻辑系统的文件系统使逻辑系统用户能够查看跟踪日志和修改逻辑系统文件。逻辑系统管理员具有查看和修改特定于逻辑系统的所有文件的完全访问权限。 逻辑系统用户和管理员可以使用 和 load 配置模式命令在 save 逻辑系统级别保存和加载配置文件。此外，它们还可以在逻辑系统级别发出 show log 、 monitor 和 file 操作模式命令。 此示例说明如何在逻辑系统上配置和查看 BGP 跟踪文件。可以调整这些步骤，以应用于支持跟踪操作的任何 Junos OS 层次结构级别的跟踪操作。 提示： 要查看支持跟踪操作的层次结构级别的列表，请在配置模式下输入 help apropos traceoptions 命令。 逻辑系统在目录中创建了 /var/logical-systems/ logical-system-name 单独的目录结构。它包含以下子目录： /config —包含特定于逻辑系统的活动配置。 /log - 包含特定于逻辑系统的系统日志和跟踪文件。 为了保持日志文件与以前版本的 Junos OS 的向后兼容性，配置逻辑系统时会创建从 /var/logs/ logical-system-name 目录到 /var/logical-systems/ logical-system-name 目录的符号链接（符号链接）。 /tmp - 包含特定于逻辑系统的临时文件。 每个逻辑系统的文件系统使逻辑系统用户能够查看跟踪日志和修改逻辑系统文件。逻辑系统管理员具有查看和修改特定于逻辑系统的所有文件的完全访问权限。 逻辑系统用户和管理员可以使用 和 load 配置模式命令在 save 逻辑系统级别保存和加载配置文件。此外，它们还可以在逻辑系统级别发出 show log 、 monitor 和 file 操作模式命令。 此示例说明如何在逻辑系统上配置和查看 BGP 跟踪文件。可以调整这些步骤，以应用于支持跟踪操作的任何 Junos OS 层次结构级别的跟踪操作。 提示： 要查看支持跟踪操作的层次结构级别的列表，请在配置模式下输入 help apropos traceoptions 命令。 要查看支持跟踪操作的层次结构级别的列表，请在配置模式下输入 help apropos traceoptions 命令。"
+    },
+    {
+      "title": "配置",
+      "level": 3,
+      "content": "要快速配置此示例，请复制以下命令，将其粘贴到文本文件中，删除所有换行符，更改与您的网络配置匹配所需的任何详细信息，然后将命令复制并粘贴到层次结构级别的 CLI [edit] 中。 set logical-systems A protocols bgp group internal-peers traceoptions file bgp-log set logical-systems A protocols bgp group internal-peers traceoptions file size 10k set logical-systems A protocols bgp group internal-peers traceoptions file files 2 set logical-systems A protocols bgp group internal-peers traceoptions flag update detail 下面的示例要求您在各个配置层级中进行导航。有关导航 CLI 的信息，请参阅 CLI 用户指南中的在配置模式下使用 CLI 编辑器。 要配置跟踪操作，请执行以下操作： 在逻辑系统上配置跟踪操作。 [edit logical-systems A protocols bgp group internal-peers] user@host# set traceoptions file bgp-log user@host# set traceoptions file size 10k user@host# set traceoptions file files 2 user@host# set traceoptions flag update detail 如果完成设备配置，请提交配置。 [edit] user@host# commit 查看跟踪文件： 在主路由器上的操作模式下，列出逻辑系统上的目录。 user@host> file list /var/logical-systems/A /var/logical-systems/A: config/ log/ tmp/ 在主路由器的操作模式下，列出逻辑系统上的日志文件。 user@host> file list /var/logical-systems/A/log/ /var/logical-systems/A/log: bgp-log 查看文件的内容 bgp-log 。 user@host> file show /var/logical-systems/A/log/bgp-log Aug 10 17:12:01 trace_on: Tracing to \"/var/log/A/bgp-log\" started Aug 10 17:14:22.826182 bgp_peer_mgmt_clear:5829: NOTIFICATION sent to 192.163.6.4 (Internal AS 17): code 6 (Cease) subcode 4 (Administratively Reset), Reason: Management session cleared BGP neighbor Aug 10 17:14:22.826445 bgp_send: sending 21 bytes to 192.163.6.4 (Internal AS 17) Aug 10 17:14:22.826499 Aug 10 17:14:22.826499 BGP SEND 192.168.6.5+64965 -> 192.163.6.4+179 Aug 10 17:14:22.826559 BGP SEND message type 3 (Notification) length 21 Aug 10 17:14:22.826598 BGP SEND Notification code 6 (Cease) subcode 4 (Administratively Reset) Aug 10 17:14:22.831756 bgp_peer_mgmt_clear:5829: NOTIFICATION sent to 192.168.40.4 (Internal AS 17): code 6 (Cease) subcode 4 (Administratively Reset), Reason: Management session cleared BGP neighbor Aug 10 17:14:22.831851 bgp_send: sending 21 bytes to 192.168.40.4 (Internal AS 17) Aug 10 17:14:22.831901 Aug 10 17:14:22.831901 BGP SEND 192.168.6.5+53889 -> 192.168.40.4+179 Aug 10 17:14:22.831959 BGP SEND message type 3 (Notification) length 21 Aug 10 17:14:22.831999 BGP SEND Notification code 6 (Cease) subcode 4 (Administratively Reset) ... 筛选日志文件的输出。 user@host> file show /var/logical-systems/A/log/bgp-log | match \"flags 0x40\" Aug 10 17:14:54.867460 BGP SEND flags 0x40 code Origin(1): IGP Aug 10 17:14:54.867595 BGP SEND flags 0x40 code ASPath(2) length 0: <null> Aug 10 17:14:54.867650 BGP SEND flags 0x40 code NextHop(3): 192.168.6.5 Aug 10 17:14:54.867692 BGP SEND flags 0x40 code LocalPref(5): 100 Aug 10 17:14:54.884529 BGP RECV flags 0x40 code Origin(1): IGP Aug 10 17:14:54.884581 BGP RECV flags 0x40 code ASPath(2) length 0: <null> Aug 10 17:14:54.884628 BGP RECV flags 0x40 code NextHop(3): 192.163.6.4 Aug 10 17:14:54.884667 BGP RECV flags 0x40 code LocalPref(5): 100 Aug 10 17:14:54.911377 BGP RECV flags 0x40 code Origin(1): IGP Aug 10 17:14:54.911422 BGP RECV flags 0x40 code ASPath(2) length 0: <null> Aug 10 17:14:54.911466 BGP RECV flags 0x40 code NextHop(3): 192.168.40.4 Aug 10 17:14:54.911507 BGP RECV flags 0x40 code LocalPref(5): 100 Aug 10 17:14:54.916008 BGP SEND flags 0x40 code Origin(1): IGP Aug 10 17:14:54.916054 BGP SEND flags 0x40 code ASPath(2) length 0: <null> Aug 10 17:14:54.916100 BGP SEND flags 0x40 code NextHop(3): 192.168.6.5 Aug 10 17:14:54.916143 BGP SEND flags 0x40 code LocalPref(5): 100 Aug 10 17:14:54.920304 BGP RECV flags 0x40 code Origin(1): IGP Aug 10 17:14:54.920348 BGP RECV flags 0x40 code ASPath(2) length 0: <null> Aug 10 17:14:54.920393 BGP RECV flags 0x40 code NextHop(3): 10.0.0.10 Aug 10 17:14:54.920434 BGP RECV flags 0x40 code LocalPref(5): 100 实时查看追踪操作。 user@host> clear bgp neighbor logical-system A Cleared 2 connections 警告： 清除 BGP 邻居表在生产环境中会造成中断。 警告： 清除 BGP 邻居表在生产环境中会造成中断。 monitor start 使用可选 match 条件运行命令。 user@host> monitor start A/bgp-log | match 0.0.0.0/0 Aug 10 19:21:40.773467 BGP RECV 0.0.0.0/0 Aug 10 19:21:40.773685 bgp_rcv_nlri: 0.0.0.0/0 Aug 10 19:21:40.773778 bgp_rcv_nlri: 0.0.0.0/0 belongs to meshgroup Aug 10 19:21:40.773832 bgp_rcv_nlri: 0.0.0.0/0 qualified bnp->ribact 0x0 l2afcb 0x0 monitor 按 Esc-Q 暂停命令。 要取消暂停输出，请再次按 Esc-Q。 按 Enter 并键入 monitor stop 来停止命令。 monitor [Enter] user@host> monitor stop 完成故障排除后，请考虑停用跟踪日志记录以避免对系统资源产生任何不必要的影响。 [edit protocols bgp group internal-peers] user@host:A# deactivate traceoptions user@host:A# commit 停用配置后，它将显示在带有标记的 inactive 配置中。要重新激活跟踪操作， activate 请使用配置模式语句。 [edit protocols bgp group internal-peers] user@host:A# show type internal; inactive: traceoptions { file bgp-log size 10k files 2; flag update detail; flag all; } local-address 192.168.6.5; export send-direct; neighbor 192.163.6.4; neighbor 192.168.40.4; 要重新激活跟踪操作， activate 请使用配置模式语句。 [edit protocols bgp group internal-peers] user@host:A# activate traceoptions user@host:A# commit 要停用并重新激活跟踪文件，请执行以下操作： 完成故障排除后，请考虑停用跟踪日志记录以避免对系统资源产生不必要的影响。 停用配置后，语句将显示在带有标记的 inactive 配置中。 [edit protocols bgp group internal-peers] user@host:A# show type internal; inactive : traceoptions { file bgp-log size 10k files 2; flag update detail; flag all; } local-address 192.168.6.5; export send-direct; neighbor 192.163.6.4; neighbor 192.168.40.4; 要重新激活日志记录， activate 请使用配置模式语句。 在配置模式下，输入 show logical-systems A protocols bgp group internal-peers 命令以确认您的配置。如果输出未显示预期的配置，请重复此示例中的说明，以便进行更正。 user@host# show logical-systems A protocols bgp group internal-peers traceoptions { file bgp-log size 10k files 2; flag update detail; }",
+      "sections": [
+        {
+          "title": "CLI 快速配置",
+          "level": 4,
+          "content": "要快速配置此示例，请复制以下命令，将其粘贴到文本文件中，删除所有换行符，更改与您的网络配置匹配所需的任何详细信息，然后将命令复制并粘贴到层次结构级别的 CLI [edit] 中。 set logical-systems A protocols bgp group internal-peers traceoptions file bgp-log set logical-systems A protocols bgp group internal-peers traceoptions file size 10k set logical-systems A protocols bgp group internal-peers traceoptions file files 2 set logical-systems A protocols bgp group internal-peers traceoptions flag update detail",
+          "code": [
+            "set logical-systems A protocols bgp group internal-peers traceoptions file bgp-log",
+            "set logical-systems A protocols bgp group internal-peers traceoptions file size 10k",
+            "set logical-systems A protocols bgp group internal-peers traceoptions file files 2",
+            "set logical-systems A protocols bgp group internal-peers traceoptions flag update detail"
+          ]
+        },
+        {
+          "title": "配置跟踪操作",
+          "level": 4,
+          "content": "下面的示例要求您在各个配置层级中进行导航。有关导航 CLI 的信息，请参阅 CLI 用户指南中的在配置模式下使用 CLI 编辑器。 要配置跟踪操作，请执行以下操作： 在逻辑系统上配置跟踪操作。 [edit logical-systems A protocols bgp group internal-peers] user@host# set traceoptions file bgp-log user@host# set traceoptions file size 10k user@host# set traceoptions file files 2 user@host# set traceoptions flag update detail 如果完成设备配置，请提交配置。 [edit] user@host# commit",
+          "sections": [
+            {
+              "title": "分步过程",
+              "level": 5,
+              "step_by_step": [
+                {
+                  "step": 1,
+                  "description": "在逻辑系统上配置跟踪操作。",
+                  "code": [
+                    "[edit logical-systems A protocols bgp group internal-peers]",
+                    "user@host# set traceoptions file bgp-log",
+                    "user@host# set traceoptions file size 10k ",
+                    "user@host# set traceoptions file files 2 ",
+                    "user@host# set traceoptions flag update detail"
+                  ]
+                },
+                {
+                  "step": 2,
+                  "description": "如果完成设备配置，请提交配置。",
+                  "code": [
+                    "[edit]",
+                    "user@host# commit"
+                  ]
+                }
+              ]
+            },
+            {
+              "title": "分步过程",
+              "level": 5,
+              "step_by_step": [
+                {
+                  "step": 1,
+                  "description": "在主路由器上的操作模式下，列出逻辑系统上的目录。",
+                  "code": [
+                    "user@host> file list /var/logical-systems/A",
+                    "/var/logical-systems/A:",
+                    "config/",
+                    "log/",
+                    "tmp/"
+                  ]
+                },
+                {
+                  "step": 2,
+                  "description": "在主路由器的操作模式下，列出逻辑系统上的日志文件。",
+                  "code": [
+                    "user@host> file list /var/logical-systems/A/log/",
+                    "/var/logical-systems/A/log:",
+                    "bgp-log"
+                  ]
+                },
+                {
+                  "step": 3,
+                  "description": "查看文件的内容 bgp-log 。",
+                  "code": [
+                    "user@host> file show /var/logical-systems/A/log/bgp-log",
+                    "Aug 10 17:12:01 trace_on: Tracing to \"/var/log/A/bgp-log\" started",
+                    "Aug 10 17:14:22.826182 bgp_peer_mgmt_clear:5829: NOTIFICATION sent to 192.163.6.4 (Internal AS 17): code 6 (Cease) subcode 4 (Administratively Reset), Reason: Management session cleared BGP neighbor",
+                    "Aug 10 17:14:22.826445 bgp_send: sending 21 bytes to 192.163.6.4 (Internal AS 17)",
+                    "Aug 10 17:14:22.826499",
+                    "Aug 10 17:14:22.826499 BGP SEND 192.168.6.5+64965 -> 192.163.6.4+179",
+                    "Aug 10 17:14:22.826559 BGP SEND message type 3 (Notification) length 21",
+                    "Aug 10 17:14:22.826598 BGP SEND Notification code 6 (Cease) subcode 4 (Administratively Reset)",
+                    "Aug 10 17:14:22.831756 bgp_peer_mgmt_clear:5829: NOTIFICATION sent to 192.168.40.4 (Internal AS 17): code 6 (Cease) subcode 4 (Administratively Reset), Reason: Management session cleared BGP neighbor",
+                    "Aug 10 17:14:22.831851 bgp_send: sending 21 bytes to 192.168.40.4 (Internal AS 17)",
+                    "Aug 10 17:14:22.831901",
+                    "Aug 10 17:14:22.831901 BGP SEND 192.168.6.5+53889 -> 192.168.40.4+179",
+                    "Aug 10 17:14:22.831959 BGP SEND message type 3 (Notification) length 21",
+                    "Aug 10 17:14:22.831999 BGP SEND Notification code 6 (Cease) subcode 4 (Administratively Reset)",
+                    "..."
+                  ]
+                },
+                {
+                  "step": 4,
+                  "description": "筛选日志文件的输出。",
+                  "code": [
+                    "user@host> file show /var/logical-systems/A/log/bgp-log | match \"flags 0x40\"",
+                    "Aug 10 17:14:54.867460 BGP SEND flags 0x40 code Origin(1): IGP",
+                    "Aug 10 17:14:54.867595 BGP SEND flags 0x40 code ASPath(2) length 0: <null>",
+                    "Aug 10 17:14:54.867650 BGP SEND flags 0x40 code NextHop(3): 192.168.6.5",
+                    "Aug 10 17:14:54.867692 BGP SEND flags 0x40 code LocalPref(5): 100",
+                    "Aug 10 17:14:54.884529 BGP RECV flags 0x40 code Origin(1): IGP",
+                    "Aug 10 17:14:54.884581 BGP RECV flags 0x40 code ASPath(2) length 0: <null>",
+                    "Aug 10 17:14:54.884628 BGP RECV flags 0x40 code NextHop(3): 192.163.6.4",
+                    "Aug 10 17:14:54.884667 BGP RECV flags 0x40 code LocalPref(5): 100",
+                    "Aug 10 17:14:54.911377 BGP RECV flags 0x40 code Origin(1): IGP",
+                    "Aug 10 17:14:54.911422 BGP RECV flags 0x40 code ASPath(2) length 0: <null>",
+                    "Aug 10 17:14:54.911466 BGP RECV flags 0x40 code NextHop(3): 192.168.40.4",
+                    "Aug 10 17:14:54.911507 BGP RECV flags 0x40 code LocalPref(5): 100",
+                    "Aug 10 17:14:54.916008 BGP SEND flags 0x40 code Origin(1): IGP",
+                    "Aug 10 17:14:54.916054 BGP SEND flags 0x40 code ASPath(2) length 0: <null>",
+                    "Aug 10 17:14:54.916100 BGP SEND flags 0x40 code NextHop(3): 192.168.6.5",
+                    "Aug 10 17:14:54.916143 BGP SEND flags 0x40 code LocalPref(5): 100",
+                    "Aug 10 17:14:54.920304 BGP RECV flags 0x40 code Origin(1): IGP",
+                    "Aug 10 17:14:54.920348 BGP RECV flags 0x40 code ASPath(2) length 0: <null>",
+                    "Aug 10 17:14:54.920393 BGP RECV flags 0x40 code NextHop(3): 10.0.0.10",
+                    "Aug 10 17:14:54.920434 BGP RECV flags 0x40 code LocalPref(5): 100"
+                  ]
+                },
+                {
+                  "step": 5,
+                  "description": "实时查看追踪操作。",
+                  "code": [
+                    "user@host> clear bgp neighbor logical-system A",
+                    "Cleared 2 connections"
+                  ]
+                },
+                {
+                  "step": 6,
+                  "description": "monitor start 使用可选 match 条件运行命令。",
+                  "code": [
+                    "user@host> monitor start A/bgp-log | match 0.0.0.0/0",
+                    "Aug 10 19:21:40.773467 BGP RECV         0.0.0.0/0",
+                    "Aug 10 19:21:40.773685 bgp_rcv_nlri: 0.0.0.0/0",
+                    "Aug 10 19:21:40.773778 bgp_rcv_nlri: 0.0.0.0/0 belongs to meshgroup ",
+                    "Aug 10 19:21:40.773832 bgp_rcv_nlri: 0.0.0.0/0 qualified bnp->ribact 0x0 l2afcb 0x0"
+                  ]
+                },
+                {
+                  "step": 7,
+                  "description": "monitor 按 Esc-Q 暂停命令。 要取消暂停输出，请再次按 Esc-Q。",
+                  "code": []
+                },
+                {
+                  "step": 8,
+                  "description": "按 Enter 并键入 monitor stop 来停止命令。 monitor",
+                  "code": [
+                    "[Enter]",
+                    "user@host> monitor stop"
+                  ]
+                },
+                {
+                  "step": 9,
+                  "description": "完成故障排除后，请考虑停用跟踪日志记录以避免对系统资源产生任何不必要的影响。",
+                  "code": [
+                    "[edit protocols bgp group internal-peers]",
+                    "user@host:A# deactivate traceoptions",
+                    "user@host:A# commit",
+                    "[edit protocols bgp group internal-peers]",
+                    "user@host:A# show",
+                    "type internal;",
+                    "inactive: traceoptions {",
+                    "    file bgp-log size 10k files 2;",
+                    "    flag update detail;",
+                    "    flag all;",
+                    "}",
+                    "local-address 192.168.6.5;",
+                    "export send-direct;",
+                    "neighbor 192.163.6.4;",
+                    "neighbor 192.168.40.4;"
+                  ]
+                },
+                {
+                  "step": 10,
+                  "description": "要重新激活跟踪操作， activate 请使用配置模式语句。",
+                  "code": [
+                    "[edit protocols bgp group internal-peers]",
+                    "user@host:A# activate traceoptions",
+                    "user@host:A# commit"
+                  ]
+                }
+              ]
+            },
+            {
+              "title": "分步过程",
+              "level": 5,
+              "step_by_step": [
+                {
+                  "step": 1,
+                  "description": "完成故障排除后，请考虑停用跟踪日志记录以避免对系统资源产生不必要的影响。",
+                  "code": [
+                    "[edit protocols bgp group internal-peers]",
+                    "user@host:A# deactivate traceoptions",
+                    "user@host:A# commit",
+                    "[edit protocols bgp group internal-peers]",
+                    "user@host:A# show",
+                    "type internal;",
+                    "inactive: traceoptions {",
+                    "    file bgp-log size 10k files 2;",
+                    "    flag update detail;",
+                    "    flag all;",
+                    "}",
+                    "local-address 192.168.6.5;",
+                    "export send-direct;",
+                    "neighbor 192.163.6.4;",
+                    "neighbor 192.168.40.4;"
+                  ]
+                },
+                {
+                  "step": 2,
+                  "description": "要重新激活日志记录， activate 请使用配置模式语句。",
+                  "code": [
+                    "[edit protocols bgp group internal-peers]",
+                    "user@host:A# activate traceoptions",
+                    "user@host:A# commit"
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "结果",
+          "level": 4,
+          "content": "在配置模式下，输入 show logical-systems A protocols bgp group internal-peers 命令以确认您的配置。如果输出未显示预期的配置，请重复此示例中的说明，以便进行更正。",
+          "code": [
+            "user@host#show logical-systems A protocols bgp group internal-peerstraceoptions {\n    file bgp-log size 10k files 2;\n    flag update detail;\n}"
+          ]
+        }
+      ]
+    }
+  ],
+  "content": "此示例说明如何列出和查看存储在逻辑系统上的文件。 要求 您必须具有 view 逻辑系统的权限。 配置网络，例如示例中显示的 BGP 网络：在逻辑系统上配置内部 BGP 对等会话。 概述 逻辑系统在目录中创建了 /var/logical-systems/ logical-system-name 单独的目录结构。它包含以下子目录： /config —包含特定于逻辑系统的活动配置。 /log - 包含特定于逻辑系统的系统日志和跟踪文件。 为了保持日志文件与以前版本的 Junos OS 的向后兼容性，配置逻辑系统时会创建从 /var/logs/ logical-system-name 目录到 /var/logical-systems/ logical-system-name 目录的符号链接（符号链接）。 /tmp - 包含特定于逻辑系统的临时文件。 每个逻辑系统的文件系统使逻辑系统用户能够查看跟踪日志和修改逻辑系统文件。逻辑系统管理员具有查看和修改特定于逻辑系统的所有文件的完全访问权限。 逻辑系统用户和管理员可以使用 和 load 配置模式命令在 save 逻辑系统级别保存和加载配置文件。此外，它们还可以在逻辑系统级别发出 show log 、 monitor 和 file 操作模式命令。 此示例说明如何在逻辑系统上配置和查看 BGP 跟踪文件。可以调整这些步骤，以应用于支持跟踪操作的任何 Junos OS 层次结构级别的跟踪操作。 提示： 要查看支持跟踪操作的层次结构级别的列表，请在配置模式下输入 help apropos traceoptions 命令"
+}

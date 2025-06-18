@@ -1,0 +1,116 @@
+{
+  "title": "示例：均衡 BGP 流量负载",
+  "sections": [
+    {
+      "title": "要求",
+      "level": 3,
+      "content": "准备工作： 配置设备接口。 配置内部网关协议 （IGP）。 配置 BGP。 配置路由策略，将路由（例如直接路由或 IGP 路由）从路由表导出到 BGP。 准备工作： 配置设备接口。 配置内部网关协议 （IGP）。 配置 BGP。 配置路由策略，将路由（例如直接路由或 IGP 路由）从路由表导出到 BGP。"
+    },
+    {
+      "title": "概述",
+      "level": 3,
+      "content": "以下步骤说明如何配置每个数据包的负载平衡： 通过在层次结构级别包含一个或多个 policy-statement 语句 [edit policy-options] 来定义负载平衡路由策略，并定义以下 load-balance per-packet 操作： policy-statement policy-name { from { match-conditions ; route-filter destination-prefix match-type < actions >; prefix-list name ; } then { load-balance per-packet; } } 注： 要在多个 EBGP 路径和多个 IBGP 路径之间启用负载平衡，请在层次结构级别全局 [edit protocols bgp] 包含 multipath 语句。如果不全局包含 multipath 语句，或者为层次结构级别的 BGP 组 [edit protocols bgp group group-name 或层次结构级别的特定 BGP 邻接方 [edit protocols bgp group group-name neighbor address ] 启用该语句，则无法启用 BGP 流量的负载平衡。 要在多个 EBGP 路径和多个 IBGP 路径之间启用负载平衡，请在层次结构级别全局 [edit protocols bgp] 包含 multipath 语句。如果不全局包含 multipath 语句，或者为层次结构级别的 BGP 组 [edit protocols bgp group group-name 或层次结构级别的特定 BGP 邻接方 [edit protocols bgp group group-name neighbor address ] 启用该语句，则无法启用 BGP 流量的负载平衡。 将策略应用于从路由表导出到转发表的路由。为此，请包含 forwarding-table 和 export 语句： forwarding-table { export policy-name ; } 您无法将导出策略应用于 VRF 路由实例。 在分配与正在播发的路由对应的标签时，指定该路由的所有下一跃点（如果存在多个跃点）。 配置 MPLS 的转发选项哈希密钥以包含 IP 有效负载。 注： 在某些平台上，您可以使用机箱 maxum-ecmp 语句增加负载平衡的路径数。 使用此语句，您可以将等价负载平衡路径的最大数量更改为 32、64、128、256 或 512（最大数量因平台而异 — 请参阅 最大 ecmp）。 支持 BGP 的所有平台都支持多路径功能。对 QFX 平台进行了一些增强： 从 Junos OS 19.1R1 版开始，您可以在 QFX10000 交换机上指定最多 128 条等价路径。 从 Junos OS 19.2R1 版开始，您可以在QFX10000交换机上指定最多 512 条等价路径 — 请参阅 了解配置多达 512 条具有可选一致负载平衡的等价路径。 在某些平台上，您可以使用机箱 maxum-ecmp 语句增加负载平衡的路径数。 使用此语句，您可以将等价负载平衡路径的最大数量更改为 32、64、128、256 或 512（最大数量因平台而异 — 请参阅 最大 ecmp）。 支持 BGP 的所有平台都支持多路径功能。对 QFX 平台进行了一些增强： 在此示例中，设备 R1 位于 AS 64500 中，并连接到位于 AS 64501 中的设备 R2 和设备 R3。此示例显示了设备 R1 上的配置。 拓扑学 图 1 显示了此示例中使用的拓扑。 图 1： BGP 负载平衡 图 1 显示了此示例中使用的拓扑。 图 1： BGP 负载平衡",
+      "sections": [
+        {
+          "title": "拓扑学",
+          "level": 4,
+          "content": "图 1 显示了此示例中使用的拓扑。 图 1： BGP 负载平衡",
+          "images": [
+            "BGP 会话的负载平衡\\images\\3_示例：均衡_BGP_流量负载_1.gif"
+          ]
+        }
+      ]
+    },
+    {
+      "title": "配置",
+      "level": 3,
+      "content": "要快速配置此示例，请复制以下命令，将其粘贴到文本文件中，删除所有换行符，更改与您的网络配置匹配所需的任何详细信息，然后将命令复制并粘贴到层次结构级别的 CLI [edit] 中。 set protocols bgp group external type external set protocols bgp group external peer-as 64501 set protocols bgp group external multipath set protocols bgp group external neighbor 10.0.1.1 set protocols bgp group external neighbor 10.0.0.2 set policy-options policy-statement loadbal from route-filter 10.0.0.0/16 orlonger set policy-options policy-statement loadbal then load-balance per-packet set routing-options forwarding-table export loadbal set routing-options autonomous-system 64500 以下示例要求您在配置层次结构中导航各个级别。有关导航 CLI 的信息，请参阅《Junos OS CLI 用户指南》中的在配置模式下使用 CLI 编辑器。 要配置 BGP 对等会话，请执行以下操作： 配置 BGP 组。 [edit protocols bgp group external] user@R1# set type external user@R1# set peer-as 64501 user@R1# set neighbor 10.0.1.1 user@R1# set neighbor 10.0.0.2 使 BGP 组能够使用多个路径。 注： 要禁用要求 BGP 多路径接受的路径必须具有相同相邻自治系统 （AS） 的默认检查，请包含该 multiple-as 选项。 要禁用要求 BGP 多路径接受的路径必须具有相同相邻自治系统 （AS） 的默认检查，请包含该 multiple-as 选项。 [edit protocols bgp group external] user@R1# set multipath 配置负载均衡策略。 [edit policy-options policy-statement loadbal] user@R1# set from route-filter 10.0.0.0/16 orlonger user@R1# set then load-balance per-packet 应用负载平衡策略。 [edit routing-options] user@R1# set forwarding-table export loadbal 配置本地自治系统 (AS) 编号。 [edit routing-options] user@R1# set autonomous-system 64500 在配置模式下，输入 show protocols 、 show policy-options 和 show routing-options 命令确认您的配置。如果输出未显示预期的配置，请重复此示例中的说明，以便进行更正。 [edit] user@R1# show protocols bgp { group external { type external; peer-as 64501; multipath; neighbor 10.0.1.1; neighbor 10.0.0.2; } } [edit] user@R1# show policy-options policy-statement loadbal { from { route-filter 10.0.0.0/16 orlonger; } then { load-balance per-packet; } } [edit] user@R1# show routing-options autonomous-system 64500; forwarding-table { export loadbal; } 如果完成设备配置，请从配置模式输入 commit 。",
+      "sections": [
+        {
+          "title": "程序",
+          "level": 4,
+          "content": "要快速配置此示例，请复制以下命令，将其粘贴到文本文件中，删除所有换行符，更改与您的网络配置匹配所需的任何详细信息，然后将命令复制并粘贴到层次结构级别的 CLI [edit] 中。 set protocols bgp group external type external set protocols bgp group external peer-as 64501 set protocols bgp group external multipath set protocols bgp group external neighbor 10.0.1.1 set protocols bgp group external neighbor 10.0.0.2 set policy-options policy-statement loadbal from route-filter 10.0.0.0/16 orlonger set policy-options policy-statement loadbal then load-balance per-packet set routing-options forwarding-table export loadbal set routing-options autonomous-system 64500 以下示例要求您在配置层次结构中导航各个级别。有关导航 CLI 的信息，请参阅《Junos OS CLI 用户指南》中的在配置模式下使用 CLI 编辑器。 要配置 BGP 对等会话，请执行以下操作： 配置 BGP 组。 [edit protocols bgp group external] user@R1# set type external user@R1# set peer-as 64501 user@R1# set neighbor 10.0.1.1 user@R1# set neighbor 10.0.0.2 使 BGP 组能够使用多个路径。 注： 要禁用要求 BGP 多路径接受的路径必须具有相同相邻自治系统 （AS） 的默认检查，请包含该 multiple-as 选项。 要禁用要求 BGP 多路径接受的路径必须具有相同相邻自治系统 （AS） 的默认检查，请包含该 multiple-as 选项。 [edit protocols bgp group external] user@R1# set multipath 配置负载均衡策略。 [edit policy-options policy-statement loadbal] user@R1# set from route-filter 10.0.0.0/16 orlonger user@R1# set then load-balance per-packet 应用负载平衡策略。 [edit routing-options] user@R1# set forwarding-table export loadbal 配置本地自治系统 (AS) 编号。 [edit routing-options] user@R1# set autonomous-system 64500 在配置模式下，输入 show protocols 、 show policy-options 和 show routing-options 命令确认您的配置。如果输出未显示预期的配置，请重复此示例中的说明，以便进行更正。 [edit] user@R1# show protocols bgp { group external { type external; peer-as 64501; multipath; neighbor 10.0.1.1; neighbor 10.0.0.2; } } [edit] user@R1# show policy-options policy-statement loadbal { from { route-filter 10.0.0.0/16 orlonger; } then { load-balance per-packet; } } [edit] user@R1# show routing-options autonomous-system 64500; forwarding-table { export loadbal; } 如果完成设备配置，请从配置模式输入 commit 。",
+          "sections": [
+            {
+              "title": "CLI 快速配置",
+              "level": 5,
+              "content": "要快速配置此示例，请复制以下命令，将其粘贴到文本文件中，删除所有换行符，更改与您的网络配置匹配所需的任何详细信息，然后将命令复制并粘贴到层次结构级别的 CLI [edit] 中。 set protocols bgp group external type external set protocols bgp group external peer-as 64501 set protocols bgp group external multipath set protocols bgp group external neighbor 10.0.1.1 set protocols bgp group external neighbor 10.0.0.2 set policy-options policy-statement loadbal from route-filter 10.0.0.0/16 orlonger set policy-options policy-statement loadbal then load-balance per-packet set routing-options forwarding-table export loadbal set routing-options autonomous-system 64500",
+              "code": [
+                "set protocols bgp group external type external",
+                "set protocols bgp group external peer-as 64501",
+                "set protocols bgp group external multipath",
+                "set protocols bgp group external neighbor 10.0.1.1",
+                "set protocols bgp group external neighbor 10.0.0.2",
+                "set policy-options policy-statement loadbal from route-filter 10.0.0.0/16 orlonger",
+                "set policy-options policy-statement loadbal then load-balance per-packet",
+                "set routing-options forwarding-table export loadbal",
+                "set routing-options autonomous-system 64500"
+              ]
+            },
+            {
+              "title": "分步过程",
+              "level": 5,
+              "step_by_step": [
+                {
+                  "step": 1,
+                  "description": "配置 BGP 组。",
+                  "code": [
+                    "[edit protocols bgp group external]",
+                    "user@R1# set type external ",
+                    "user@R1# set peer-as 64501 ",
+                    "user@R1# set neighbor 10.0.1.1 ",
+                    "user@R1# set neighbor 10.0.0.2 "
+                  ]
+                },
+                {
+                  "step": 2,
+                  "description": "使 BGP 组能够使用多个路径。",
+                  "code": [
+                    "[edit protocols bgp group external]",
+                    "user@R1# set multipath"
+                  ]
+                },
+                {
+                  "step": 3,
+                  "description": "配置负载均衡策略。",
+                  "code": [
+                    "[edit policy-options policy-statement loadbal]",
+                    "user@R1# set from route-filter 10.0.0.0/16 orlonger ",
+                    "user@R1# set then load-balance per-packet "
+                  ]
+                },
+                {
+                  "step": 4,
+                  "description": "应用负载平衡策略。",
+                  "code": [
+                    "[edit routing-options]",
+                    "user@R1# set forwarding-table export loadbal"
+                  ]
+                },
+                {
+                  "step": 5,
+                  "description": "配置本地自治系统 (AS) 编号。",
+                  "code": [
+                    "[edit routing-options]",
+                    "user@R1# set autonomous-system 64500"
+                  ]
+                }
+              ]
+            },
+            {
+              "title": "结果",
+              "level": 5,
+              "content": "在配置模式下，输入 show protocols 、 show policy-options 和 show routing-options 命令确认您的配置。如果输出未显示预期的配置，请重复此示例中的说明，以便进行更正。 如果完成设备配置，请从配置模式输入 commit 。",
+              "code": [
+                "[edit]\nuser@R1#show protocolsbgp {\n    group external {\n        type external;\n        peer-as 64501;\n        multipath;\n        neighbor 10.0.1.1;\n        neighbor 10.0.0.2;\n    }\n}",
+                "[edit]\nuser@R1#show policy-optionspolicy-statement loadbal {\n    from {\n        route-filter 10.0.0.0/16 orlonger;\n    }\n    then {\n        load-balance per-packet;\n    }\n}",
+                "[edit]\nuser@R1#show routing-optionsautonomous-system 64500;\nforwarding-table {\n    export loadbal;\n}"
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "content": "此示例说明如何配置 BGP 以选择多个等价外部 BGP （EBGP） 或内部 BGP （IBGP） 路径作为活动路径。 要求 准备工作： 配置设备接口。 配置内部网关协议 （IGP）。 配置 BGP。 配置路由策略，将路由（例如直接路由或 IGP 路由）从路由表导出到 BGP"
+}

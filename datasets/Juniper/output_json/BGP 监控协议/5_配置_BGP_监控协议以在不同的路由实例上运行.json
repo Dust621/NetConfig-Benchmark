@@ -1,0 +1,16 @@
+{
+  "title": "配置 BGP 监控协议以在不同的路由实例上运行",
+  "sections": [
+    {
+      "title": "为 BMP 配置非默认路由实例",
+      "level": 3,
+      "content": "要修改 BMP 使用的路由实例，必须配置 BMP 工作站和连接模式（被动或主动）。在活动模式下，路由器会尝试启动与 BMP 站的 TCP 连接。在被动模式下，路由器等待 BMP 站启动 TCP 会话。您还必须配置端口和工作站地址。 注： 要使用非默认路由实例，必须在层次结构级别下 [edit routing-instances] 对其进行配置。 要为 BMP 配置非默认路由实例，请执行以下操作： 注： 要使用非默认路由实例，必须在层次结构级别下 [edit routing-instances] 对其进行配置。 要使用非默认路由实例，必须在层次结构级别下 [edit routing-instances] 对其进行配置。 要为 BMP 配置非默认路由实例，请执行以下操作： user@host# set routing-instances routing-instance-name description description user@host# set routing-options bmp station station-name routing-instance routing-instance-name user@host# set routing-options bmp station station-name connection-mode (active | passive) 如果配置被动模式，请配置以下附加语句： set routing-options bmp station station-name local-address ip-address set routing-options bmp station station-name local-port port-number set routing-options bmp station station-name station-address ip-address 如果配置主动模式，请至少配置以下附加语句： set routing-options bmp station station-name station-address ip-address set routing-options bmp station station-name station-port port-number"
+    },
+    {
+      "title": "为 BMP 配置 mgmt_junos",
+      "level": 3,
+      "content": "要修改 BMP 使用的路由实例，必须配置 BMP 工作站和连接模式（被动或主动）。在活动模式下，路由器会尝试启动与 BMP 站的 TCP 连接。在被动模式下，路由器等待 BMP 站启动 TCP 会话。您还必须配置端口和工作站地址。 注： 若要使用管理路由实例，必须在层次结构级别下 [edit routing-instances] 对其进行配置，并且必须使用配置语句启用 management-instance 它。 要将 mgmt_junos 配置为 BMP 的路由实例，请执行以下操作： 注： 若要使用管理路由实例，必须在层次结构级别下 [edit routing-instances] 对其进行配置，并且必须使用配置语句启用 management-instance 它。 若要使用管理路由实例，必须在层次结构级别下 [edit routing-instances] 对其进行配置，并且必须使用配置语句启用 management-instance 它。 要将 mgmt_junos 配置为 BMP 的路由实例，请执行以下操作： user@host# set system management-instance user@host# set routing-instances mgmt_junos description description user@host# set routing-options bmp station station-name routing-instance mgmt_junos 如果配置被动模式，请配置以下附加语句： set routing-options bmp station station-name connection-mode passive set routing-options bmp station station-name local-address ip-address set routing-options bmp station station-name local-port port-number set routing-options bmp station station-name station-address ip-address 如果配置主动模式，请配置以下附加语句： set routing-options bmp station station-name connection-mode active set routing-options bmp station station-name station-address ip-address set routing-options bmp station station-name station-port port-number"
+    }
+  ],
+  "content": "从 Junos OS 18.3R1 版开始，您可以指定希望 BGP 监控协议 （BMP） 使用的路由实例。在 Junos OS 18.3R1 版之前，您必须使用默认路由实例。默认情况下，在 Junos OS 中，管理以太网接口（通常名为 fxp0 或 em0）为设备提供带外管理网络。带外管理流量和带内协议控制流量，或路由实例或路由表级别的用户流量之间没有明确的分离。相反，所有流量都通过默认路由实例处理，从而引起对安全性、性能和故障排除方式的担忧。 从 Junos OS 17.3R1 版开始，您可以在非默认虚拟路由和转发 （VRF） 实例（即mgmt_junos路由实例）中配置管理接口。按照 配置mgmt_junos路由实例中所述配置此管理路由实例后，管理流量不再需要与系统中的其他控制或协议流量共享路由表（即 default.inet.0 表）。但只有从 Junos OS 18.3R1 版开始，您才能将此非默认管理实例用于 BMP。您还可以为 BMP 使用任何已配置的路由实例。它不再需要是默认路由实例"
+}

@@ -1,0 +1,377 @@
+{
+  "title": "示例：使用 BGP 配置链路状态分配",
+  "sections": [
+    {
+      "title": "要求",
+      "level": 3,
+      "content": "此示例使用以下硬件和软件组件： 四个路由器，可以是 M 系列、MX 系列或 T 系列路由器的组合 在所有路由器上运行的 Junos OS 14.2 或更高版本 准备工作： 配置设备接口。 配置设备的自治系统编号和路由器 ID。 配置以下协议： RSVP MPLS BGP IS-IS OSPF 此示例使用以下硬件和软件组件： 四个路由器，可以是 M 系列、MX 系列或 T 系列路由器的组合 在所有路由器上运行的 Junos OS 14.2 或更高版本 准备工作： 配置设备接口。 配置设备的自治系统编号和路由器 ID。 配置以下协议： RSVP MPLS BGP IS-IS OSPF"
+    },
+    {
+      "title": "概述",
+      "level": 3,
+      "content": "从 Junos OS 14.2 版开始，引入了一种跨多个区域和自治系统 （AS） 分发拓扑信息的新机制，扩展 BGP 协议以传输链路状态信息，这些信息最初是使用 IGP 获取的。IGP 协议在分发大型数据库时具有扩展限制。BGP 不仅是用于传输多区域和多 AS 拓扑信息的更具可扩展性的工具，还提供了可用于多 AS 拓扑分布的策略控制。BGP 链路状态拓扑信息用于计算跨多个域（例如区域间 TE LSP）的 MPLS 标签交换路径 （LSP） 的路径，并为外部路径计算实体（如 ALTO 和 PCE）获取网络拓扑提供可扩展和策略控制的方法。 从 Junos OS 17.1R1 版开始，QFX10000 交换机都支持使用 BGP 分配链路状态。 拓扑学 图 3： 使用 BGP 的链路状态分布 在 中 图 3，路由器 R0 和 R1 以及路由器 R2 和 R3 属于不同的自治系统。路由器 R0 和 R1 运行 OSPF，路由器 R2 和 R3 运行 IS-IS。 从 Junos OS 14.2 版开始，引入了一种跨多个区域和自治系统 （AS） 分发拓扑信息的新机制，扩展 BGP 协议以传输链路状态信息，这些信息最初是使用 IGP 获取的。IGP 协议在分发大型数据库时具有扩展限制。BGP 不仅是用于传输多区域和多 AS 拓扑信息的更具可扩展性的工具，还提供了可用于多 AS 拓扑分布的策略控制。BGP 链路状态拓扑信息用于计算跨多个域（例如区域间 TE LSP）的 MPLS 标签交换路径 （LSP） 的路径，并为外部路径计算实体（如 ALTO 和 PCE）获取网络拓扑提供可扩展和策略控制的方法。 从 Junos OS 17.1R1 版开始，QFX10000 交换机都支持使用 BGP 分配链路状态。 拓扑学 图 3： 使用 BGP 的链路状态分布 在 中 图 3，路由器 R0 和 R1 以及路由器 R2 和 R3 属于不同的自治系统。路由器 R0 和 R1 运行 OSPF，路由器 R2 和 R3 运行 IS-IS。 图 3： 使用 BGP 的链路状态分布 在 中 图 3，路由器 R0 和 R1 以及路由器 R2 和 R3 属于不同的自治系统。路由器 R0 和 R1 运行 OSPF，路由器 R2 和 R3 运行 IS-IS。",
+      "sections": [
+        {
+          "title": "拓扑学",
+          "level": 4,
+          "content": "图 3： 使用 BGP 的链路状态分布 在 中 图 3，路由器 R0 和 R1 以及路由器 R2 和 R3 属于不同的自治系统。路由器 R0 和 R1 运行 OSPF，路由器 R2 和 R3 运行 IS-IS。",
+          "images": [
+            "使用 BGP 的链路状态分布\\images\\3_示例：使用_BGP_配置链路状态分配_1.gif"
+          ]
+        }
+      ]
+    },
+    {
+      "title": "配置",
+      "level": 3,
+      "content": "要快速配置此示例，请复制以下命令，将其粘贴到文本文件中，删除所有换行符，更改详细信息，以便与网络配置匹配，将命令复制并粘贴到 [edit] 层级的 CLI 中，然后从配置模式进入 commit 。 R0 set interfaces ge-0/0/0 unit 0 family inet address 10.8.31.101/24 set interfaces ge-0/0/0 unit 0 family iso set interfaces ge-0/0/0 unit 0 family mpls set interfaces lo0 unit 0 family inet address 10.255.105.137/32 set routing-options router-id 10.255.105.137 set routing-options autonomous-system 65533 set protocols rsvp interface all set protocols rsvp interface fxp0.0 disable set protocols mpls traffic-engineering database export policy accept-all set protocols mpls cross-credibility-cspf set protocols mpls label-switched-path to-R3-inter-as to 10.255.105.135 set protocols mpls label-switched-path to-R3-inter-as bandwidth 40m set protocols mpls interface all set protocols mpls interface fxp0.0 disable set protocols bgp group ibgp type internal set protocols bgp group ibgp local-address 10.255.105.137 set protocols bgp group ibgp family traffic-engineering unicast set protocols bgp group ibgp neighbor 10.255.105.141 set protocols ospf traffic-engineering set protocols ospf area 0.0.0.0 interface lo0.0 set protocols ospf area 0.0.0.0 interface ge-0/0/0.0 set policy-options policy-statement accept-all from family traffic-engineering set policy-options policy-statement accept-all then accept R1 set interfaces ge-0/0/0 unit 0 family inet address 10.8.31.103/24 set interfaces ge-0/0/0 unit 0 family iso set interfaces ge-0/0/0 unit 0 family mpls set interfaces ge-0/0/1 unit 0 family inet address 10.8.42.102/24 set interfaces ge-0/0/1 unit 0 family iso set interfaces ge-0/0/1 unit 0 family mpls set interfaces lo0 unit 0 family inet address 10.255.105.141/32 set interfaces lo0 unit 0 family iso address 47.0005.0102.5501.8181 set routing-options router-id 10.255.105.141 set routing-options autonomous-system 65533 set protocols rsvp interface all set protocols rsvp interface fxp0.0 disable set protocols mpls interface all set protocols mpls interface fxp0.0 disable set protocols bgp group ibgp type internal set protocols bgp group ibgp local-address 10.255.105.141 set protocols bgp group ibgp family traffic-engineering unicast set protocols bgp group ibgp export nlri2bgp set protocols bgp group ibgp neighbor 10.255.105.137 set protocols bgp group ebgp type external set protocols bgp group ebgp family traffic-engineering unicast set protocols bgp group ebgp neighbor 10.8.42.104 local-address 10.8.42.102 set protocols bgp group ebgp neighbor 10.8.42.104 peer-as 65534 set protocols isis interface ge-0/0/1.0 passive remote-node-iso 0102.5502.4211 set protocols isis interface ge-0/0/1.0 passive remote-node-id 10.8.42.104 set protocols ospf traffic-engineering set protocols ospf area 0.0.0.0 interface lo0.0 set protocols ospf area 0.0.0.0 interface ge-0/0/0.0 set protocols ospf area 0.0.0.0 interface ge-0/0/1.0 passive traffic-engineering remote-node-id 10.8.42.104 set protocols ospf area 0.0.0.0 interface ge-0/0/1.0 passive traffic-engineering remote-node-router-id 10.255.105.139 set policy-options policy-statement accept-all from family traffic-engineering set policy-options policy-statement accept-all then accept set policy-options policy-statement nlri2bgp term 1 from family traffic-engineering set policy-options policy-statement nlri2bgp term 1 then accept R2 set interfaces ge-0/0/0 unit 0 family inet address 10.8.64.104/24 set interfaces ge-0/0/0 unit 0 family iso set interfaces ge-0/0/0 unit 0 family mpls set interfaces ge-0/0/1 unit 0 family inet address 10.8.42.104/24 set interfaces ge-0/0/1 unit 0 family iso set interfaces ge-0/0/1 unit 0 family mpls set interfaces lo0 unit 0 family inet address 10.255.105.139/32 set interfaces lo0 unit 0 family iso address 47.0005.0102.5502.4211.00 set routing-options router-id 10.255.105.139 set routing-options autonomous-system 65534 set protocols rsvp interface all set protocols rsvp interface fxp0.0 disable set protocols mpls traffic-engineering database import policy ted2nlri set protocols mpls interface all set protocols mpls interface fxp0.0 disable set protocols bgp group ibgp type internal set protocols bgp group ibgp local-address 10.255.105.139 set protocols bgp group ibgp family traffic-engineering unicast set protocols bgp group ibgp export nlri2bgp set protocols bgp group ibgp neighbor 10.255.105.135 set protocols bgp group ebgp type external set protocols bgp group ebgp family traffic-engineering unicast set protocols bgp group ebgp export nlri2bgp set protocols bgp group ebgp peer-as 65533 set protocols bgp group ebgp neighbor 10.8.42.102 set protocols isis level 1 disable set protocols isis interface ge-0/0/0.0 set protocols isis interface ge-0/0/1.0 passive remote-node-iso 0102.5501.8181 set protocols isis interface ge-0/0/1.0 passive remote-node-id 10.8.42.102 set protocols isis interface lo0.0 set protocols ospf traffic-engineering set protocols ospf area 0.0.0.0 interface ge-0/0/1.0 passive traffic-engineering remote-node-id 10.8.42.102 set protocols ospf area 0.0.0.0 interface ge-0/0/1.0 passive traffic-engineering remote-node-router-id 10.255.105.141 set policy-options policy-statement accept-all from family traffic-engineering set policy-options policy-statement accept-all then accept set policy-options policy-statement nlri2bgp term 1 from family traffic-engineering set policy-options policy-statement nlri2bgp term 1 then accept set policy-options policy-statement ted2nlri term 1 from protocol isis set policy-options policy-statement ted2nlri term 1 from protocol ospf set policy-options policy-statement ted2nlri term 1 then accept set policy-options policy-statement ted2nlri term 2 then reject R3 set interfaces ge-0/0/0 unit 0 family inet address 10.8.64.106/24 set interfaces ge-0/0/0 unit 0 family iso set interfaces ge-0/0/0 unit 0 family mpls set interfaces lo0 unit 0 family inet address 10.255.105.135/32 set interfaces lo0 unit 0 family iso address 47.0005.0102.5502.4250 set routing-options router-id 10.255.105.135 set routing-options autonomous-system 65534 set protocols rsvp interface all set protocols rsvp interface fxp0.0 disable set protocols mpls traffic-engineering database export policy accept-all set protocols mpls interface all set protocols mpls interface fxp0.0 disable set protocols bgp group ibgp type internal set protocols bgp group ibgp local-address 10.255.105.135 set protocols bgp group ibgp family traffic-engineering unicast set protocols bgp group ibgp neighbor 10.255.105.139 set protocols isis interface ge-0/0/0.0 level 1 disable set protocols isis interface lo0.0 set protocols ospf traffic-engineering set protocols ospf area 0.0.0.0 interface lo0.0 set protocols ospf area 0.0.0.0 interface ge-0/0/0.0 set policy-options policy-statement accept-all from family traffic-engineering set policy-options policy-statement accept-all then accept 下面的示例要求您在各个配置层级中进行导航。有关导航 CLI 的信息，请参阅 在配置模式下使用 CLI 编辑器。 要配置路由器 R1： 配置路由器 R1 接口。 [edit interfaces] user@R1# set ge-0/0/0 unit 0 family inet address 10.8.31.103/24 user@R1# set ge-0/0/0 unit 0 family iso user@R1# set ge-0/0/0 unit 0 family mpls user@R1# set ge-0/0/1 unit 0 family inet address 10.8.42.102/24 user@R1# set ge-0/0/1 unit 0 family iso user@R1# set ge-0/0/1 unit 0 family mpls user@R1# set lo0 unit 0 family inet address 10.255.105.141/32 user@R1# set lo0 unit 0 family iso address 47.0005.0102.5501.8181 配置路由器 R1 的路由器 ID 和自治系统。 [edit routing-options] user@R1# set router-id 10.255.105.141 user@R1# set autonomous-system 65533 在路由器 R1 的所有接口（不包括管理接口）上启用 RSVP。 [edit protocols] user@R1# set rsvp interface all user@R1# set rsvp interface fxp0.0 disable 在路由器 R1 的所有接口（不包括管理接口）上启用 MPLS。 [edit protocols] user@R1# set mpls interface all user@R1# set mpls interface fxp0.0 disable 将路由器 R1 的 BGP 组配置为与路由器 R0 对等，并分配本地地址和邻居地址。 [edit protocols] user@R1# set bgp group ibgp type internal user@R1# set bgp group ibgp local-address 10.255.105.141 user@R1# set bgp group ibgp neighbor 10.255.105.137 将 BGP-TE 信令网络层可达性信息 （NLRI） 包含在 ibgp BGP 组。 [edit protocols] user@R1# set bgp group ibgp family traffic-engineering unicast 在路由器 R1 上启用策略 nlri2bgp 的导出。 [edit protocols] user@R1# set bgp group ibgp export nlri2bgp 将路由器 R1 的 BGP 组配置为与路由器 R2 对等，并将本地地址和邻居自治系统分配给 ebgp BGP 组。 [edit protocols] user@R1# set bgp group ebgp type external user@R1# set bgp group ebgp neighbor 10.8.42.104 local-address 10.8.42.102 user@R1# set bgp group ebgp neighbor 10.8.42.104 peer-as 65534 将 BGP-TE 信令 NLRI 加入 ebgp BGP 组。 [edit protocols] user@R1# set bgp group ebgp family traffic-engineering unicast 在 AS 间链路上启用被动信息流工程。 [edit protocols] user@R1# set isis interface ge-0/0/1.0 passive remote-node-iso 0102.5502.4211 user@R1# set isis interface ge-0/0/1.0 passive remote-node-id 10.8.42.104 在将路由器 R1 连接到路由器 R0 的接口上以及在路由器 R1 的环路接口上启用 OSPF，并启用流量工程功能。 [edit protocols] user@R1# set ospf traffic-engineering user@R1# set ospf area 0.0.0.0 interface lo0.0 user@R1# set ospf area 0.0.0.0 interface ge-0/0/0.0 [edit protocols] user@R1# set ospf area 0.0.0.0 interface ge-0/0/1.0 passive traffic-engineering remote-node-id 10.8.42.104 user@R1# set ospf area 0.0.0.0 interface ge-0/0/1.0 passive traffic-engineering remote-node-router-id 10.255.105.139 配置策略以接受来自 BGP-TE NLRI 的流量。 [edit policy-options] user@R1# set policy-statement accept-all from family traffic-engineering user@R1# set policy-statement accept-all then accept user@R1# set policy-statement nlri2bgp term 1 from family traffic-engineering user@R1# set policy-statement nlri2bgp term 1 then accept 在配置模式下，输入 show interfaces 、 show routing-options 、 show protocols 和 show policy-options 命令，以确认您的配置。如果输出未显示预期的配置，请重复此示例中的说明，以便进行更正。 user@R1# show interfaces ge-0/0/0 { unit 0 { family inet { address 10.8.31.103/24; } family iso; family mpls; } } ge-0/0/1 { unit 0 { family inet { address 10.8.42.102/24; } family iso; family mpls; } } lo0 { unit 0 { family inet { address 10.255.105.141/32; family iso { address 47.0005.0102.5501.8181:00; } } } user@R1# show routing-options router-id 10.255.105.141; autonomous-system 65533; user@R1# show protocols rsvp { interface all; interface fxp0.0 { disable; } } mpls { interface all; interface fxp0.0 { disable; } } bgp { group ibgp { type internal; local-address 10.255.105.141; family traffic-engineering { unicast; } export nlri2bgp; neighbor 10.255.105.137; } group ebgp { type external; family traffic-engineering { unicast; } neighbor 10.8.42.104 { local-address 10.8.42.102; peer-as 65534; } } } isis { interface ge-0/0/1.0 { passive { remote-node-iso 0102.5502.4211; remote-node-id 10.8.42.104; } } } ospf { traffic-engineering; area 0.0.0.0 { interface lo0.0; interface ge-0/0/0.0; interface ge-0/0/1.0 { passive { traffic-engineering { remote-node-id 10.8.42.104; remote-node-router-id 10.255.105.139; } } } } } user@R1# show policy-options policy-statement accept-all { from family traffic-engineering; then accept; } policy-statement nlri2bgp { term 1 { from family traffic-engineering; then { accept; } } } 要配置路由器 R2： 配置路由器 R2 接口。 [edit interfaces] user@R2# set ge-0/0/0 unit 0 family inet address 10.8.64.104/24 user@R2# set ge-0/0/0 unit 0 family iso user@R2# set ge-0/0/0 unit 0 family mpls user@R2# set ge-0/0/1 unit 0 family inet address 10.8.42.104/24 user@R2# set ge-0/0/1 unit 0 family iso user@R2# set ge-0/0/1 unit 0 family mpls user@R2# set lo0 unit 0 family inet address 10.255.105.139/32 user@R2# set lo0 unit 0 family iso address 47.0005.0102.5502.4211.00 配置路由器 R2 的路由器 ID 和自治系统。 [edit routing-options] user@R2# set router-id 10.255.105.139 user@R2# set autonomous-system 65534 在路由器 R2 的所有接口（不包括管理接口）上启用 RSVP。 [edit routing-options] user@R2# set rsvp interface all user@R2# set rsvp interface fxp0.0 disable 在路由器 R2 的所有接口（不包括管理接口）上启用 MPLS。 [edit routing-options] user@R2# set mpls interface all user@R2# set mpls interface fxp0.0 disable 使用 ted2nlri 策略启用信息流工程数据库参数的导入。 [edit protocols] user@R2# set mpls traffic-engineering database import policy ted2nlri 将路由器 R2 的 BGP 组配置为与路由器 R3 对等，并分配本地地址和邻居地址。 [edit protocols] user@R2# set bgp group ibgp type internal user@R2# set bgp group ibgp local-address 10.255.105.139 user@R2# set bgp group ibgp neighbor 10.255.105.135 [edit protocols] user@R2# set bgp group ibgp family traffic-engineering unicast 在路由器 R2 上启用策略 nlri2bgp 的导出。 [edit protocols] user@R2# set bgp group ibgp export nlri2bgp 配置路由器 R2 的 BGP 组，以便与路由器 R1 对等。 [edit protocols] user@R2# set bgp group ebgp type external [edit protocols] user@R2# set bgp group ebgp family traffic-engineering unicast 将本地地址和邻居自治系统分配给 ebgp BGP 组。 [edit protocols] user@R2# set bgp group ebgp peer-as 65533 user@R2# set bgp group ebgp neighbor 10.8.42.102 [edit protocols] user@R2# set bgp group ebgp export nlri2bgp 在连接路由器 R2 与路由器 R3 的接口以及路由器 R2 的环路接口上启用 IS-IS。 [edit protocols] user@R2# set isis level 1 disable user@R2# set isis interface ge-0/0/0.0 user@R2# set isis interface lo0.0 在连接路由器 R2 和路由器 R1 的接口上仅启用 IS-IS 通告。 [edit protocols] user@R2# set isis interface ge-0/0/1.0 passive remote-node-iso 0102.5501.8181 user@R2# set isis interface ge-0/0/1.0 passive remote-node-id 10.8.42.102 在路由器 R2 上配置流量工程功能。 [edit protocols] user@R2# set ospf traffic-engineering 在连接路由器 R2 和路由器 R1 的接口上仅启用 OSPF 通告。 [edit protocols] user@R2# set ospf area 0.0.0.0 interface ge-0/0/1.0 passive traffic-engineering remote-node-id 10.8.42.102 user@R2# set ospf area 0.0.0.0 interface ge-0/0/1.0 passive traffic-engineering remote-node-router-id 10.255.105.141 [edit policy-options] user@R2# set policy-statement accept-all from family traffic-engineering user@R2# set policy-statement accept-all then accept user@R2# set policy-statement nlri2bgp term 1 from family traffic-engineering user@R2# set policy-statement nlri2bgp term 1 then accept user@R2# set policy-statement ted2nlri term 1 from protocol isis user@R2# set policy-statement ted2nlri term 1 from protocol ospf user@R2# set policy-statement ted2nlri term 1 then accept user@R2# set policy-statement ted2nlri term 2 then reject user@R2# show interfaces ge-0/0/0 { unit 0 { family inet { address 10.8.64.104/24; } family iso; family mpls; } } ge-0/0/1 { unit 0 { family inet { address 10.8.42.104/24; } family iso; family mpls; } } lo0 { unit 0 { family inet { address 10.255.105.139/32; family iso { address 47.0005.0102.5502.4211.00; } family iso; } } user@R2# show routing-options router-id 10.255.105.139; autonomous-system 65534; user@R2# show protocols rsvp { interface all; interface fxp0.0 { disable; } } mpls { traffic-engineering { database { import { policy ted2nlri; } } } interface all; interface fxp0.0 { disable; } } bgp { group ibgp { type internal; local-address 10.255.105.139; family traffic-engineering { unicast; } export nlri2bgp; neighbor 10.255.105.135; } group ebgp { type external; family traffic-engineering { unicast; } export nlri2bgp; peer-as 65533; neighbor 10.8.42.102; } } isis { level 1 disable; interface ge-0/0/0.0; interface ge-0/0/1.0 { passive { remote-node-iso 0102.5501.8181; remote-node-id 10.8.42.102; } } interface lo0.0; } ospf { traffic-engineering; area 0.0.0.0 { interface ge-0/0/1.0 { passive { traffic-engineering { remote-node-id 10.8.42.102; remote-node-router-id 10.255.105.141; } } } } } user@R2# show policy-options policy-statement accept-all { from family traffic-engineering; then accept; } policy-statement nlri2bgp { term 1 { from family traffic-engineering; then { accept; } } } policy-statement ted2nlri { term 1 { from protocol [ isis ospf ]; then accept; } term 2 { then reject; } }",
+      "sections": [
+        {
+          "title": "CLI 快速配置",
+          "level": 4,
+          "content": "要快速配置此示例，请复制以下命令，将其粘贴到文本文件中，删除所有换行符，更改详细信息，以便与网络配置匹配，将命令复制并粘贴到 [edit] 层级的 CLI 中，然后从配置模式进入 commit 。 R0 set interfaces ge-0/0/0 unit 0 family inet address 10.8.31.101/24 set interfaces ge-0/0/0 unit 0 family iso set interfaces ge-0/0/0 unit 0 family mpls set interfaces lo0 unit 0 family inet address 10.255.105.137/32 set routing-options router-id 10.255.105.137 set routing-options autonomous-system 65533 set protocols rsvp interface all set protocols rsvp interface fxp0.0 disable set protocols mpls traffic-engineering database export policy accept-all set protocols mpls cross-credibility-cspf set protocols mpls label-switched-path to-R3-inter-as to 10.255.105.135 set protocols mpls label-switched-path to-R3-inter-as bandwidth 40m set protocols mpls interface all set protocols mpls interface fxp0.0 disable set protocols bgp group ibgp type internal set protocols bgp group ibgp local-address 10.255.105.137 set protocols bgp group ibgp family traffic-engineering unicast set protocols bgp group ibgp neighbor 10.255.105.141 set protocols ospf traffic-engineering set protocols ospf area 0.0.0.0 interface lo0.0 set protocols ospf area 0.0.0.0 interface ge-0/0/0.0 set policy-options policy-statement accept-all from family traffic-engineering set policy-options policy-statement accept-all then accept R1 set interfaces ge-0/0/0 unit 0 family inet address 10.8.31.103/24 set interfaces ge-0/0/0 unit 0 family iso set interfaces ge-0/0/0 unit 0 family mpls set interfaces ge-0/0/1 unit 0 family inet address 10.8.42.102/24 set interfaces ge-0/0/1 unit 0 family iso set interfaces ge-0/0/1 unit 0 family mpls set interfaces lo0 unit 0 family inet address 10.255.105.141/32 set interfaces lo0 unit 0 family iso address 47.0005.0102.5501.8181 set routing-options router-id 10.255.105.141 set routing-options autonomous-system 65533 set protocols rsvp interface all set protocols rsvp interface fxp0.0 disable set protocols mpls interface all set protocols mpls interface fxp0.0 disable set protocols bgp group ibgp type internal set protocols bgp group ibgp local-address 10.255.105.141 set protocols bgp group ibgp family traffic-engineering unicast set protocols bgp group ibgp export nlri2bgp set protocols bgp group ibgp neighbor 10.255.105.137 set protocols bgp group ebgp type external set protocols bgp group ebgp family traffic-engineering unicast set protocols bgp group ebgp neighbor 10.8.42.104 local-address 10.8.42.102 set protocols bgp group ebgp neighbor 10.8.42.104 peer-as 65534 set protocols isis interface ge-0/0/1.0 passive remote-node-iso 0102.5502.4211 set protocols isis interface ge-0/0/1.0 passive remote-node-id 10.8.42.104 set protocols ospf traffic-engineering set protocols ospf area 0.0.0.0 interface lo0.0 set protocols ospf area 0.0.0.0 interface ge-0/0/0.0 set protocols ospf area 0.0.0.0 interface ge-0/0/1.0 passive traffic-engineering remote-node-id 10.8.42.104 set protocols ospf area 0.0.0.0 interface ge-0/0/1.0 passive traffic-engineering remote-node-router-id 10.255.105.139 set policy-options policy-statement accept-all from family traffic-engineering set policy-options policy-statement accept-all then accept set policy-options policy-statement nlri2bgp term 1 from family traffic-engineering set policy-options policy-statement nlri2bgp term 1 then accept R2 set interfaces ge-0/0/0 unit 0 family inet address 10.8.64.104/24 set interfaces ge-0/0/0 unit 0 family iso set interfaces ge-0/0/0 unit 0 family mpls set interfaces ge-0/0/1 unit 0 family inet address 10.8.42.104/24 set interfaces ge-0/0/1 unit 0 family iso set interfaces ge-0/0/1 unit 0 family mpls set interfaces lo0 unit 0 family inet address 10.255.105.139/32 set interfaces lo0 unit 0 family iso address 47.0005.0102.5502.4211.00 set routing-options router-id 10.255.105.139 set routing-options autonomous-system 65534 set protocols rsvp interface all set protocols rsvp interface fxp0.0 disable set protocols mpls traffic-engineering database import policy ted2nlri set protocols mpls interface all set protocols mpls interface fxp0.0 disable set protocols bgp group ibgp type internal set protocols bgp group ibgp local-address 10.255.105.139 set protocols bgp group ibgp family traffic-engineering unicast set protocols bgp group ibgp export nlri2bgp set protocols bgp group ibgp neighbor 10.255.105.135 set protocols bgp group ebgp type external set protocols bgp group ebgp family traffic-engineering unicast set protocols bgp group ebgp export nlri2bgp set protocols bgp group ebgp peer-as 65533 set protocols bgp group ebgp neighbor 10.8.42.102 set protocols isis level 1 disable set protocols isis interface ge-0/0/0.0 set protocols isis interface ge-0/0/1.0 passive remote-node-iso 0102.5501.8181 set protocols isis interface ge-0/0/1.0 passive remote-node-id 10.8.42.102 set protocols isis interface lo0.0 set protocols ospf traffic-engineering set protocols ospf area 0.0.0.0 interface ge-0/0/1.0 passive traffic-engineering remote-node-id 10.8.42.102 set protocols ospf area 0.0.0.0 interface ge-0/0/1.0 passive traffic-engineering remote-node-router-id 10.255.105.141 set policy-options policy-statement accept-all from family traffic-engineering set policy-options policy-statement accept-all then accept set policy-options policy-statement nlri2bgp term 1 from family traffic-engineering set policy-options policy-statement nlri2bgp term 1 then accept set policy-options policy-statement ted2nlri term 1 from protocol isis set policy-options policy-statement ted2nlri term 1 from protocol ospf set policy-options policy-statement ted2nlri term 1 then accept set policy-options policy-statement ted2nlri term 2 then reject R3 set interfaces ge-0/0/0 unit 0 family inet address 10.8.64.106/24 set interfaces ge-0/0/0 unit 0 family iso set interfaces ge-0/0/0 unit 0 family mpls set interfaces lo0 unit 0 family inet address 10.255.105.135/32 set interfaces lo0 unit 0 family iso address 47.0005.0102.5502.4250 set routing-options router-id 10.255.105.135 set routing-options autonomous-system 65534 set protocols rsvp interface all set protocols rsvp interface fxp0.0 disable set protocols mpls traffic-engineering database export policy accept-all set protocols mpls interface all set protocols mpls interface fxp0.0 disable set protocols bgp group ibgp type internal set protocols bgp group ibgp local-address 10.255.105.135 set protocols bgp group ibgp family traffic-engineering unicast set protocols bgp group ibgp neighbor 10.255.105.139 set protocols isis interface ge-0/0/0.0 level 1 disable set protocols isis interface lo0.0 set protocols ospf traffic-engineering set protocols ospf area 0.0.0.0 interface lo0.0 set protocols ospf area 0.0.0.0 interface ge-0/0/0.0 set policy-options policy-statement accept-all from family traffic-engineering set policy-options policy-statement accept-all then accept",
+          "commands_by_device": {
+            "R0": "set interfaces ge-0/0/0 unit 0 family inet address 10.8.31.101/24\nset interfaces ge-0/0/0 unit 0 family iso\nset interfaces ge-0/0/0 unit 0 family mpls\nset interfaces lo0 unit 0 family inet address 10.255.105.137/32\nset routing-options router-id 10.255.105.137\nset routing-options autonomous-system 65533\nset protocols rsvp interface all\nset protocols rsvp interface fxp0.0 disable\nset protocols mpls traffic-engineering database export policy accept-all\nset protocols mpls cross-credibility-cspf\nset protocols mpls label-switched-path to-R3-inter-as to 10.255.105.135\nset protocols mpls label-switched-path to-R3-inter-as bandwidth 40m\nset protocols mpls interface all\nset protocols mpls interface fxp0.0 disable\nset protocols bgp group ibgp type internal\nset protocols bgp group ibgp local-address 10.255.105.137\nset protocols bgp group ibgp family traffic-engineering unicast\nset protocols bgp group ibgp neighbor 10.255.105.141\nset protocols ospf traffic-engineering\nset protocols ospf area 0.0.0.0 interface lo0.0\nset protocols ospf area 0.0.0.0 interface ge-0/0/0.0\nset policy-options policy-statement accept-all from family traffic-engineering\nset policy-options policy-statement accept-all then accept",
+            "R1": "set interfaces ge-0/0/0 unit 0 family inet address 10.8.31.103/24\nset interfaces ge-0/0/0 unit 0 family iso\nset interfaces ge-0/0/0 unit 0 family mpls\nset interfaces ge-0/0/1 unit 0 family inet address 10.8.42.102/24\nset interfaces ge-0/0/1 unit 0 family iso\nset interfaces ge-0/0/1 unit 0 family mpls\nset interfaces lo0 unit 0 family inet address 10.255.105.141/32\nset interfaces lo0 unit 0 family iso address 47.0005.0102.5501.8181\nset routing-options router-id 10.255.105.141\nset routing-options autonomous-system 65533\nset protocols rsvp interface all\nset protocols rsvp interface fxp0.0 disable\nset protocols mpls interface all\nset protocols mpls interface fxp0.0 disable\nset protocols bgp group ibgp type internal\nset protocols bgp group ibgp local-address 10.255.105.141\nset protocols bgp group ibgp family traffic-engineering unicast\nset protocols bgp group ibgp export nlri2bgp\nset protocols bgp group ibgp neighbor 10.255.105.137\nset protocols bgp group ebgp type external\nset protocols bgp group ebgp family traffic-engineering unicast\nset protocols bgp group ebgp neighbor 10.8.42.104 local-address 10.8.42.102\nset protocols bgp group ebgp neighbor 10.8.42.104 peer-as 65534\nset protocols isis interface ge-0/0/1.0 passive remote-node-iso 0102.5502.4211\nset protocols isis interface ge-0/0/1.0 passive remote-node-id 10.8.42.104\nset protocols ospf traffic-engineering\nset protocols ospf area 0.0.0.0 interface lo0.0\nset protocols ospf area 0.0.0.0 interface ge-0/0/0.0\nset protocols ospf area 0.0.0.0 interface ge-0/0/1.0 passive traffic-engineering remote-node-id 10.8.42.104\nset protocols ospf area 0.0.0.0 interface ge-0/0/1.0 passive traffic-engineering remote-node-router-id 10.255.105.139\nset policy-options policy-statement accept-all from family traffic-engineering\nset policy-options policy-statement accept-all then accept\nset policy-options policy-statement nlri2bgp term 1 from family traffic-engineering\nset policy-options policy-statement nlri2bgp term 1 then accept",
+            "R2": "set interfaces ge-0/0/0 unit 0 family inet address 10.8.64.104/24\nset interfaces ge-0/0/0 unit 0 family iso\nset interfaces ge-0/0/0 unit 0 family mpls\nset interfaces ge-0/0/1 unit 0 family inet address 10.8.42.104/24\nset interfaces ge-0/0/1 unit 0 family iso\nset interfaces ge-0/0/1 unit 0 family mpls\nset interfaces lo0 unit 0 family inet address 10.255.105.139/32\nset interfaces lo0 unit 0 family iso address 47.0005.0102.5502.4211.00\nset routing-options router-id 10.255.105.139\nset routing-options autonomous-system 65534\nset protocols rsvp interface all\nset protocols rsvp interface fxp0.0 disable\nset protocols mpls traffic-engineering database import policy ted2nlri\nset protocols mpls interface all\nset protocols mpls interface fxp0.0 disable\nset protocols bgp group ibgp type internal\nset protocols bgp group ibgp local-address 10.255.105.139\nset protocols bgp group ibgp family traffic-engineering unicast\nset protocols bgp group ibgp export nlri2bgp\nset protocols bgp group ibgp neighbor 10.255.105.135\nset protocols bgp group ebgp type external\nset protocols bgp group ebgp family traffic-engineering unicast\nset protocols bgp group ebgp export nlri2bgp\nset protocols bgp group ebgp peer-as 65533\nset protocols bgp group ebgp neighbor 10.8.42.102\nset protocols isis level 1 disable\nset protocols isis interface ge-0/0/0.0\nset protocols isis interface ge-0/0/1.0 passive remote-node-iso 0102.5501.8181\nset protocols isis interface ge-0/0/1.0 passive remote-node-id 10.8.42.102\nset protocols isis interface lo0.0\nset protocols ospf traffic-engineering\nset protocols ospf area 0.0.0.0 interface ge-0/0/1.0 passive traffic-engineering remote-node-id 10.8.42.102\nset protocols ospf area 0.0.0.0 interface ge-0/0/1.0 passive traffic-engineering remote-node-router-id 10.255.105.141\nset policy-options policy-statement accept-all from family traffic-engineering\nset policy-options policy-statement accept-all then accept\nset policy-options policy-statement nlri2bgp term 1 from family traffic-engineering\nset policy-options policy-statement nlri2bgp term 1 then accept\nset policy-options policy-statement ted2nlri term 1 from protocol isis\nset policy-options policy-statement ted2nlri term 1 from protocol ospf\nset policy-options policy-statement ted2nlri term 1 then accept\nset policy-options policy-statement ted2nlri term 2 then reject",
+            "R3": "set interfaces ge-0/0/0 unit 0 family inet address 10.8.64.106/24\nset interfaces ge-0/0/0 unit 0 family iso\nset interfaces ge-0/0/0 unit 0 family mpls\nset interfaces lo0 unit 0 family inet address 10.255.105.135/32\nset interfaces lo0 unit 0 family iso address 47.0005.0102.5502.4250\nset routing-options router-id 10.255.105.135\nset routing-options autonomous-system 65534\nset protocols rsvp interface all\nset protocols rsvp interface fxp0.0 disable\nset protocols mpls traffic-engineering database export policy accept-all\nset protocols mpls interface all\nset protocols mpls interface fxp0.0 disable\nset protocols bgp group ibgp type internal\nset protocols bgp group ibgp local-address 10.255.105.135\nset protocols bgp group ibgp family traffic-engineering unicast\nset protocols bgp group ibgp neighbor 10.255.105.139\nset protocols isis interface ge-0/0/0.0 level 1 disable\nset protocols isis interface lo0.0\nset protocols ospf traffic-engineering\nset protocols ospf area 0.0.0.0 interface lo0.0\nset protocols ospf area 0.0.0.0 interface ge-0/0/0.0\nset policy-options policy-statement accept-all from family traffic-engineering\nset policy-options policy-statement accept-all then accept"
+          }
+        },
+        {
+          "title": "程序",
+          "level": 4,
+          "content": "下面的示例要求您在各个配置层级中进行导航。有关导航 CLI 的信息，请参阅 在配置模式下使用 CLI 编辑器。 要配置路由器 R1： 配置路由器 R1 接口。 [edit interfaces] user@R1# set ge-0/0/0 unit 0 family inet address 10.8.31.103/24 user@R1# set ge-0/0/0 unit 0 family iso user@R1# set ge-0/0/0 unit 0 family mpls user@R1# set ge-0/0/1 unit 0 family inet address 10.8.42.102/24 user@R1# set ge-0/0/1 unit 0 family iso user@R1# set ge-0/0/1 unit 0 family mpls user@R1# set lo0 unit 0 family inet address 10.255.105.141/32 user@R1# set lo0 unit 0 family iso address 47.0005.0102.5501.8181 配置路由器 R1 的路由器 ID 和自治系统。 [edit routing-options] user@R1# set router-id 10.255.105.141 user@R1# set autonomous-system 65533 在路由器 R1 的所有接口（不包括管理接口）上启用 RSVP。 [edit protocols] user@R1# set rsvp interface all user@R1# set rsvp interface fxp0.0 disable 在路由器 R1 的所有接口（不包括管理接口）上启用 MPLS。 [edit protocols] user@R1# set mpls interface all user@R1# set mpls interface fxp0.0 disable 将路由器 R1 的 BGP 组配置为与路由器 R0 对等，并分配本地地址和邻居地址。 [edit protocols] user@R1# set bgp group ibgp type internal user@R1# set bgp group ibgp local-address 10.255.105.141 user@R1# set bgp group ibgp neighbor 10.255.105.137 将 BGP-TE 信令网络层可达性信息 （NLRI） 包含在 ibgp BGP 组。 [edit protocols] user@R1# set bgp group ibgp family traffic-engineering unicast 在路由器 R1 上启用策略 nlri2bgp 的导出。 [edit protocols] user@R1# set bgp group ibgp export nlri2bgp 将路由器 R1 的 BGP 组配置为与路由器 R2 对等，并将本地地址和邻居自治系统分配给 ebgp BGP 组。 [edit protocols] user@R1# set bgp group ebgp type external user@R1# set bgp group ebgp neighbor 10.8.42.104 local-address 10.8.42.102 user@R1# set bgp group ebgp neighbor 10.8.42.104 peer-as 65534 将 BGP-TE 信令 NLRI 加入 ebgp BGP 组。 [edit protocols] user@R1# set bgp group ebgp family traffic-engineering unicast 在 AS 间链路上启用被动信息流工程。 [edit protocols] user@R1# set isis interface ge-0/0/1.0 passive remote-node-iso 0102.5502.4211 user@R1# set isis interface ge-0/0/1.0 passive remote-node-id 10.8.42.104 在将路由器 R1 连接到路由器 R0 的接口上以及在路由器 R1 的环路接口上启用 OSPF，并启用流量工程功能。 [edit protocols] user@R1# set ospf traffic-engineering user@R1# set ospf area 0.0.0.0 interface lo0.0 user@R1# set ospf area 0.0.0.0 interface ge-0/0/0.0 [edit protocols] user@R1# set ospf area 0.0.0.0 interface ge-0/0/1.0 passive traffic-engineering remote-node-id 10.8.42.104 user@R1# set ospf area 0.0.0.0 interface ge-0/0/1.0 passive traffic-engineering remote-node-router-id 10.255.105.139 配置策略以接受来自 BGP-TE NLRI 的流量。 [edit policy-options] user@R1# set policy-statement accept-all from family traffic-engineering user@R1# set policy-statement accept-all then accept user@R1# set policy-statement nlri2bgp term 1 from family traffic-engineering user@R1# set policy-statement nlri2bgp term 1 then accept 在配置模式下，输入 show interfaces 、 show routing-options 、 show protocols 和 show policy-options 命令，以确认您的配置。如果输出未显示预期的配置，请重复此示例中的说明，以便进行更正。 user@R1# show interfaces ge-0/0/0 { unit 0 { family inet { address 10.8.31.103/24; } family iso; family mpls; } } ge-0/0/1 { unit 0 { family inet { address 10.8.42.102/24; } family iso; family mpls; } } lo0 { unit 0 { family inet { address 10.255.105.141/32; family iso { address 47.0005.0102.5501.8181:00; } } } user@R1# show routing-options router-id 10.255.105.141; autonomous-system 65533; user@R1# show protocols rsvp { interface all; interface fxp0.0 { disable; } } mpls { interface all; interface fxp0.0 { disable; } } bgp { group ibgp { type internal; local-address 10.255.105.141; family traffic-engineering { unicast; } export nlri2bgp; neighbor 10.255.105.137; } group ebgp { type external; family traffic-engineering { unicast; } neighbor 10.8.42.104 { local-address 10.8.42.102; peer-as 65534; } } } isis { interface ge-0/0/1.0 { passive { remote-node-iso 0102.5502.4211; remote-node-id 10.8.42.104; } } } ospf { traffic-engineering; area 0.0.0.0 { interface lo0.0; interface ge-0/0/0.0; interface ge-0/0/1.0 { passive { traffic-engineering { remote-node-id 10.8.42.104; remote-node-router-id 10.255.105.139; } } } } } user@R1# show policy-options policy-statement accept-all { from family traffic-engineering; then accept; } policy-statement nlri2bgp { term 1 { from family traffic-engineering; then { accept; } } }",
+          "sections": [
+            {
+              "title": "分步过程",
+              "level": 5,
+              "step_by_step": [
+                {
+                  "step": 1,
+                  "description": "配置路由器 R1 接口。",
+                  "code": [
+                    "[edit interfaces]",
+                    "user@R1# set ge-0/0/0 unit 0 family inet address 10.8.31.103/24",
+                    "user@R1# set ge-0/0/0 unit 0 family iso",
+                    "user@R1# set ge-0/0/0 unit 0 family mpls",
+                    "user@R1# set ge-0/0/1 unit 0 family inet address 10.8.42.102/24",
+                    "user@R1# set ge-0/0/1 unit 0 family iso",
+                    "user@R1# set ge-0/0/1 unit 0 family mpls",
+                    "user@R1# set lo0 unit 0 family inet address 10.255.105.141/32",
+                    "user@R1# set lo0 unit 0 family iso address 47.0005.0102.5501.8181"
+                  ]
+                },
+                {
+                  "step": 2,
+                  "description": "配置路由器 R1 的路由器 ID 和自治系统。",
+                  "code": [
+                    "[edit routing-options]",
+                    "user@R1# set router-id 10.255.105.141",
+                    "user@R1# set autonomous-system 65533"
+                  ]
+                },
+                {
+                  "step": 3,
+                  "description": "在路由器 R1 的所有接口（不包括管理接口）上启用 RSVP。",
+                  "code": [
+                    "[edit protocols]",
+                    "user@R1# set rsvp interface all",
+                    "user@R1# set rsvp interface fxp0.0 disable"
+                  ]
+                },
+                {
+                  "step": 4,
+                  "description": "在路由器 R1 的所有接口（不包括管理接口）上启用 MPLS。",
+                  "code": [
+                    "[edit protocols]",
+                    "user@R1# set mpls interface all",
+                    "user@R1# set mpls interface fxp0.0 disable"
+                  ]
+                },
+                {
+                  "step": 5,
+                  "description": "将路由器 R1 的 BGP 组配置为与路由器 R0 对等，并分配本地地址和邻居地址。",
+                  "code": [
+                    "[edit protocols]",
+                    "user@R1# set bgp group ibgp type internal",
+                    "user@R1# set bgp group ibgp local-address 10.255.105.141",
+                    "user@R1# set bgp group ibgp neighbor 10.255.105.137"
+                  ]
+                },
+                {
+                  "step": 6,
+                  "description": "将 BGP-TE 信令网络层可达性信息 （NLRI） 包含在 ibgp BGP 组。",
+                  "code": [
+                    "[edit protocols]",
+                    "user@R1# set bgp group ibgp family traffic-engineering unicast"
+                  ]
+                },
+                {
+                  "step": 7,
+                  "description": "在路由器 R1 上启用策略 nlri2bgp 的导出。",
+                  "code": [
+                    "[edit protocols]",
+                    "user@R1# set bgp group ibgp export nlri2bgp"
+                  ]
+                },
+                {
+                  "step": 8,
+                  "description": "将路由器 R1 的 BGP 组配置为与路由器 R2 对等，并将本地地址和邻居自治系统分配给 ebgp BGP 组。",
+                  "code": [
+                    "[edit protocols]",
+                    "user@R1# set bgp group ebgp type external",
+                    "user@R1# set bgp group ebgp neighbor 10.8.42.104 local-address 10.8.42.102",
+                    "user@R1# set bgp group ebgp neighbor 10.8.42.104 peer-as 65534"
+                  ]
+                },
+                {
+                  "step": 9,
+                  "description": "将 BGP-TE 信令 NLRI 加入 ebgp BGP 组。",
+                  "code": [
+                    "[edit protocols]",
+                    "user@R1# set bgp group ebgp family traffic-engineering unicast"
+                  ]
+                },
+                {
+                  "step": 10,
+                  "description": "在 AS 间链路上启用被动信息流工程。",
+                  "code": [
+                    "[edit protocols]",
+                    "user@R1# set isis interface ge-0/0/1.0 passive remote-node-iso 0102.5502.4211",
+                    "user@R1# set isis interface ge-0/0/1.0 passive remote-node-id 10.8.42.104"
+                  ]
+                },
+                {
+                  "step": 11,
+                  "description": "在将路由器 R1 连接到路由器 R0 的接口上以及在路由器 R1 的环路接口上启用 OSPF，并启用流量工程功能。",
+                  "code": [
+                    "[edit protocols]",
+                    "user@R1# set ospf traffic-engineering",
+                    "user@R1# set ospf area 0.0.0.0 interface lo0.0",
+                    "user@R1# set ospf area 0.0.0.0 interface ge-0/0/0.0"
+                  ]
+                },
+                {
+                  "step": 12,
+                  "description": "在 AS 间链路上启用被动信息流工程。",
+                  "code": [
+                    "[edit protocols]",
+                    "user@R1# set ospf area 0.0.0.0 interface ge-0/0/1.0 passive traffic-engineering remote-node-id 10.8.42.104",
+                    "user@R1# set ospf area 0.0.0.0 interface ge-0/0/1.0 passive traffic-engineering remote-node-router-id 10.255.105.139"
+                  ]
+                },
+                {
+                  "step": 13,
+                  "description": "配置策略以接受来自 BGP-TE NLRI 的流量。",
+                  "code": [
+                    "[edit policy-options]",
+                    "user@R1# set policy-statement accept-all from family traffic-engineering",
+                    "user@R1# set policy-statement accept-all then accept",
+                    "user@R1# set policy-statement nlri2bgp term 1 from family traffic-engineering",
+                    "user@R1# set policy-statement nlri2bgp term 1 then accept"
+                  ]
+                }
+              ]
+            },
+            {
+              "title": "结果",
+              "level": 5,
+              "content": "在配置模式下，输入 show interfaces 、 show routing-options 、 show protocols 和 show policy-options 命令，以确认您的配置。如果输出未显示预期的配置，请重复此示例中的说明，以便进行更正。",
+              "code": [
+                "user@R1#show interfacesge-0/0/0 {\n    unit 0 {\n        family inet {\n            address 10.8.31.103/24;\n        }\n        family iso;\n        family mpls;\n    }\n}\nge-0/0/1 {\n    unit 0 {\n        family inet {\n            address 10.8.42.102/24;\n        }\n        family iso;\n        family mpls;\n    }\n}\nlo0 {\n    unit 0 {\n        family inet {\n            address 10.255.105.141/32;\n        family iso {\n            address 47.0005.0102.5501.8181:00;\n        }\n    }\n}",
+                "user@R1#show routing-optionsrouter-id 10.255.105.141;\nautonomous-system 65533;",
+                "user@R1#show protocolsrsvp {\n    interface all;\n    interface fxp0.0 {\n        disable;\n    }\n}\nmpls {\n    interface all;\n    interface fxp0.0 {\n        disable;\n    }\n}\nbgp {\n    group ibgp {\n        type internal;\n        local-address 10.255.105.141;\n        family traffic-engineering {\n            unicast;\n        }\n        export nlri2bgp;\n        neighbor 10.255.105.137;\n    }\n    group ebgp {\n        type external;\n        family traffic-engineering {\n            unicast;\n        }\n        neighbor 10.8.42.104 {\n            local-address 10.8.42.102;\n            peer-as 65534;\n        }\n    }\n}\nisis {\n    interface ge-0/0/1.0 {\n        passive {\n            remote-node-iso 0102.5502.4211;\n            remote-node-id 10.8.42.104;\n        }\n    }\n}\nospf {\n    traffic-engineering;\n    area 0.0.0.0 {\n        interface lo0.0;\n        interface ge-0/0/0.0;\n        interface ge-0/0/1.0 {\n            passive {\n                traffic-engineering {\n                    remote-node-id 10.8.42.104;\n                    remote-node-router-id 10.255.105.139;\n                }\n            }\n        }\n    }\n}",
+                "user@R1#show policy-optionspolicy-statement accept-all {\n    from family traffic-engineering;\n    then accept;\n}\npolicy-statement nlri2bgp {\n    term 1 {\n        from family traffic-engineering;\n        then {\n            accept;\n        }\n    }\n}"
+              ]
+            }
+          ]
+        },
+        {
+          "title": "程序",
+          "level": 4,
+          "content": "下面的示例要求您在各个配置层级中进行导航。有关导航 CLI 的信息，请参阅 在配置模式下使用 CLI 编辑器。 要配置路由器 R2： 配置路由器 R2 接口。 [edit interfaces] user@R2# set ge-0/0/0 unit 0 family inet address 10.8.64.104/24 user@R2# set ge-0/0/0 unit 0 family iso user@R2# set ge-0/0/0 unit 0 family mpls user@R2# set ge-0/0/1 unit 0 family inet address 10.8.42.104/24 user@R2# set ge-0/0/1 unit 0 family iso user@R2# set ge-0/0/1 unit 0 family mpls user@R2# set lo0 unit 0 family inet address 10.255.105.139/32 user@R2# set lo0 unit 0 family iso address 47.0005.0102.5502.4211.00 配置路由器 R2 的路由器 ID 和自治系统。 [edit routing-options] user@R2# set router-id 10.255.105.139 user@R2# set autonomous-system 65534 在路由器 R2 的所有接口（不包括管理接口）上启用 RSVP。 [edit routing-options] user@R2# set rsvp interface all user@R2# set rsvp interface fxp0.0 disable 在路由器 R2 的所有接口（不包括管理接口）上启用 MPLS。 [edit routing-options] user@R2# set mpls interface all user@R2# set mpls interface fxp0.0 disable 使用 ted2nlri 策略启用信息流工程数据库参数的导入。 [edit protocols] user@R2# set mpls traffic-engineering database import policy ted2nlri 将路由器 R2 的 BGP 组配置为与路由器 R3 对等，并分配本地地址和邻居地址。 [edit protocols] user@R2# set bgp group ibgp type internal user@R2# set bgp group ibgp local-address 10.255.105.139 user@R2# set bgp group ibgp neighbor 10.255.105.135 将 BGP-TE 信令网络层可达性信息 （NLRI） 包含在 ibgp BGP 组。 [edit protocols] user@R2# set bgp group ibgp family traffic-engineering unicast 在路由器 R2 上启用策略 nlri2bgp 的导出。 [edit protocols] user@R2# set bgp group ibgp export nlri2bgp 配置路由器 R2 的 BGP 组，以便与路由器 R1 对等。 [edit protocols] user@R2# set bgp group ebgp type external 将 BGP-TE 信令 NLRI 加入 ebgp BGP 组。 [edit protocols] user@R2# set bgp group ebgp family traffic-engineering unicast 将本地地址和邻居自治系统分配给 ebgp BGP 组。 [edit protocols] user@R2# set bgp group ebgp peer-as 65533 user@R2# set bgp group ebgp neighbor 10.8.42.102 [edit protocols] user@R2# set bgp group ebgp export nlri2bgp 在连接路由器 R2 与路由器 R3 的接口以及路由器 R2 的环路接口上启用 IS-IS。 [edit protocols] user@R2# set isis level 1 disable user@R2# set isis interface ge-0/0/0.0 user@R2# set isis interface lo0.0 在连接路由器 R2 和路由器 R1 的接口上仅启用 IS-IS 通告。 [edit protocols] user@R2# set isis interface ge-0/0/1.0 passive remote-node-iso 0102.5501.8181 user@R2# set isis interface ge-0/0/1.0 passive remote-node-id 10.8.42.102 在路由器 R2 上配置流量工程功能。 [edit protocols] user@R2# set ospf traffic-engineering 在连接路由器 R2 和路由器 R1 的接口上仅启用 OSPF 通告。 [edit protocols] user@R2# set ospf area 0.0.0.0 interface ge-0/0/1.0 passive traffic-engineering remote-node-id 10.8.42.102 user@R2# set ospf area 0.0.0.0 interface ge-0/0/1.0 passive traffic-engineering remote-node-router-id 10.255.105.141 配置策略以接受来自 BGP-TE NLRI 的流量。 [edit policy-options] user@R2# set policy-statement accept-all from family traffic-engineering user@R2# set policy-statement accept-all then accept user@R2# set policy-statement nlri2bgp term 1 from family traffic-engineering user@R2# set policy-statement nlri2bgp term 1 then accept user@R2# set policy-statement ted2nlri term 1 from protocol isis user@R2# set policy-statement ted2nlri term 1 from protocol ospf user@R2# set policy-statement ted2nlri term 1 then accept user@R2# set policy-statement ted2nlri term 2 then reject 在配置模式下，输入 show interfaces 、 show routing-options 、 show protocols 和 show policy-options 命令，以确认您的配置。如果输出未显示预期的配置，请重复此示例中的说明，以便进行更正。 user@R2# show interfaces ge-0/0/0 { unit 0 { family inet { address 10.8.64.104/24; } family iso; family mpls; } } ge-0/0/1 { unit 0 { family inet { address 10.8.42.104/24; } family iso; family mpls; } } lo0 { unit 0 { family inet { address 10.255.105.139/32; family iso { address 47.0005.0102.5502.4211.00; } family iso; } } user@R2# show routing-options router-id 10.255.105.139; autonomous-system 65534; user@R2# show protocols rsvp { interface all; interface fxp0.0 { disable; } } mpls { traffic-engineering { database { import { policy ted2nlri; } } } interface all; interface fxp0.0 { disable; } } bgp { group ibgp { type internal; local-address 10.255.105.139; family traffic-engineering { unicast; } export nlri2bgp; neighbor 10.255.105.135; } group ebgp { type external; family traffic-engineering { unicast; } export nlri2bgp; peer-as 65533; neighbor 10.8.42.102; } } isis { level 1 disable; interface ge-0/0/0.0; interface ge-0/0/1.0 { passive { remote-node-iso 0102.5501.8181; remote-node-id 10.8.42.102; } } interface lo0.0; } ospf { traffic-engineering; area 0.0.0.0 { interface ge-0/0/1.0 { passive { traffic-engineering { remote-node-id 10.8.42.102; remote-node-router-id 10.255.105.141; } } } } } user@R2# show policy-options policy-statement accept-all { from family traffic-engineering; then accept; } policy-statement nlri2bgp { term 1 { from family traffic-engineering; then { accept; } } } policy-statement ted2nlri { term 1 { from protocol [ isis ospf ]; then accept; } term 2 { then reject; } }",
+          "sections": [
+            {
+              "title": "分步过程",
+              "level": 5,
+              "step_by_step": [
+                {
+                  "step": 1,
+                  "description": "配置路由器 R2 接口。",
+                  "code": [
+                    "[edit interfaces]",
+                    "user@R2# set ge-0/0/0 unit 0 family inet address 10.8.64.104/24",
+                    "user@R2# set ge-0/0/0 unit 0 family iso",
+                    "user@R2# set ge-0/0/0 unit 0 family mpls",
+                    "user@R2# set ge-0/0/1 unit 0 family inet address 10.8.42.104/24",
+                    "user@R2# set ge-0/0/1 unit 0 family iso",
+                    "user@R2# set ge-0/0/1 unit 0 family mpls",
+                    "user@R2# set lo0 unit 0 family inet address 10.255.105.139/32",
+                    "user@R2# set lo0 unit 0 family iso address 47.0005.0102.5502.4211.00"
+                  ]
+                },
+                {
+                  "step": 2,
+                  "description": "配置路由器 R2 的路由器 ID 和自治系统。",
+                  "code": [
+                    "[edit routing-options]",
+                    "user@R2# set router-id 10.255.105.139",
+                    "user@R2# set autonomous-system 65534"
+                  ]
+                },
+                {
+                  "step": 3,
+                  "description": "在路由器 R2 的所有接口（不包括管理接口）上启用 RSVP。",
+                  "code": [
+                    "[edit routing-options]",
+                    "user@R2# set rsvp interface all",
+                    "user@R2# set rsvp interface fxp0.0 disable"
+                  ]
+                },
+                {
+                  "step": 4,
+                  "description": "在路由器 R2 的所有接口（不包括管理接口）上启用 MPLS。",
+                  "code": [
+                    "[edit routing-options]",
+                    "user@R2# set mpls interface all",
+                    "user@R2# set mpls interface fxp0.0 disable"
+                  ]
+                },
+                {
+                  "step": 5,
+                  "description": "使用 ted2nlri 策略启用信息流工程数据库参数的导入。",
+                  "code": [
+                    "[edit protocols]",
+                    "user@R2# set mpls traffic-engineering database import policy ted2nlri"
+                  ]
+                },
+                {
+                  "step": 6,
+                  "description": "将路由器 R2 的 BGP 组配置为与路由器 R3 对等，并分配本地地址和邻居地址。",
+                  "code": [
+                    "[edit protocols]",
+                    "user@R2# set bgp group ibgp type internal",
+                    "user@R2# set bgp group ibgp local-address 10.255.105.139",
+                    "user@R2# set bgp group ibgp neighbor 10.255.105.135"
+                  ]
+                },
+                {
+                  "step": 7,
+                  "description": "将 BGP-TE 信令网络层可达性信息 （NLRI） 包含在 ibgp BGP 组。",
+                  "code": [
+                    "[edit protocols]",
+                    "user@R2# set bgp group ibgp family traffic-engineering unicast"
+                  ]
+                },
+                {
+                  "step": 8,
+                  "description": "在路由器 R2 上启用策略 nlri2bgp 的导出。",
+                  "code": [
+                    "[edit protocols]",
+                    "user@R2# set bgp group ibgp export nlri2bgp"
+                  ]
+                },
+                {
+                  "step": 9,
+                  "description": "配置路由器 R2 的 BGP 组，以便与路由器 R1 对等。",
+                  "code": [
+                    "[edit protocols]",
+                    "user@R2# set bgp group ebgp type external"
+                  ]
+                },
+                {
+                  "step": 10,
+                  "description": "将 BGP-TE 信令 NLRI 加入 ebgp BGP 组。",
+                  "code": [
+                    "[edit protocols]",
+                    "user@R2# set bgp group ebgp family traffic-engineering unicast"
+                  ]
+                },
+                {
+                  "step": 11,
+                  "description": "将本地地址和邻居自治系统分配给 ebgp BGP 组。",
+                  "code": [
+                    "[edit protocols]",
+                    "user@R2# set bgp group ebgp peer-as 65533",
+                    "user@R2# set bgp group ebgp neighbor 10.8.42.102"
+                  ]
+                },
+                {
+                  "step": 12,
+                  "description": "在路由器 R2 上启用策略 nlri2bgp 的导出。",
+                  "code": [
+                    "[edit protocols]",
+                    "user@R2# set bgp group ebgp export nlri2bgp"
+                  ]
+                },
+                {
+                  "step": 13,
+                  "description": "在连接路由器 R2 与路由器 R3 的接口以及路由器 R2 的环路接口上启用 IS-IS。",
+                  "code": [
+                    "[edit protocols]",
+                    "user@R2# set isis level 1 disable",
+                    "user@R2# set isis interface ge-0/0/0.0",
+                    "user@R2# set isis interface lo0.0"
+                  ]
+                },
+                {
+                  "step": 14,
+                  "description": "在连接路由器 R2 和路由器 R1 的接口上仅启用 IS-IS 通告。",
+                  "code": [
+                    "[edit protocols]",
+                    "user@R2# set isis interface ge-0/0/1.0 passive remote-node-iso 0102.5501.8181",
+                    "user@R2# set isis interface ge-0/0/1.0 passive remote-node-id 10.8.42.102"
+                  ]
+                },
+                {
+                  "step": 15,
+                  "description": "在路由器 R2 上配置流量工程功能。",
+                  "code": [
+                    "[edit protocols]",
+                    "user@R2# set ospf traffic-engineering"
+                  ]
+                },
+                {
+                  "step": 16,
+                  "description": "在连接路由器 R2 和路由器 R1 的接口上仅启用 OSPF 通告。",
+                  "code": [
+                    "[edit protocols]",
+                    "user@R2# set ospf area 0.0.0.0 interface ge-0/0/1.0 passive traffic-engineering remote-node-id 10.8.42.102",
+                    "user@R2# set ospf area 0.0.0.0 interface ge-0/0/1.0 passive traffic-engineering remote-node-router-id 10.255.105.141"
+                  ]
+                },
+                {
+                  "step": 17,
+                  "description": "配置策略以接受来自 BGP-TE NLRI 的流量。",
+                  "code": [
+                    "[edit policy-options]",
+                    "user@R2# set policy-statement accept-all from family traffic-engineering",
+                    "user@R2# set policy-statement accept-all then accept",
+                    "user@R2# set policy-statement nlri2bgp term 1 from family traffic-engineering",
+                    "user@R2# set policy-statement nlri2bgp term 1 then accept",
+                    "user@R2# set policy-statement ted2nlri term 1 from protocol isis",
+                    "user@R2# set policy-statement ted2nlri term 1 from protocol ospf",
+                    "user@R2# set policy-statement ted2nlri term 1 then accept",
+                    "user@R2# set policy-statement ted2nlri term 2 then reject"
+                  ]
+                }
+              ]
+            },
+            {
+              "title": "结果",
+              "level": 5,
+              "content": "在配置模式下，输入 show interfaces 、 show routing-options 、 show protocols 和 show policy-options 命令，以确认您的配置。如果输出未显示预期的配置，请重复此示例中的说明，以便进行更正。",
+              "code": [
+                "user@R2#show interfacesge-0/0/0 {\n    unit 0 {\n        family inet {\n            address 10.8.64.104/24;\n        }\n        family iso;\n        family mpls;\n    }\n}\nge-0/0/1 {\n    unit 0 {\n        family inet {\n            address 10.8.42.104/24;\n        }\n        family iso;\n        family mpls;\n    }\n}\nlo0 {\n    unit 0 {\n        family inet {\n            address 10.255.105.139/32;\n        family iso {\n            address 47.0005.0102.5502.4211.00;\n        }\n        family iso;\n    }\n}",
+                "user@R2#show routing-optionsrouter-id 10.255.105.139;\n autonomous-system 65534;",
+                "user@R2#show protocolsrsvp {\n    interface all;\n    interface fxp0.0 {\n        disable;\n    }\n}\nmpls {\n    traffic-engineering {\n        database {\n            import {\n                policy ted2nlri;\n            }\n        }\n    }\n    interface all;\n    interface fxp0.0 {\n        disable;\n    }\n}\nbgp {\n\n    group ibgp {\n        type internal;\n        local-address 10.255.105.139;\n        family traffic-engineering {\n            unicast;\n        }\n        export nlri2bgp;\n        neighbor 10.255.105.135;\n    }\n    group ebgp {\n        type external;\n        family traffic-engineering {\n            unicast;\n        }\n        export nlri2bgp;\n        peer-as 65533;\n        neighbor 10.8.42.102;\n    }\n}\nisis {\n    level 1 disable;\n    interface ge-0/0/0.0;\n    interface ge-0/0/1.0 {\n        passive {\n            remote-node-iso 0102.5501.8181;\n            remote-node-id 10.8.42.102;\n        }\n    }\n    interface lo0.0;\n}\nospf {\n    traffic-engineering;\n    area 0.0.0.0 {\n        interface ge-0/0/1.0 {\n            passive {\n                traffic-engineering {\n                    remote-node-id 10.8.42.102;\n                    remote-node-router-id 10.255.105.141;\n                }\n            }\n        }\n    }\n}",
+                "user@R2#show policy-optionspolicy-statement accept-all {\n    from family traffic-engineering;\n    then accept;\n}\npolicy-statement nlri2bgp {\n    term 1 {\n        from family traffic-engineering;\n        then {\n            accept;\n        }\n    }\n}\npolicy-statement ted2nlri {\n    term 1 {\n        from protocol [ isis ospf ];\n        then accept;\n    }\n    term 2 {\n        then reject;\n    }\n}"
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "content": "此示例说明如何将 BGP 配置为跨多个域传输链路状态信息，这些信息用于计算跨多个域的 MPLS LSP 的路径，例如区域间 TE LSP，并为外部路径计算实体（如 ALTO 和 PCE）提供可扩展和策略控制的方法，以获取网络拓扑。 要求 此示例使用以下硬件和软件组件： 四个路由器，可以是 M 系列、MX 系列或 T 系列路由器的组合 在所有路由器上运行的 Junos OS 14.2 或更高版本 准备工作： 配置设备接口。 配置设备的自治系统编号和路由器 ID。 配置以下协议： RSVP MPLS BGP IS-IS OSPF 概述 从 Junos OS 14.2 版开始，引入了一种跨多个区域和自治系统 （AS） 分发拓扑信息的新机制，扩展 BGP 协议以传输链路状态信息，这些信息最初是使用 IGP 获取的。IGP 协议在分发大型数据库时具有扩展限制。BGP 不仅是用于传输多区域和多 AS 拓扑信息的更具可扩展性的工具，还提供了可用于多 AS 拓扑分布的策略控制。BGP 链路状态拓扑信息用于计算跨多个域（例如区域间 TE LSP）的 MPLS 标签交换路径 （LSP） 的路径，并为外部路径计算实体（如 ALTO 和 PCE）获取网络拓扑提供可扩展和策略控制的方法。 从 Junos OS 17.1R1 版开始，QFX10000 交换机都支持使用 BGP 分配链路状态。 拓扑学 图 3： 使用 BGP 的链路状态分布 在 中 图 3，路由器 R0 和 R1 以及路由器 R2 和 R3 属于不同的自治系统。路由器 R0 和 R1 运行 OSPF，路由器 R2 和 R3 运行 IS-IS"
+}

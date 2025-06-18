@@ -1,0 +1,212 @@
+{
+  "title": "示例：在逻辑系统上配置内部 BGP 对等会话",
+  "sections": [
+    {
+      "title": "要求",
+      "level": 3,
+      "content": "在此示例中，不需要除设备初始化之外的特殊配置。"
+    },
+    {
+      "title": "概述",
+      "level": 3,
+      "content": "在此示例中，您将配置内部 BGP （IBGP） 对等会话。 在示例网络中，AS 17 中的设备在组中 internal-peers 完全网状。这些设备的环路地址为 192.168.6.5、192.163.6.4 和 192.168.40.4。 图 6 显示了具有内部对等会话的典型网络。 图 6： 具有 IBGP 会话的典型网络 在此示例中，您将配置内部 BGP （IBGP） 对等会话。 在示例网络中，AS 17 中的设备在组中 internal-peers 完全网状。这些设备的环路地址为 192.168.6.5、192.163.6.4 和 192.168.40.4。 图 6 显示了具有内部对等会话的典型网络。 图 6： 具有 IBGP 会话的典型网络"
+    },
+    {
+      "title": "配置",
+      "level": 3,
+      "content": "要快速配置此示例，请复制以下命令，将其粘贴到文本文件中，删除所有换行符，更改与您的网络配置匹配所需的任何详细信息，然后将命令复制并粘贴到层次结构级别的 CLI [edit] 中。 set logical-systems A interfaces lt-0/1/0 unit 1 description to-B set logical-systems A interfaces lt-0/1/0 unit 1 encapsulation ethernet set logical-systems A interfaces lt-0/1/0 unit 1 peer-unit 2 set logical-systems A interfaces lt-0/1/0 unit 1 family inet address 10.10.10.1/30 set logical-systems A interfaces lo0 unit 1 family inet address 192.168.6.5/32 set logical-systems A protocols bgp group internal-peers type internal set logical-systems A protocols bgp group internal-peers local-address 192.168.6.5 set logical-systems A protocols bgp group internal-peers export send-direct set logical-systems A protocols bgp group internal-peers neighbor 192.163.6.4 set logical-systems A protocols bgp group internal-peers neighbor 192.168.40.4 set logical-systems A protocols ospf area 0.0.0.0 interface lo0.1 passive set logical-systems A protocols ospf area 0.0.0.0 interface lt-0/1/0.1 set logical-systems A policy-options policy-statement send-direct term 2 from protocol direct set logical-systems A policy-options policy-statement send-direct term 2 then accept set logical-systems A routing-options router-id 192.168.6.5 set logical-systems A routing-options autonomous-system 17 set logical-systems B interfaces lt-0/1/0 unit 2 description to-A set logical-systems B interfaces lt-0/1/0 unit 2 encapsulation ethernet set logical-systems B interfaces lt-0/1/0 unit 2 peer-unit 1 set logical-systems B interfaces lt-0/1/0 unit 2 family inet address 10.10.10.2/30 set logical-systems B interfaces lt-0/1/0 unit 5 description to-C set logical-systems B interfaces lt-0/1/0 unit 5 encapsulation ethernet set logical-systems B interfaces lt-0/1/0 unit 5 peer-unit 6 set logical-systems B interfaces lt-0/1/0 unit 5 family inet address 10.10.10.5/30 set logical-systems B interfaces lo0 unit 2 family inet address 192.163.6.4/32 set logical-systems B protocols bgp group internal-peers type internal set logical-systems B protocols bgp group internal-peers local-address 192.163.6.4 set logical-systems B protocols bgp group internal-peers export send-direct set logical-systems B protocols bgp group internal-peers neighbor 192.168.40.4 set logical-systems B protocols bgp group internal-peers neighbor 192.168.6.5 set logical-systems B protocols ospf area 0.0.0.0 interface lo0.2 passive set logical-systems B protocols ospf area 0.0.0.0 interface lt-0/1/0.2 set logical-systems B protocols ospf area 0.0.0.0 interface lt-0/1/0.5 set logical-systems B policy-options policy-statement send-direct term 2 from protocol direct set logical-systems B policy-options policy-statement send-direct term 2 then accept set logical-systems B routing-options router-id 192.163.6.4 set logical-systems B routing-options autonomous-system 17 set logical-systems C interfaces lt-0/1/0 unit 6 description to-B set logical-systems C interfaces lt-0/1/0 unit 6 encapsulation ethernet set logical-systems C interfaces lt-0/1/0 unit 6 peer-unit 5 set logical-systems C interfaces lt-0/1/0 unit 6 family inet address 10.10.10.6/30 set logical-systems C interfaces lo0 unit 3 family inet address 192.168.40.4/32 set logical-systems C protocols bgp group internal-peers type internal set logical-systems C protocols bgp group internal-peers local-address 192.168.40.4 set logical-systems C protocols bgp group internal-peers export send-direct set logical-systems C protocols bgp group internal-peers neighbor 192.163.6.4 set logical-systems C protocols bgp group internal-peers neighbor 192.168.6.5 set logical-systems C protocols ospf area 0.0.0.0 interface lo0.3 passive set logical-systems C protocols ospf area 0.0.0.0 interface lt-0/1/0.6 set logical-systems C policy-options policy-statement send-direct term 2 from protocol direct set logical-systems C policy-options policy-statement send-direct term 2 then accept set logical-systems C routing-options router-id 192.168.40.4 set logical-systems C routing-options autonomous-system 17 下面的示例要求您在各个配置层级中进行导航。有关导航 CLI 的信息，请参阅 CLI 用户指南中的在配置模式下使用 CLI 编辑器。 要在设备 A 上配置内部 BGP 对等会话，请执行以下操作： 配置接口。 [edit logical-systems A interfaces lt-0/1/0 unit 1] user@R1# set description to-B user@R1# set encapsulation ethernet user@R1# set peer-unit 2 user@R1# set family inet address 10.10.10.1/30 user@R1# set family inet address 192.168.6.5/32 user@R1# up user@R1# up [edit logical-systems A interfaces] user@R1# set lo0 unit 1 family inet address 192.168.6.5/32 user@R1# exit [edit] user@R1# edit logical-systems B interfaces lt-0/1/0 [edit logical-systems B interfaces lt-0/1/0] user@R1# set unit 2 description to-A user@R1# set unit 2 encapsulation ethernet user@R1# set unit 2 peer-unit 1 user@R1# set unit 2 family inet address 10.10.10.2/30 user@R1# set unit 5 description to-C user@R1# set unit 5 encapsulation ethernet user@R1# set unit 5 peer-unit 6 user@R1# set family inet address 10.10.10.5/30 user@R1# up [edit logical-systems B interfaces] user@R1# set lo0 unit 2 family inet address 192.163.6.4/32 user@R1# exit [edit] user@R1# edit logical-systems C interfaces lt-0/1/0 unit 6 [edit logical-systems C interfaces lt-0/1/0 unit 6] set description to-B set encapsulation ethernet set peer-unit 5 set family inet address 10.10.10.6/30 user@R1# up user@R1# up [edit logical-systems C interfaces] set lo0 unit 3 family inet address 192.168.40.4/32 配置 BGP。 在逻辑系统 A 上， neighbor 设备 B 和设备 C 都包含语句，即使逻辑系统 A 未直接连接到设备 C。 [edit logical-systems A protocols bgp group internal-peers] user@R1# set type internal user@R1# set local-address 192.168.6.5 user@R1# set export send-direct user@R1# set neighbor 192.163.6.4 user@R1# set neighbor 192.168.40.4 [edit logical-systems B protocols bgp group internal-peers] user@R1# set type internal user@R1# set local-address 192.163.6.4 user@R1# set export send-direct user@R1# set neighbor 192.168.40.4 user@R1# set neighbor 192.168.6.5 [edit logical-systems C protocols bgp group internal-peers] user@R1# set type internal user@R1# set local-address 192.168.40.4 user@R1# set export send-direct user@R1# set neighbor 192.163.6.4 user@R1# set neighbor 192.168.6.5 配置 OSPF。 [edit logical-systems A protocols ospf area 0.0.0.0] user@R1# set interface lo0.1 passive user@R1# set interface lt-0/1/0.1 [edit logical-systems A protocols ospf area 0.0.0.0] user@R1# set interface lo0.2 passive user@R1# set interface lt-0/1/0.2 user@R1# set interface lt-0/1/0.5 [edit logical-systems A protocols ospf area 0.0.0.0] user@R1# set interface lo0.3 passive user@R1# set interface lt-0/1/0.6 配置接受直接路由的策略。 此方案的其他有用选项可能是接受通过 OSPF 或本地路由获知的路由。 [edit logical-systems A policy-options policy-statement send-direct term 2] user@R1# set from protocol direct user@R1# set then accept [edit logical-systems B policy-options policy-statement send-direct term 2] user@R1# set from protocol direct user@R1# set then accept [edit logical-systems C policy-options policy-statement send-direct term 2] user@R1# set from protocol direct user@R1# set then accept 配置路由器 ID 和自治系统 （AS） 编号。 [edit logical-systems A routing-options] user@R1# set router-id 192.168.6.5 user@R1# set autonomous-system 17 [edit logical-systems B routing-options] user@R1# set router-id 192.163.6.4 user@R1# set autonomous-system 17 [edit logical-systems C routing-options] user@R1# set router-id 192.168.40.4 user@R1# set autonomous-system 17 在配置模式下，输入 show logical-systems 命令以确认您的配置。如果输出未显示预期的配置，请重复此示例中的配置说明，以便进行更正。 user@R1# show logical-systems A { interfaces { lt-0/1/0 { unit 1 { description to-B; encapsulation ethernet; peer-unit 2; family inet { address 10.10.10.1/30; } } } lo0 { unit 1 { family inet { address 192.168.6.5/32; } } } } protocols { bgp { group internal-peers { type internal; local-address 192.168.6.5; export send-direct; neighbor 192.163.6.4; neighbor 192.168.40.4; } } ospf { area 0.0.0.0 { interface lo0.1 { passive; } interface lt-0/1/0.1; } } } policy-options { policy-statement send-direct { term 2 { from protocol direct; then accept; } } } routing-options { router-id 192.168.6.5; autonomous-system 17; } } B { interfaces { lt-0/1/0 { unit 2 { description to-A; encapsulation ethernet; peer-unit 1; family inet { address 10.10.10.2/30; } } unit 5 { description to-C; encapsulation ethernet; peer-unit 6; family inet { address 10.10.10.5/30; } } } lo0 { unit 2 { family inet { address 192.163.6.4/32; } } } } protocols { bgp { group internal-peers { type internal; local-address 192.163.6.4; export send-direct; neighbor 192.168.40.4; neighbor 192.168.6.5; } } ospf { area 0.0.0.0 { interface lo0.2 { passive; } interface lt-0/1/0.2; interface lt-0/1/0.5; } } } policy-options { policy-statement send-direct { term 2 { from protocol direct; then accept; } } } routing-options { router-id 192.163.6.4; autonomous-system 17; } } C { interfaces { lt-0/1/0 { unit 6 { description to-B; encapsulation ethernet; peer-unit 5; family inet { address 10.10.10.6/30; } } } lo0 { unit 3 { family inet { address 192.168.40.4/32; } } } } protocols { bgp { group internal-peers { type internal; local-address 192.168.40.4; export send-direct; neighbor 192.163.6.4; neighbor 192.168.6.5; } } ospf { area 0.0.0.0 { interface lo0.3 { passive; } interface lt-0/1/0.6; } } } policy-options { policy-statement send-direct { term 2 { from protocol direct; then accept; } } } routing-options { router-id 192.168.40.4; autonomous-system 17; } } 如果完成设备配置，请从配置模式输入 commit 。",
+      "sections": [
+        {
+          "title": "CLI 快速配置",
+          "level": 4,
+          "content": "要快速配置此示例，请复制以下命令，将其粘贴到文本文件中，删除所有换行符，更改与您的网络配置匹配所需的任何详细信息，然后将命令复制并粘贴到层次结构级别的 CLI [edit] 中。 set logical-systems A interfaces lt-0/1/0 unit 1 description to-B set logical-systems A interfaces lt-0/1/0 unit 1 encapsulation ethernet set logical-systems A interfaces lt-0/1/0 unit 1 peer-unit 2 set logical-systems A interfaces lt-0/1/0 unit 1 family inet address 10.10.10.1/30 set logical-systems A interfaces lo0 unit 1 family inet address 192.168.6.5/32 set logical-systems A protocols bgp group internal-peers type internal set logical-systems A protocols bgp group internal-peers local-address 192.168.6.5 set logical-systems A protocols bgp group internal-peers export send-direct set logical-systems A protocols bgp group internal-peers neighbor 192.163.6.4 set logical-systems A protocols bgp group internal-peers neighbor 192.168.40.4 set logical-systems A protocols ospf area 0.0.0.0 interface lo0.1 passive set logical-systems A protocols ospf area 0.0.0.0 interface lt-0/1/0.1 set logical-systems A policy-options policy-statement send-direct term 2 from protocol direct set logical-systems A policy-options policy-statement send-direct term 2 then accept set logical-systems A routing-options router-id 192.168.6.5 set logical-systems A routing-options autonomous-system 17 set logical-systems B interfaces lt-0/1/0 unit 2 description to-A set logical-systems B interfaces lt-0/1/0 unit 2 encapsulation ethernet set logical-systems B interfaces lt-0/1/0 unit 2 peer-unit 1 set logical-systems B interfaces lt-0/1/0 unit 2 family inet address 10.10.10.2/30 set logical-systems B interfaces lt-0/1/0 unit 5 description to-C set logical-systems B interfaces lt-0/1/0 unit 5 encapsulation ethernet set logical-systems B interfaces lt-0/1/0 unit 5 peer-unit 6 set logical-systems B interfaces lt-0/1/0 unit 5 family inet address 10.10.10.5/30 set logical-systems B interfaces lo0 unit 2 family inet address 192.163.6.4/32 set logical-systems B protocols bgp group internal-peers type internal set logical-systems B protocols bgp group internal-peers local-address 192.163.6.4 set logical-systems B protocols bgp group internal-peers export send-direct set logical-systems B protocols bgp group internal-peers neighbor 192.168.40.4 set logical-systems B protocols bgp group internal-peers neighbor 192.168.6.5 set logical-systems B protocols ospf area 0.0.0.0 interface lo0.2 passive set logical-systems B protocols ospf area 0.0.0.0 interface lt-0/1/0.2 set logical-systems B protocols ospf area 0.0.0.0 interface lt-0/1/0.5 set logical-systems B policy-options policy-statement send-direct term 2 from protocol direct set logical-systems B policy-options policy-statement send-direct term 2 then accept set logical-systems B routing-options router-id 192.163.6.4 set logical-systems B routing-options autonomous-system 17 set logical-systems C interfaces lt-0/1/0 unit 6 description to-B set logical-systems C interfaces lt-0/1/0 unit 6 encapsulation ethernet set logical-systems C interfaces lt-0/1/0 unit 6 peer-unit 5 set logical-systems C interfaces lt-0/1/0 unit 6 family inet address 10.10.10.6/30 set logical-systems C interfaces lo0 unit 3 family inet address 192.168.40.4/32 set logical-systems C protocols bgp group internal-peers type internal set logical-systems C protocols bgp group internal-peers local-address 192.168.40.4 set logical-systems C protocols bgp group internal-peers export send-direct set logical-systems C protocols bgp group internal-peers neighbor 192.163.6.4 set logical-systems C protocols bgp group internal-peers neighbor 192.168.6.5 set logical-systems C protocols ospf area 0.0.0.0 interface lo0.3 passive set logical-systems C protocols ospf area 0.0.0.0 interface lt-0/1/0.6 set logical-systems C policy-options policy-statement send-direct term 2 from protocol direct set logical-systems C policy-options policy-statement send-direct term 2 then accept set logical-systems C routing-options router-id 192.168.40.4 set logical-systems C routing-options autonomous-system 17",
+          "code": [
+            "set logical-systems A interfaces lt-0/1/0 unit 1 description to-B",
+            "set logical-systems A interfaces lt-0/1/0 unit 1 encapsulation ethernet",
+            "set logical-systems A interfaces lt-0/1/0 unit 1 peer-unit 2",
+            "set logical-systems A interfaces lt-0/1/0 unit 1 family inet address 10.10.10.1/30",
+            "set logical-systems A interfaces lo0 unit 1 family inet address 192.168.6.5/32",
+            "set logical-systems A protocols bgp group internal-peers type internal",
+            "set logical-systems A protocols bgp group internal-peers local-address 192.168.6.5",
+            "set logical-systems A protocols bgp group internal-peers export send-direct",
+            "set logical-systems A protocols bgp group internal-peers neighbor 192.163.6.4",
+            "set logical-systems A protocols bgp group internal-peers neighbor 192.168.40.4",
+            "set logical-systems A protocols ospf area 0.0.0.0 interface lo0.1 passive",
+            "set logical-systems A protocols ospf area 0.0.0.0 interface lt-0/1/0.1",
+            "set logical-systems A policy-options policy-statement send-direct term 2 from protocol direct",
+            "set logical-systems A policy-options policy-statement send-direct term 2 then accept",
+            "set logical-systems A routing-options router-id 192.168.6.5",
+            "set logical-systems A routing-options autonomous-system 17",
+            "set logical-systems B interfaces lt-0/1/0 unit 2 description to-A",
+            "set logical-systems B interfaces lt-0/1/0 unit 2 encapsulation ethernet",
+            "set logical-systems B interfaces lt-0/1/0 unit 2 peer-unit 1",
+            "set logical-systems B interfaces lt-0/1/0 unit 2 family inet address 10.10.10.2/30",
+            "set logical-systems B interfaces lt-0/1/0 unit 5 description to-C",
+            "set logical-systems B interfaces lt-0/1/0 unit 5 encapsulation ethernet",
+            "set logical-systems B interfaces lt-0/1/0 unit 5 peer-unit 6",
+            "set logical-systems B interfaces lt-0/1/0 unit 5 family inet address 10.10.10.5/30",
+            "set logical-systems B interfaces lo0 unit 2 family inet address 192.163.6.4/32",
+            "set logical-systems B protocols bgp group internal-peers type internal",
+            "set logical-systems B protocols bgp group internal-peers local-address 192.163.6.4",
+            "set logical-systems B protocols bgp group internal-peers export send-direct",
+            "set logical-systems B protocols bgp group internal-peers neighbor 192.168.40.4",
+            "set logical-systems B protocols bgp group internal-peers neighbor 192.168.6.5",
+            "set logical-systems B protocols ospf area 0.0.0.0 interface lo0.2 passive",
+            "set logical-systems B protocols ospf area 0.0.0.0 interface lt-0/1/0.2",
+            "set logical-systems B protocols ospf area 0.0.0.0 interface lt-0/1/0.5",
+            "set logical-systems B policy-options policy-statement send-direct term 2 from protocol direct",
+            "set logical-systems B policy-options policy-statement send-direct term 2 then accept",
+            "set logical-systems B routing-options router-id 192.163.6.4",
+            "set logical-systems B routing-options autonomous-system 17",
+            "set logical-systems C interfaces lt-0/1/0 unit 6 description to-B",
+            "set logical-systems C interfaces lt-0/1/0 unit 6 encapsulation ethernet",
+            "set logical-systems C interfaces lt-0/1/0 unit 6 peer-unit 5",
+            "set logical-systems C interfaces lt-0/1/0 unit 6 family inet address 10.10.10.6/30",
+            "set logical-systems C interfaces lo0 unit 3 family inet address 192.168.40.4/32",
+            "set logical-systems C protocols bgp group internal-peers type internal",
+            "set logical-systems C protocols bgp group internal-peers local-address 192.168.40.4",
+            "set logical-systems C protocols bgp group internal-peers export send-direct",
+            "set logical-systems C protocols bgp group internal-peers neighbor 192.163.6.4",
+            "set logical-systems C protocols bgp group internal-peers neighbor 192.168.6.5",
+            "set logical-systems C protocols ospf area 0.0.0.0 interface lo0.3 passive",
+            "set logical-systems C protocols ospf area 0.0.0.0 interface lt-0/1/0.6",
+            "set logical-systems C policy-options policy-statement send-direct term 2 from protocol direct",
+            "set logical-systems C policy-options policy-statement send-direct term 2 then accept",
+            "set logical-systems C routing-options router-id 192.168.40.4",
+            "set logical-systems C routing-options autonomous-system 17"
+          ],
+          "sections": [
+            {
+              "title": "分步过程",
+              "level": 5,
+              "step_by_step": [
+                {
+                  "step": 1,
+                  "description": "配置接口。",
+                  "code": [
+                    "[edit logical-systems A interfaces lt-0/1/0 unit 1]",
+                    "user@R1# set description to-B",
+                    "user@R1# set encapsulation ethernet",
+                    "user@R1# set peer-unit 2",
+                    "user@R1# set family inet address 10.10.10.1/30",
+                    "user@R1# set family inet address 192.168.6.5/32",
+                    "user@R1# up",
+                    "user@R1# up",
+                    "[edit  logical-systems A interfaces]",
+                    "user@R1# set lo0 unit 1 family inet address 192.168.6.5/32",
+                    "user@R1# exit",
+                    "[edit]",
+                    "user@R1# edit logical-systems B interfaces lt-0/1/0",
+                    "[edit logical-systems B interfaces lt-0/1/0]",
+                    "user@R1# set unit 2 description to-A",
+                    "user@R1# set unit 2 encapsulation ethernet",
+                    "user@R1# set unit 2 peer-unit 1",
+                    "user@R1# set unit 2 family inet address 10.10.10.2/30",
+                    "user@R1# set unit 5 description to-C",
+                    "user@R1# set unit 5 encapsulation ethernet",
+                    "user@R1# set unit 5 peer-unit 6",
+                    "user@R1# set family inet address 10.10.10.5/30",
+                    "user@R1# up",
+                    "[edit logical-systems B interfaces]",
+                    "user@R1# set lo0 unit 2 family inet address 192.163.6.4/32",
+                    "user@R1# exit",
+                    "[edit]",
+                    "user@R1# edit logical-systems C interfaces lt-0/1/0 unit 6",
+                    "[edit logical-systems C interfaces lt-0/1/0 unit 6]",
+                    "set description to-B",
+                    "set encapsulation ethernet",
+                    "set peer-unit 5",
+                    "set family inet address 10.10.10.6/30",
+                    "user@R1# up",
+                    "user@R1# up",
+                    "[edit  logical-systems C interfaces]",
+                    "set lo0 unit 3 family inet address 192.168.40.4/32"
+                  ]
+                },
+                {
+                  "step": 2,
+                  "description": "配置 BGP。",
+                  "code": [
+                    "[edit logical-systems A protocols bgp group internal-peers]",
+                    "user@R1# set type internal",
+                    "user@R1# set local-address 192.168.6.5",
+                    "user@R1# set export send-direct",
+                    "user@R1# set neighbor 192.163.6.4",
+                    "user@R1# set neighbor 192.168.40.4",
+                    "[edit logical-systems B protocols bgp group internal-peers]",
+                    "user@R1# set type internal",
+                    "user@R1# set local-address 192.163.6.4",
+                    "user@R1# set export send-direct",
+                    "user@R1# set neighbor 192.168.40.4",
+                    "user@R1# set neighbor 192.168.6.5",
+                    "[edit logical-systems C protocols bgp group internal-peers]",
+                    "user@R1# set type internal",
+                    "user@R1# set local-address 192.168.40.4",
+                    "user@R1# set export send-direct",
+                    "user@R1# set neighbor 192.163.6.4",
+                    "user@R1# set neighbor 192.168.6.5"
+                  ]
+                },
+                {
+                  "step": 3,
+                  "description": "配置 OSPF。",
+                  "code": [
+                    "[edit logical-systems A protocols ospf area 0.0.0.0]",
+                    "user@R1# set interface lo0.1 passive",
+                    "user@R1# set interface lt-0/1/0.1",
+                    "[edit logical-systems A protocols ospf area 0.0.0.0]",
+                    "user@R1# set interface lo0.2 passive",
+                    "user@R1# set interface lt-0/1/0.2",
+                    "user@R1# set interface lt-0/1/0.5",
+                    "[edit logical-systems A protocols ospf area 0.0.0.0]",
+                    "user@R1# set interface lo0.3 passive",
+                    "user@R1# set interface lt-0/1/0.6"
+                  ]
+                },
+                {
+                  "step": 4,
+                  "description": "配置接受直接路由的策略。",
+                  "code": [
+                    "[edit logical-systems A policy-options policy-statement send-direct term 2]",
+                    "user@R1# set from protocol direct",
+                    "user@R1# set then accept",
+                    "[edit logical-systems B policy-options policy-statement send-direct term 2]",
+                    "user@R1# set from protocol direct",
+                    "user@R1# set then accept",
+                    "[edit logical-systems C policy-options policy-statement send-direct term 2]",
+                    "user@R1# set from protocol direct",
+                    "user@R1# set then accept"
+                  ]
+                },
+                {
+                  "step": 5,
+                  "description": "配置路由器 ID 和自治系统 （AS） 编号。",
+                  "code": [
+                    "[edit logical-systems A routing-options]",
+                    "user@R1# set router-id 192.168.6.5",
+                    "user@R1# set autonomous-system 17",
+                    "[edit logical-systems B routing-options]",
+                    "user@R1# set router-id 192.163.6.4",
+                    "user@R1# set autonomous-system 17",
+                    "[edit logical-systems C routing-options]",
+                    "user@R1# set router-id 192.168.40.4",
+                    "user@R1# set autonomous-system 17"
+                  ]
+                }
+              ]
+            },
+            {
+              "title": "结果",
+              "level": 5,
+              "content": "在配置模式下，输入 show logical-systems 命令以确认您的配置。如果输出未显示预期的配置，请重复此示例中的配置说明，以便进行更正。 如果完成设备配置，请从配置模式输入 commit 。",
+              "code": [
+                "user@R1#show logical-systemsA {\n    interfaces {\n        lt-0/1/0 {\n            unit 1 {\n                description to-B;\n                encapsulation ethernet;\n                peer-unit 2;\n                family inet {\n                    address 10.10.10.1/30;\n                }\n            }\n        }\n        lo0 {\n            unit 1 {\n                family inet {\n                    address 192.168.6.5/32;\n                }\n            }\n        }\n    }\n    protocols {\n        bgp {\n            group internal-peers {\n                type internal;\n                local-address 192.168.6.5;\n                export send-direct;\n                neighbor 192.163.6.4;\n                neighbor 192.168.40.4;\n            }\n        }\n        ospf {\n            area 0.0.0.0 {\n                interface lo0.1 {\n                    passive;\n                }\n                interface lt-0/1/0.1;\n            }\n        }\n    }\n    policy-options {\n        policy-statement send-direct {\n            term 2 {\n                from protocol direct;\n                then accept;\n            }\n        }\n    }\n    routing-options {\n        router-id 192.168.6.5;\n        autonomous-system 17;\n    }\n}\nB {\n    interfaces {\n        lt-0/1/0 {\n            unit 2 {\n                description to-A;\n                encapsulation ethernet;\n                peer-unit 1;\n                family inet {\n                    address 10.10.10.2/30;\n                }\n            }\n            unit 5 {\n                description to-C;\n                encapsulation ethernet;\n                peer-unit 6;\n                family inet {\n                    address 10.10.10.5/30;\n                }\n            }\n        }\n        lo0 {\n            unit 2 {\n                family inet {\n                    address 192.163.6.4/32;\n                }\n            }\n        }\n    }\n    protocols {\n        bgp {\n            group internal-peers {\n                type internal;\n                local-address 192.163.6.4;\n                export send-direct;\n                neighbor 192.168.40.4;\n                neighbor 192.168.6.5;\n            }\n        }\n        ospf {\n            area 0.0.0.0 {\n                interface lo0.2 {\n                    passive;\n                }\n                interface lt-0/1/0.2;\n                interface lt-0/1/0.5;\n            }\n        }\n    }\n    policy-options {\n        policy-statement send-direct {\n            term 2 {\n                from protocol direct;\n                then accept;\n            }\n        }\n    }\n    routing-options {\n        router-id 192.163.6.4;\n        autonomous-system 17;\n    }\n}\nC {\n    interfaces {\n        lt-0/1/0 {\n            unit 6 {\n                description to-B;\n                encapsulation ethernet;\n                peer-unit 5;\n                family inet {\n                    address 10.10.10.6/30;\n                }\n            }\n        }\n        lo0 {\n            unit 3 {\n                family inet {\n                    address 192.168.40.4/32;\n                }\n            }\n        }\n    }\n    protocols {\n        bgp {\n            group internal-peers {\n                type internal;\n                local-address 192.168.40.4;\n                export send-direct;\n                neighbor 192.163.6.4;\n                neighbor 192.168.6.5;\n            }\n        }\n        ospf {\n            area 0.0.0.0 {\n                interface lo0.3 {\n                    passive;\n                }\n                interface lt-0/1/0.6;\n            }\n        }\n    }\n    policy-options {\n        policy-statement send-direct {\n            term 2 {\n                from protocol direct;\n                then accept;\n            }\n        }\n    }\n    routing-options {\n        router-id 192.168.40.4;\n        autonomous-system 17;\n    }\n}"
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "content": "此示例说明如何在逻辑系统上配置内部 BGP 对等会话。 要求 在此示例中，不需要除设备初始化之外的特殊配置。 概述 在此示例中，您将配置内部 BGP （IBGP） 对等会话。 在示例网络中，AS 17 中的设备在组中 internal-peers 完全网状。这些设备的环路地址为 192.168.6.5、192.163.6.4 和 192.168.40.4。 图 6 显示了具有内部对等会话的典型网络"
+}

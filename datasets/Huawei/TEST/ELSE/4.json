@@ -1,0 +1,17 @@
+{
+    "requirement": "配置 NAT 实现私网 IPv4 地址访问公网，并模拟公网服务。",
+    "steps": [
+      "1. 配置 R1 和 R2 之间的接口 IP 地址，以及静态路由。",
+      "2. 配置 R1 和 R3 的 Telnet 功能以进行验证。",
+      "3. 配置动态 NAT，使得私网客户端可以访问公网。",
+      "4. 配置 ACL 用于过滤 NAT 流量。",
+      "5. 配置 R2 的出口接口上的 NAT，并进行 Easy IP 配置。",
+      "6. 配置 NAT Server 以使 R3 向公网提供服务。"
+    ],
+    "configs": {
+      "R1": "# \nsysname R1 \n# \ninterface GigabitEthernet0/0/0 \n ip address 192.168.1.1 24 \n# \nip route-static 0.0.0.0 0 192.168.1.254 \n# \nuser-interface vty 0 4 \n authentication-mode aaa \n aaa \n local-user test password cipher Huawei@123 \n local-user test privilege level 15 \n# \nreturn",
+      "R2": "# \nsysname R2 \n# \ninterface GigabitEthernet0/0/0 \n ip address 192.168.1.254 24 \n# \ninterface GigabitEthernet0/0/1 \n ip address 1.2.3.4 24 \n# \nip route-static 0.0.0.0 0 1.2.3.254 \n# \nnat address-group 1 1.2.3.10 1.2.3.20 \nacl 2000 \n rule 5 permit source any \n# \ninterface GigabitEthernet0/0/1 \n nat outbound 2000 address-group 1 \n# \nundo nat outbound 2000 address-group 1 \n interface GigabitEthernet0/0/1 \n nat outbound 2000 \n# \ninterface GigabitEthernet0/0/1 \n nat server protocol tcp global current-interface 2323 inside 192.168.1.1 telnet \n# \nreturn",
+      "R3": "# \nsysname R3 \n# \ninterface GigabitEthernet0/0/0 \n ip address 1.2.3.254 24 \n# \nuser-interface vty 0 4 \n authentication-mode aaa \n aaa \n local-user test password cipher Huawei@123 \n local-user test service-type telnet \n local-user test privilege level 15 \n# \nreturn"
+    }
+  }
+  

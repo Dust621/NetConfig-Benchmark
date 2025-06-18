@@ -1,0 +1,190 @@
+{
+  "title": "示例：跟踪全局路由协议操作",
+  "sections": [
+    {
+      "title": "要求",
+      "level": 3,
+      "content": "您必须具有此 view 特权。"
+    },
+    {
+      "title": "概述",
+      "level": 3,
+      "content": "要配置全局路由协议跟踪，请在层次结构级别包含 traceoptions 语句 [edit routing-options] ： traceoptions { file filename <files number > <size size > <world-readable | no-world-readable>; flag flag <disable>; } 语句中的 traceoptions flag 标志是标识符。使用命令配置 set 标志时，不会修改可能已设置的任何标志。在以下示例中，设置 timer 跟踪标志对已配置 task 的标志没有影响。使用 delete 命令删除特定标志。 [edit routing-options traceoptions] user@host# show flag task; user@host# set traceoptions flag timer user@host# show flag task; flag timer; user@host# delete traceoptions flag task user@host# show flag timer; 此示例说明如何配置和查看跟踪路由表中更改的跟踪文件。可以调整这些步骤，以应用于支持跟踪操作的任何 Junos OS 层次结构级别的跟踪操作。 提示： 要查看支持跟踪操作的层次结构级别的列表，请在配置模式下输入 help apropos traceoptions 命令。 要查看支持跟踪操作的层次结构级别的列表，请在配置模式下输入 help apropos traceoptions 命令。"
+    },
+    {
+      "title": "配置",
+      "level": 3,
+      "content": "要快速配置此示例，请复制以下命令，将其粘贴到文本文件中，删除所有换行符，更改与您的网络配置匹配所需的任何详细信息，然后将命令复制并粘贴到层次结构级别的 CLI [edit] 中。 set routing-options traceoptions file routing-table-changes set routing-options traceoptions file size 10m set routing-options traceoptions file files 10 set routing-options traceoptions flag route set routing-options static route 1.1.1.2/32 next-hop 10.0.45.6 下面的示例要求您在各个配置层级中进行导航。有关导航 CLI 的信息，请参阅《Junos OS CLI 用户指南》中的在配置模式下使用 CLI 编辑器。 要配置跟踪操作，请执行以下操作： 配置跟踪操作。 [edit routing-options traceoptions] user@host# set file routing-table-changes user@host# set file size 10m user@host# set file files 10 user@host# set flag route 配置静态路由以导致路由表发生变化。 [edit routing-options static] user@host# set route 1.1.1.2/32 next-hop 10.0.45.6 如果完成设备配置，请提交配置。 [edit] user@host# commit 查看跟踪文件： 在操作模式下，列出系统上的日志文件。 user@host> file list /var/log /var/log: ... routing-table-changes ... 查看文件的内容 routing-table-changes 。 user@host> file show /var/log/routing-table-changes Dec 15 11:09:29 trace_on: Tracing to \"/var/log/routing-table-changes\" started Dec 15 11:09:29.496507 Dec 15 11:09:29.496507 Tracing flags enabled: route Dec 15 11:09:29.496507 Dec 15 11:09:29.533203 inet_routerid_notify: Router ID: 192.168.4.1 Dec 15 11:09:29.533334 inet_routerid_notify: No Router ID assigned Dec 15 11:09:29.533381 inet_routerid_notify: No Router ID assigned Dec 15 11:09:29.533420 inet_routerid_notify: No Router ID assigned Dec 15 11:09:29.534915 inet_routerid_notify: Router ID: 192.168.4.1 Dec 15 11:09:29.542934 inet_routerid_notify: No Router ID assigned Dec 15 11:09:29.549253 inet_routerid_notify: No Router ID assigned Dec 15 11:09:29.556878 inet_routerid_notify: No Router ID assigned Dec 15 11:09:29.582990 rt_static_reinit: examined 3 static nexthops, 0 unreferenced Dec 15 11:09:29.589920 Dec 15 11:09:29.589920 task_reconfigure reinitializing done ... 筛选日志文件的输出。 user@host> file show /var/log/routing-table-changes | match 1.1.1.2 Dec 15 11:15:30.780314 ADD 1.1.1.2/32 nhid 0 gw 10.0.45.6 Static pref 5/0 metric at-0/2/0.0 <ctive Int Ext> Dec 15 11:15:30.782276 KRT Request: send len 216 v104 seq 0 ADD route/user af 2 table 0 infot 0 addr 1.1.1.2 nhop-type unicast nhindex 663 通过使用可选 match 条件运行 monitor start 命令来实时查看跟踪操作。 user@host> monitor start routing-table-changes | match 1.1.1.2 Aug 10 19:21:40.773467 BGP RECV 0.0.0.0/0 Aug 10 19:21:40.773685 bgp_rcv_nlri: 0.0.0.0/0 Aug 10 19:21:40.773778 bgp_rcv_nlri: 0.0.0.0/0 belongs to meshgroup Aug 10 19:21:40.773832 bgp_rcv_nlri: 0.0.0.0/0 qualified bnp->ribact 0x0 l2afcb 0x0 停用静态路由。 user@host# deactivate routing-options static route 1.1.1.2/32 user@host# commit *** routing-table-changes *** Dec 15 11:42:59.355557 CHANGE 1.1.1.2/32 nhid 663 gw 10.0.45.6 Static pref 5/0 metric at-0/2/0.0 <Delete Int Ext> Dec 15 11:42:59.426887 KRT Request: send len 216 v104 seq 0 DELETE route/user af 2 table 0 infot 0 addr 1.1.1.2 nhop-type discard filtidx 0 Dec 15 11:42:59.427366 RELEASE 1.1.1.2/32 nhid 663 gw 10.0.45.6 Static pref 5/0 metric at-0/2/0.0 <Release Delete Int Ext> 按 Enter 并键入 monitor stop 来停止命令。 monitor [Enter] user@host> monitor stop 完成故障排除后，请考虑停用跟踪日志记录以避免对系统资源产生任何不必要的影响。 停用配置后，它将显示在带有标记的 inactive 配置中。 [edit routing-options] user@host# deactivate traceoptions user@host# commit [edit routing-options] user@host# show inactive: traceoptions { file routing-table-changes size 10m files 10; flag route; } static { inactive: route 1.1.1.2/32 next-hop 10.0.45.6; } 要重新激活跟踪操作， activate 请使用配置模式语句。 [edit routing-options] user@host# activate traceoptions user@host# commit 在配置模式下，输入 show routing-options 命令以确认您的配置。如果输出未显示预期的配置，请重复此示例中的说明，以便进行更正。 user@host# show routing-options traceoptions { file routing-table-changes size 10m files 10; flag route; } static { route 1.1.1.2/32 next-hop 10.0.45.6; }",
+      "sections": [
+        {
+          "title": "CLI 快速配置",
+          "level": 4,
+          "content": "要快速配置此示例，请复制以下命令，将其粘贴到文本文件中，删除所有换行符，更改与您的网络配置匹配所需的任何详细信息，然后将命令复制并粘贴到层次结构级别的 CLI [edit] 中。 set routing-options traceoptions file routing-table-changes set routing-options traceoptions file size 10m set routing-options traceoptions file files 10 set routing-options traceoptions flag route set routing-options static route 1.1.1.2/32 next-hop 10.0.45.6",
+          "code": [
+            "set routing-options traceoptions file routing-table-changes",
+            "set routing-options traceoptions file size 10m",
+            "set routing-options traceoptions file files 10",
+            "set routing-options traceoptions flag route",
+            "set routing-options static route 1.1.1.2/32 next-hop 10.0.45.6"
+          ]
+        },
+        {
+          "title": "配置跟踪操作",
+          "level": 4,
+          "content": "下面的示例要求您在各个配置层级中进行导航。有关导航 CLI 的信息，请参阅《Junos OS CLI 用户指南》中的在配置模式下使用 CLI 编辑器。 要配置跟踪操作，请执行以下操作： 配置跟踪操作。 [edit routing-options traceoptions] user@host# set file routing-table-changes user@host# set file size 10m user@host# set file files 10 user@host# set flag route 配置静态路由以导致路由表发生变化。 [edit routing-options static] user@host# set route 1.1.1.2/32 next-hop 10.0.45.6 如果完成设备配置，请提交配置。 [edit] user@host# commit",
+          "sections": [
+            {
+              "title": "分步过程",
+              "level": 5,
+              "step_by_step": [
+                {
+                  "step": 1,
+                  "description": "配置跟踪操作。",
+                  "code": [
+                    "[edit routing-options traceoptions]",
+                    "user@host# set file routing-table-changes",
+                    "user@host# set file size 10m",
+                    "user@host# set file files 10",
+                    "user@host# set flag route"
+                  ]
+                },
+                {
+                  "step": 2,
+                  "description": "配置静态路由以导致路由表发生变化。",
+                  "code": [
+                    "[edit routing-options static]",
+                    "user@host# set route 1.1.1.2/32 next-hop 10.0.45.6"
+                  ]
+                },
+                {
+                  "step": 3,
+                  "description": "如果完成设备配置，请提交配置。",
+                  "code": [
+                    "[edit]",
+                    "user@host# commit"
+                  ]
+                }
+              ]
+            },
+            {
+              "title": "分步过程",
+              "level": 5,
+              "step_by_step": [
+                {
+                  "step": 1,
+                  "description": "在操作模式下，列出系统上的日志文件。",
+                  "code": [
+                    "user@host> file list /var/log",
+                    "/var/log:",
+                    "...",
+                    "routing-table-changes",
+                    "..."
+                  ]
+                },
+                {
+                  "step": 2,
+                  "description": "查看文件的内容 routing-table-changes 。",
+                  "code": [
+                    "user@host> file show /var/log/routing-table-changes",
+                    "Dec 15 11:09:29 trace_on: Tracing to \"/var/log/routing-table-changes\" started",
+                    "Dec 15 11:09:29.496507",
+                    "Dec 15 11:09:29.496507 Tracing flags enabled: route",
+                    "Dec 15 11:09:29.496507",
+                    "Dec 15 11:09:29.533203 inet_routerid_notify: Router ID: 192.168.4.1",
+                    "Dec 15 11:09:29.533334 inet_routerid_notify: No Router ID assigned",
+                    "Dec 15 11:09:29.533381 inet_routerid_notify: No Router ID assigned",
+                    "Dec 15 11:09:29.533420 inet_routerid_notify: No Router ID assigned",
+                    "Dec 15 11:09:29.534915 inet_routerid_notify: Router ID: 192.168.4.1",
+                    "Dec 15 11:09:29.542934 inet_routerid_notify: No Router ID assigned",
+                    "Dec 15 11:09:29.549253 inet_routerid_notify: No Router ID assigned",
+                    "Dec 15 11:09:29.556878 inet_routerid_notify: No Router ID assigned",
+                    "Dec 15 11:09:29.582990 rt_static_reinit: examined 3 static nexthops, 0 unreferenced",
+                    "Dec 15 11:09:29.589920",
+                    "Dec 15 11:09:29.589920 task_reconfigure reinitializing done",
+                    "..."
+                  ]
+                },
+                {
+                  "step": 3,
+                  "description": "筛选日志文件的输出。",
+                  "code": [
+                    "user@host> file show /var/log/routing-table-changes | match 1.1.1.2",
+                    "Dec 15 11:15:30.780314 ADD      1.1.1.2/32          nhid 0 gw 10.0.45.6       Static   pref 5/0 metric  at-0/2/0.0 <ctive Int Ext>",
+                    "Dec 15 11:15:30.782276 KRT Request: send len 216 v104 seq 0 ADD route/user af 2 table 0 infot 0 addr 1.1.1.2 nhop-type unicast nhindex 663"
+                  ]
+                },
+                {
+                  "step": 4,
+                  "description": "通过使用可选 match 条件运行 monitor start 命令来实时查看跟踪操作。",
+                  "code": [
+                    "user@host> monitor start routing-table-changes | match 1.1.1.2",
+                    "Aug 10 19:21:40.773467 BGP RECV         0.0.0.0/0",
+                    "Aug 10 19:21:40.773685 bgp_rcv_nlri: 0.0.0.0/0",
+                    "Aug 10 19:21:40.773778 bgp_rcv_nlri: 0.0.0.0/0 belongs to meshgroup ",
+                    "Aug 10 19:21:40.773832 bgp_rcv_nlri: 0.0.0.0/0 qualified bnp->ribact 0x0 l2afcb 0x0"
+                  ]
+                },
+                {
+                  "step": 5,
+                  "description": "停用静态路由。",
+                  "code": [
+                    "user@host# deactivate routing-options static route 1.1.1.2/32",
+                    "user@host# commit",
+                    "*** routing-table-changes ***",
+                    "Dec 15 11:42:59.355557 CHANGE   1.1.1.2/32          nhid 663 gw 10.0.45.6       Static   pref 5/0 metric  at-0/2/0.0 <Delete Int Ext>",
+                    "Dec 15 11:42:59.426887 KRT Request: send len 216 v104 seq 0 DELETE route/user af 2 table 0 infot 0 addr 1.1.1.2 nhop-type discard filtidx 0",
+                    "Dec 15 11:42:59.427366 RELEASE  1.1.1.2/32          nhid 663 gw 10.0.45.6       Static   pref 5/0 metric  at-0/2/0.0 <Release Delete Int Ext>"
+                  ]
+                },
+                {
+                  "step": 6,
+                  "description": "按 Enter 并键入 monitor stop 来停止命令。 monitor",
+                  "code": [
+                    "[Enter]",
+                    "user@host> monitor stop"
+                  ]
+                },
+                {
+                  "step": 7,
+                  "description": "完成故障排除后，请考虑停用跟踪日志记录以避免对系统资源产生任何不必要的影响。",
+                  "code": [
+                    "[edit routing-options]",
+                    "user@host# deactivate traceoptions",
+                    "user@host# commit",
+                    "[edit routing-options]",
+                    "user@host# show",
+                    "inactive: traceoptions {",
+                    "    file routing-table-changes size 10m files 10;",
+                    "    flag route;",
+                    "}",
+                    "static {",
+                    "    inactive: route 1.1.1.2/32 next-hop 10.0.45.6;",
+                    "}"
+                  ]
+                },
+                {
+                  "step": 8,
+                  "description": "要重新激活跟踪操作， activate 请使用配置模式语句。",
+                  "code": [
+                    "[edit routing-options]",
+                    "user@host# activate traceoptions",
+                    "user@host# commit"
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "结果",
+          "level": 4,
+          "content": "在配置模式下，输入 show routing-options 命令以确认您的配置。如果输出未显示预期的配置，请重复此示例中的说明，以便进行更正。",
+          "code": [
+            "user@host#show routing-optionstraceoptions {\n    file routing-table-changes size 10m files 10;\n    flag route;\n}\nstatic {\n    route 1.1.1.2/32 next-hop 10.0.45.6;\n}"
+          ]
+        }
+      ]
+    }
+  ],
+  "content": "此示例说明如何列出和查看启用全局路由跟踪操作时创建的文件。 要求 您必须具有此 view 特权"
+}

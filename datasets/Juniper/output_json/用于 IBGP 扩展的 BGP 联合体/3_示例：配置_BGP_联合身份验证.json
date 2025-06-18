@@ -1,0 +1,100 @@
+{
+  "title": "示例：配置 BGP 联合身份验证",
+  "sections": [
+    {
+      "title": "要求",
+      "level": 3,
+      "content": "配置网络接口。 配置外部对等会话。请参阅 示例：配置外部 BGP 点对点对等会话。 配置对等方之间的内部网关协议 （IGP） 会话。 配置路由策略以通告 BGP 路由。 配置网络接口。 配置外部对等会话。请参阅 示例：配置外部 BGP 点对点对等会话。 配置对等方之间的内部网关协议 （IGP） 会话。 配置路由策略以通告 BGP 路由。"
+    },
+    {
+      "title": "概述",
+      "level": 3,
+      "content": "在 BGP 联合体内，联合体成员自治系统 （AS） 之间的链路必须是外部 BGP （EBGP） 链路，而不是内部 BGP （IBGP） 链路。 与 路由反射器 类似，BGP 联合减少了对等会话和 TCP 会话的数量，以保持 IBGP 路由设备之间的连接。BGP 联合是用于解决 IBGP 全网状要求产生的扩展问题的一种方法。BGP 联合有效地将大型 AS 分解为子自治系统。每个子 AS 必须在联合 AS 中由子 AS 编号唯一标识。通常，子 AS 编号取自 64512 和 65535 之间的专用 AS 编号。在子 AS 中，存在相同的 IBGP 全网状要求。与其他联合体的连接是使用标准 EBGP 建立的，子 AS 外部的对等方被视为外部连接。为避免路由环路，子 AS 使用联合序列，其运行方式与 AS 路径类似，但仅使用专用分配的子 AS 编号。 图 2 显示了 AS 17 具有两个独立联合的示例网络：子 AS 64512 和子 AS 64513，每个子都有多个路由器。在子 AS 中，IGP 用于与内部对等方建立网络连接。在子 AS 之间，将建立 EBGP 对等会话。 图 2： 使用 BGP 联合的典型网络 拓扑学 在 BGP 联合体内，联合体成员自治系统 （AS） 之间的链路必须是外部 BGP （EBGP） 链路，而不是内部 BGP （IBGP） 链路。 与 路由反射器 类似，BGP 联合减少了对等会话和 TCP 会话的数量，以保持 IBGP 路由设备之间的连接。BGP 联合是用于解决 IBGP 全网状要求产生的扩展问题的一种方法。BGP 联合有效地将大型 AS 分解为子自治系统。每个子 AS 必须在联合 AS 中由子 AS 编号唯一标识。通常，子 AS 编号取自 64512 和 65535 之间的专用 AS 编号。在子 AS 中，存在相同的 IBGP 全网状要求。与其他联合体的连接是使用标准 EBGP 建立的，子 AS 外部的对等方被视为外部连接。为避免路由环路，子 AS 使用联合序列，其运行方式与 AS 路径类似，但仅使用专用分配的子 AS 编号。 图 2 显示了 AS 17 具有两个独立联合的示例网络：子 AS 64512 和子 AS 64513，每个子都有多个路由器。在子 AS 中，IGP 用于与内部对等方建立网络连接。在子 AS 之间，将建立 EBGP 对等会话。 图 2： 使用 BGP 联合的典型网络 拓扑学",
+      "sections": [
+        {
+          "title": "拓扑学",
+          "level": 4
+        }
+      ]
+    },
+    {
+      "title": "配置",
+      "level": 3,
+      "content": "要快速配置此示例，请复制以下命令，将其粘贴到文本文件中，删除所有换行符，更改与您的网络配置匹配所需的任何详细信息，然后将命令复制并粘贴到层次结构级别的 CLI [edit] 中。 子 AS 64512 中的所有设备 set routing-options autonomous-system 64512 set routing-options confederation 17 members 64512 set routing-options confederation 17 members 64513 set protocols bgp group sub-AS-64512 type internal set protocols bgp group sub-AS-64512 local-address 192.168.5.1 set protocols bgp group sub-AS-64512 neighbor 192.168.8.1 set protocols bgp group sub-AS-64512 neighbor 192.168.15.1 子 AS 64512 中的边界设备 set protocols bgp group to-sub-AS-64513 type external set protocols bgp group to-sub-AS-64513 peer-as 64513 set protocols bgp group to-sub-AS-64513 neighbor 192.168.5.2 子 AS 64513 中的所有设备 set routing-options autonomous-system 64513 set routing-options confederation 17 members 64512 set routing-options confederation 17 members 64513 set protocols bgp group sub-AS-64513 type internal set protocols bgp group sub-AS-64513 local-address 192.168.5.2 set protocols bgp group sub-AS-64513 neighbor 192.168.9.1 set protocols bgp group sub-AS-64513 neighbor 192.168.16.1 子 AS 64513 中的边界设备 set protocols bgp group to-sub-AS-64512 type external set protocols bgp group to-sub-AS-64512 peer-as 64512 set protocols bgp group to-sub-AS-64512 neighbor 192.168.5.1 此过程显示子 AS 64512 中设备的步骤。 该 autonomous-system 语句设置设备的子 AS 编号。 下面的示例要求您在各个配置层级中进行导航。有关导航 CLI 的信息，请参阅《Junos OS CLI 用户指南》中的在配置模式下使用 CLI 编辑器。 要配置 BGP 联合，请执行以下操作： 设置设备的子 AS 编号。 [edit routing-options] user@host# set autonomous-system 64512 在联合体中，包括主 AS 中的所有子 AS。 数字 17 表示主 AS。该 members 语句列出了主 AS 中的所有子 AS。 [edit routing-options confederation] user@host# set 17 members 64512 user@host# set 17 members 64513 在子 AS 64512 中的边界设备上，配置与 AS 64513 中边界设备的 EBGP 连接。 [edit protocols bgp group to-sub-AS-64513] user@host# set type external user@host# set neighbor 192.168.5.2 user@host# set peer-as 64513 配置 IBGP 组，以便与子 AS 64512 中的设备对等互连。 [edit protocols bgp group sub-AS-64512] user@host# set type internal user@host# set local-address 192.168.5.1 user@host# neighbor 192.168.8.1 user@host# neighbor 192.168.15.1 在配置模式下，输入 show routing-options 和 show protocols 命令，以确认您的配置。如果输出未显示预期的配置，请重复此示例中的说明，以便进行更正。 user@host# show routing-options autonomous-system 64512; confederation 17 members [ 64512 64513 ]; user@host# show protocols bgp { group to-sub-AS-64513 { # On the border devices only type external; peer-as 64513; neighbor 192.168.5.2; } group sub-AS-64512 { type internal; local-address 192.168.5.1; neighbor 192.168.8.1; neighbor 192.168.15.1; } } 如果完成设备配置，请从配置模式输入 commit 。 对 sSub-AS 64513 重复这些步骤。",
+      "sections": [
+        {
+          "title": "程序",
+          "level": 4,
+          "content": "要快速配置此示例，请复制以下命令，将其粘贴到文本文件中，删除所有换行符，更改与您的网络配置匹配所需的任何详细信息，然后将命令复制并粘贴到层次结构级别的 CLI [edit] 中。 子 AS 64512 中的所有设备 set routing-options autonomous-system 64512 set routing-options confederation 17 members 64512 set routing-options confederation 17 members 64513 set protocols bgp group sub-AS-64512 type internal set protocols bgp group sub-AS-64512 local-address 192.168.5.1 set protocols bgp group sub-AS-64512 neighbor 192.168.8.1 set protocols bgp group sub-AS-64512 neighbor 192.168.15.1 子 AS 64512 中的边界设备 set protocols bgp group to-sub-AS-64513 type external set protocols bgp group to-sub-AS-64513 peer-as 64513 set protocols bgp group to-sub-AS-64513 neighbor 192.168.5.2 子 AS 64513 中的所有设备 set routing-options autonomous-system 64513 set routing-options confederation 17 members 64512 set routing-options confederation 17 members 64513 set protocols bgp group sub-AS-64513 type internal set protocols bgp group sub-AS-64513 local-address 192.168.5.2 set protocols bgp group sub-AS-64513 neighbor 192.168.9.1 set protocols bgp group sub-AS-64513 neighbor 192.168.16.1 子 AS 64513 中的边界设备 set protocols bgp group to-sub-AS-64512 type external set protocols bgp group to-sub-AS-64512 peer-as 64512 set protocols bgp group to-sub-AS-64512 neighbor 192.168.5.1 此过程显示子 AS 64512 中设备的步骤。 该 autonomous-system 语句设置设备的子 AS 编号。 下面的示例要求您在各个配置层级中进行导航。有关导航 CLI 的信息，请参阅《Junos OS CLI 用户指南》中的在配置模式下使用 CLI 编辑器。 要配置 BGP 联合，请执行以下操作： 设置设备的子 AS 编号。 [edit routing-options] user@host# set autonomous-system 64512 在联合体中，包括主 AS 中的所有子 AS。 数字 17 表示主 AS。该 members 语句列出了主 AS 中的所有子 AS。 [edit routing-options confederation] user@host# set 17 members 64512 user@host# set 17 members 64513 在子 AS 64512 中的边界设备上，配置与 AS 64513 中边界设备的 EBGP 连接。 [edit protocols bgp group to-sub-AS-64513] user@host# set type external user@host# set neighbor 192.168.5.2 user@host# set peer-as 64513 配置 IBGP 组，以便与子 AS 64512 中的设备对等互连。 [edit protocols bgp group sub-AS-64512] user@host# set type internal user@host# set local-address 192.168.5.1 user@host# neighbor 192.168.8.1 user@host# neighbor 192.168.15.1 在配置模式下，输入 show routing-options 和 show protocols 命令，以确认您的配置。如果输出未显示预期的配置，请重复此示例中的说明，以便进行更正。 user@host# show routing-options autonomous-system 64512; confederation 17 members [ 64512 64513 ]; user@host# show protocols bgp { group to-sub-AS-64513 { # On the border devices only type external; peer-as 64513; neighbor 192.168.5.2; } group sub-AS-64512 { type internal; local-address 192.168.5.1; neighbor 192.168.8.1; neighbor 192.168.15.1; } } 如果完成设备配置，请从配置模式输入 commit 。 对 sSub-AS 64513 重复这些步骤。",
+          "sections": [
+            {
+              "title": "CLI 快速配置",
+              "level": 5,
+              "content": "要快速配置此示例，请复制以下命令，将其粘贴到文本文件中，删除所有换行符，更改与您的网络配置匹配所需的任何详细信息，然后将命令复制并粘贴到层次结构级别的 CLI [edit] 中。 子 AS 64512 中的所有设备 set routing-options autonomous-system 64512 set routing-options confederation 17 members 64512 set routing-options confederation 17 members 64513 set protocols bgp group sub-AS-64512 type internal set protocols bgp group sub-AS-64512 local-address 192.168.5.1 set protocols bgp group sub-AS-64512 neighbor 192.168.8.1 set protocols bgp group sub-AS-64512 neighbor 192.168.15.1 子 AS 64512 中的边界设备 set protocols bgp group to-sub-AS-64513 type external set protocols bgp group to-sub-AS-64513 peer-as 64513 set protocols bgp group to-sub-AS-64513 neighbor 192.168.5.2 子 AS 64513 中的所有设备 set routing-options autonomous-system 64513 set routing-options confederation 17 members 64512 set routing-options confederation 17 members 64513 set protocols bgp group sub-AS-64513 type internal set protocols bgp group sub-AS-64513 local-address 192.168.5.2 set protocols bgp group sub-AS-64513 neighbor 192.168.9.1 set protocols bgp group sub-AS-64513 neighbor 192.168.16.1 子 AS 64513 中的边界设备 set protocols bgp group to-sub-AS-64512 type external set protocols bgp group to-sub-AS-64512 peer-as 64512 set protocols bgp group to-sub-AS-64512 neighbor 192.168.5.1",
+              "commands_by_device": {
+                "子 AS 64512 中的所有设备": "set routing-options autonomous-system 64512\nset routing-options confederation 17 members 64512\nset routing-options confederation 17 members 64513\nset protocols bgp group sub-AS-64512 type internal\nset protocols bgp group sub-AS-64512 local-address 192.168.5.1\nset protocols bgp group sub-AS-64512 neighbor 192.168.8.1\nset protocols bgp group sub-AS-64512 neighbor 192.168.15.1",
+                "子 AS 64512 中的边界设备": "set protocols bgp group to-sub-AS-64513 type external\nset protocols bgp group to-sub-AS-64513 peer-as 64513\nset protocols bgp group to-sub-AS-64513 neighbor 192.168.5.2",
+                "子 AS 64513 中的所有设备": "set routing-options autonomous-system 64513\nset routing-options confederation 17 members 64512\nset routing-options confederation 17 members 64513\nset protocols bgp group sub-AS-64513 type internal\nset protocols bgp group sub-AS-64513 local-address 192.168.5.2\nset protocols bgp group sub-AS-64513 neighbor 192.168.9.1\nset protocols bgp group sub-AS-64513 neighbor 192.168.16.1",
+                "子 AS 64513 中的边界设备": "set protocols bgp group to-sub-AS-64512 type external\nset protocols bgp group to-sub-AS-64512 peer-as 64512\nset protocols bgp group to-sub-AS-64512 neighbor 192.168.5.1"
+              }
+            },
+            {
+              "title": "分步过程",
+              "level": 5,
+              "step_by_step": [
+                {
+                  "step": 1,
+                  "description": "设置设备的子 AS 编号。",
+                  "code": [
+                    "[edit routing-options]",
+                    "user@host# set autonomous-system 64512"
+                  ]
+                },
+                {
+                  "step": 2,
+                  "description": "在联合体中，包括主 AS 中的所有子 AS。",
+                  "code": [
+                    "[edit routing-options confederation]",
+                    "user@host# set 17 members 64512",
+                    "user@host# set 17 members 64513"
+                  ]
+                },
+                {
+                  "step": 3,
+                  "description": "在子 AS 64512 中的边界设备上，配置与 AS 64513 中边界设备的 EBGP 连接。",
+                  "code": [
+                    "[edit protocols bgp group to-sub-AS-64513]",
+                    "user@host# set type external",
+                    "user@host# set neighbor 192.168.5.2",
+                    "user@host# set peer-as 64513"
+                  ]
+                },
+                {
+                  "step": 4,
+                  "description": "配置 IBGP 组，以便与子 AS 64512 中的设备对等互连。",
+                  "code": [
+                    "[edit protocols bgp group sub-AS-64512]",
+                    "user@host# set type internal",
+                    "user@host# set local-address 192.168.5.1",
+                    "user@host# neighbor 192.168.8.1",
+                    "user@host# neighbor 192.168.15.1"
+                  ]
+                }
+              ]
+            },
+            {
+              "title": "结果",
+              "level": 5,
+              "content": "在配置模式下，输入 show routing-options 和 show protocols 命令，以确认您的配置。如果输出未显示预期的配置，请重复此示例中的说明，以便进行更正。 如果完成设备配置，请从配置模式输入 commit 。 对 sSub-AS 64513 重复这些步骤。",
+              "code": [
+                "user@host#show routing-optionsautonomous-system 64512; \nconfederation 17 members [ 64512 64513 ];",
+                "user@host#show protocolsbgp {\n    group to-sub-AS-64513 { # On the border devices only\n        type external;\n        peer-as 64513;\n        neighbor 192.168.5.2;\n    }\n    group sub-AS-64512 {\n        type internal;\n        local-address 192.168.5.1;\n        neighbor 192.168.8.1;\n        neighbor 192.168.15.1;\n    }\n}"
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "content": "此示例演示如何配置 BGP 联合身份验证。 要求 配置网络接口。 配置外部对等会话。请参阅 示例：配置外部 BGP 点对点对等会话。 配置对等方之间的内部网关协议 （IGP） 会话。 配置路由策略以通告 BGP 路由。 概述 在 BGP 联合体内，联合体成员自治系统 （AS） 之间的链路必须是外部 BGP （EBGP） 链路，而不是内部 BGP （IBGP） 链路。 与 路由反射器 类似，BGP 联合减少了对等会话和 TCP 会话的数量，以保持 IBGP 路由设备之间的连接。BGP 联合是用于解决 IBGP 全网状要求产生的扩展问题的一种方法。BGP 联合有效地将大型 AS 分解为子自治系统。每个子 AS 必须在联合 AS 中由子 AS 编号唯一标识。通常，子 AS 编号取自 64512 和 65535 之间的专用 AS 编号。在子 AS 中，存在相同的 IBGP 全网状要求。与其他联合体的连接是使用标准 EBGP 建立的，子 AS 外部的对等方被视为外部连接。为避免路由环路，子 AS 使用联合序列，其运行方式与 AS 路径类似，但仅使用专用分配的子 AS 编号。 图 2 显示了 AS 17 具有两个独立联合的示例网络：子 AS 64512 和子 AS 64513，每个子都有多个路由器。在子 AS 中，IGP 用于与内部对等方建立网络连接。在子 AS 之间，将建立 EBGP 对等会话"
+}

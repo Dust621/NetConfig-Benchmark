@@ -1,0 +1,119 @@
+{
+  "title": "示例：配置 BGP 以通告非活动路由",
+  "sections": [
+    {
+      "title": "要求",
+      "level": 3,
+      "content": "配置此示例之前，不需要除设备初始化之外的特殊配置。"
+    },
+    {
+      "title": "概述",
+      "level": 3,
+      "content": "在此示例中，设备 R2 有两个外部 BGP （EBGP） 对等方，即设备 R1 和设备 R3。 设备 R1 具有到 172.16.5/24 的静态路由。同样，设备 R2 也有到 172.16.5/24 的静态路由。设备 R1 通过 BGP 向设备 R2 发送有关其静态路由的信息。设备 R2 现在具有来自两个源的有关 172.16.5/24 的信息：它自己的静态路由和从设备 R1 接收的 BGP 获知路由。静态路由优先于 BGP 获知的路由，因此 BGP 路由在设备 R2 上处于非活动状态。通常，设备 R2 会将 BGP 获知的信息发送到设备 R3，但设备 R2 不会执行此操作，因为 BGP 路由处于非活动状态。因此，设备 R3 没有关于 172.16.5/24 的信息，除非您在设备 R2 上启用 advertise-inactive 命令，这会导致设备 R2 将获知的 BGP 发送到设备 R3。 拓扑学 图 4 显示了示例网络。 图 4： 用于广告非活动的 BGP 拓扑 CLI 快速配置 显示了 中 图 4所有设备的配置。 #d14e127__d14e254本节介绍设备 R2 上的步骤。 在此示例中，设备 R2 有两个外部 BGP （EBGP） 对等方，即设备 R1 和设备 R3。 设备 R1 具有到 172.16.5/24 的静态路由。同样，设备 R2 也有到 172.16.5/24 的静态路由。设备 R1 通过 BGP 向设备 R2 发送有关其静态路由的信息。设备 R2 现在具有来自两个源的有关 172.16.5/24 的信息：它自己的静态路由和从设备 R1 接收的 BGP 获知路由。静态路由优先于 BGP 获知的路由，因此 BGP 路由在设备 R2 上处于非活动状态。通常，设备 R2 会将 BGP 获知的信息发送到设备 R3，但设备 R2 不会执行此操作，因为 BGP 路由处于非活动状态。因此，设备 R3 没有关于 172.16.5/24 的信息，除非您在设备 R2 上启用 advertise-inactive 命令，这会导致设备 R2 将获知的 BGP 发送到设备 R3。 拓扑学 图 4 显示了示例网络。 图 4： 用于广告非活动的 BGP 拓扑 CLI 快速配置 显示了 中 图 4所有设备的配置。 #d14e127__d14e254本节介绍设备 R2 上的步骤。 图 4 显示了示例网络。 图 4： 用于广告非活动的 BGP 拓扑 CLI 快速配置 显示了 中 图 4所有设备的配置。 #d14e127__d14e254本节介绍设备 R2 上的步骤。",
+      "sections": [
+        {
+          "title": "拓扑学",
+          "level": 4,
+          "content": "图 4 显示了示例网络。 图 4： 用于广告非活动的 BGP 拓扑 CLI 快速配置 显示了 中 图 4所有设备的配置。 #d14e127__d14e254本节介绍设备 R2 上的步骤。",
+          "images": [
+            "BGP 路由的本地首选项\\images\\7_示例：配置_BGP_以通告非活动路由_1.gif"
+          ]
+        }
+      ]
+    },
+    {
+      "title": "配置",
+      "level": 3,
+      "content": "要快速配置此示例，请复制以下命令，将其粘贴到文本文件中，删除所有换行符，更改与您的网络配置匹配所需的任何详细信息，然后将命令复制并粘贴到层次结构级别的 CLI [edit] 中。 设备 R1 set interfaces fe-1/2/0 unit 0 family inet address 10.0.0.1/30 set interfaces lo0 unit 0 family inet address 192.168.0.1/32 set protocols bgp group to_R2 type external set protocols bgp group to_R2 export send-static set protocols bgp group to_R2 neighbor 10.0.0.2 peer-as 200 set policy-options policy-statement send-static term 1 from protocol static set policy-options policy-statement send-static term 1 then accept set routing-options static route 172.16.5.0/24 discard set routing-options static route 172.16.5.0/24 install set routing-options autonomous-system 100 设备 R2 set interfaces fe-1/2/0 unit 0 family inet address 10.0.0.2/30 set interfaces fe-1/2/1 unit 0 family inet address 10.0.0.5/30 set interfaces lo0 unit 0 family inet address 192.168.0.2/32 set protocols bgp group to_R1 type external set protocols bgp group to_R1 neighbor 10.0.0.1 peer-as 100 set protocols bgp group to_R3 type external set protocols bgp group to_R3 advertise-inactive set protocols bgp group to_R3 neighbor 10.0.0.6 peer-as 300 set routing-options static route 172.16.5.0/24 discard set routing-options static route 172.16.5.0/24 install set routing-options autonomous-system 200 设备 R3 set interfaces fe-1/2/1 unit 0 family inet address 10.0.0.6/30 set interfaces fe-1/2/0 unit 9 family inet address 10.0.0.9/30 set interfaces lo0 unit 0 family inet address 192.168.0.3/32 set protocols bgp group ext type external set protocols bgp group ext peer-as 200 set protocols bgp group ext neighbor 10.0.0.5 set routing-options autonomous-system 300 以下示例要求您在配置层次结构中导航各个级别。有关导航 CLI 的信息，请参阅《Junos OS CLI 用户指南》中的在配置模式下使用 CLI 编辑器。 要配置设备 R2： 配置设备接口。 [edit interfaces] user@R2# set fe-1/2/0 unit 0 family inet address 10.0.0.2/30 user@R2# set fe-1/2/1 unit 0 family inet address 10.0.0.5/30 user@R2# set lo0 unit 0 family inet address 192.168.0.2/32 配置与设备 R1 的 EBGP 连接。 [edit protocols bgp group to_R1] user@R2# set type external user@R2# set neighbor 10.0.0.1 peer-as 100 配置与设备 R3 的 EBGP 连接。 [edit protocols bgp group to_R3] user@R2# set type external user@R2# set neighbor 10.0.0.6 peer-as 300 将该 advertise-inactive 语句添加到与设备 R3 的 EBGP 组对等会话。 [edit protocols bgp group to_R3] user@R2# set advertise-inactive 配置到 172.16.5.0/24 网络的静态路由。 [edit routing-options static] user@R2# set route 172.16.5.0/24 discard user@R2# set route 172.16.5.0/24 install 配置自治系统 (AS) 编号。 [edit routing-options] user@R2# set autonomous-system 200 在配置模式下，输入 show interfaces 、 show protocols 、 show policy-options 和 show routing-options 命令，以确认您的配置。如果输出未显示预期的配置，请重复此示例中的说明，以便进行更正。 user@R2# show interfaces fe-1/2/0 { unit 0 { family inet { address 10.0.0.2/30; } } } fe-1/2/1 { unit 0 { family inet { address 10.0.0.5/30; } } } lo0 { unit 0 { family inet { address 192.168.0.2/32; } } } user@R2# show protocols bgp { group to_R1 { type external; neighbor 10.0.0.1 { peer-as 100; } } group to_R3 { type external; advertise-inactive; neighbor 10.0.0.6 { peer-as 300; } } } user@R2# show routing-options static { route 172.16.5.0/24 { discard; install; } } autonomous-system 200; 如果完成设备配置，请从配置模式输入 commit 。",
+      "sections": [
+        {
+          "title": "CLI 快速配置",
+          "level": 4,
+          "content": "要快速配置此示例，请复制以下命令，将其粘贴到文本文件中，删除所有换行符，更改与您的网络配置匹配所需的任何详细信息，然后将命令复制并粘贴到层次结构级别的 CLI [edit] 中。 设备 R1 set interfaces fe-1/2/0 unit 0 family inet address 10.0.0.1/30 set interfaces lo0 unit 0 family inet address 192.168.0.1/32 set protocols bgp group to_R2 type external set protocols bgp group to_R2 export send-static set protocols bgp group to_R2 neighbor 10.0.0.2 peer-as 200 set policy-options policy-statement send-static term 1 from protocol static set policy-options policy-statement send-static term 1 then accept set routing-options static route 172.16.5.0/24 discard set routing-options static route 172.16.5.0/24 install set routing-options autonomous-system 100 设备 R2 set interfaces fe-1/2/0 unit 0 family inet address 10.0.0.2/30 set interfaces fe-1/2/1 unit 0 family inet address 10.0.0.5/30 set interfaces lo0 unit 0 family inet address 192.168.0.2/32 set protocols bgp group to_R1 type external set protocols bgp group to_R1 neighbor 10.0.0.1 peer-as 100 set protocols bgp group to_R3 type external set protocols bgp group to_R3 advertise-inactive set protocols bgp group to_R3 neighbor 10.0.0.6 peer-as 300 set routing-options static route 172.16.5.0/24 discard set routing-options static route 172.16.5.0/24 install set routing-options autonomous-system 200 设备 R3 set interfaces fe-1/2/1 unit 0 family inet address 10.0.0.6/30 set interfaces fe-1/2/0 unit 9 family inet address 10.0.0.9/30 set interfaces lo0 unit 0 family inet address 192.168.0.3/32 set protocols bgp group ext type external set protocols bgp group ext peer-as 200 set protocols bgp group ext neighbor 10.0.0.5 set routing-options autonomous-system 300",
+          "commands_by_device": {
+            "设备 R1": "set interfaces fe-1/2/0 unit 0 family inet address 10.0.0.1/30\nset interfaces lo0 unit 0 family inet address 192.168.0.1/32\nset protocols bgp group to_R2 type external\nset protocols bgp group to_R2 export send-static\nset protocols bgp group to_R2 neighbor 10.0.0.2 peer-as 200\nset policy-options policy-statement send-static term 1 from protocol static\nset policy-options policy-statement send-static term 1 then accept\nset routing-options static route 172.16.5.0/24 discard\nset routing-options static route 172.16.5.0/24 install\nset routing-options autonomous-system 100",
+            "设备 R2": "set interfaces fe-1/2/0 unit 0 family inet address 10.0.0.2/30\nset interfaces fe-1/2/1 unit 0 family inet address 10.0.0.5/30\nset interfaces lo0 unit 0 family inet address 192.168.0.2/32\nset protocols bgp group to_R1 type external\nset protocols bgp group to_R1 neighbor 10.0.0.1 peer-as 100\nset protocols bgp group to_R3 type external\nset protocols bgp group to_R3 advertise-inactive\nset protocols bgp group to_R3 neighbor 10.0.0.6 peer-as 300\nset routing-options static route 172.16.5.0/24 discard\nset routing-options static route 172.16.5.0/24 install\nset routing-options autonomous-system 200",
+            "设备 R3": "set interfaces fe-1/2/1 unit 0 family inet address 10.0.0.6/30\nset interfaces fe-1/2/0 unit 9 family inet address 10.0.0.9/30\nset interfaces lo0 unit 0 family inet address 192.168.0.3/32\nset protocols bgp group ext type external\nset protocols bgp group ext peer-as 200\nset protocols bgp group ext neighbor 10.0.0.5\nset routing-options autonomous-system 300"
+          }
+        },
+        {
+          "title": "程序",
+          "level": 4,
+          "content": "以下示例要求您在配置层次结构中导航各个级别。有关导航 CLI 的信息，请参阅《Junos OS CLI 用户指南》中的在配置模式下使用 CLI 编辑器。 要配置设备 R2： 配置设备接口。 [edit interfaces] user@R2# set fe-1/2/0 unit 0 family inet address 10.0.0.2/30 user@R2# set fe-1/2/1 unit 0 family inet address 10.0.0.5/30 user@R2# set lo0 unit 0 family inet address 192.168.0.2/32 配置与设备 R1 的 EBGP 连接。 [edit protocols bgp group to_R1] user@R2# set type external user@R2# set neighbor 10.0.0.1 peer-as 100 配置与设备 R3 的 EBGP 连接。 [edit protocols bgp group to_R3] user@R2# set type external user@R2# set neighbor 10.0.0.6 peer-as 300 将该 advertise-inactive 语句添加到与设备 R3 的 EBGP 组对等会话。 [edit protocols bgp group to_R3] user@R2# set advertise-inactive 配置到 172.16.5.0/24 网络的静态路由。 [edit routing-options static] user@R2# set route 172.16.5.0/24 discard user@R2# set route 172.16.5.0/24 install 配置自治系统 (AS) 编号。 [edit routing-options] user@R2# set autonomous-system 200 在配置模式下，输入 show interfaces 、 show protocols 、 show policy-options 和 show routing-options 命令，以确认您的配置。如果输出未显示预期的配置，请重复此示例中的说明，以便进行更正。 user@R2# show interfaces fe-1/2/0 { unit 0 { family inet { address 10.0.0.2/30; } } } fe-1/2/1 { unit 0 { family inet { address 10.0.0.5/30; } } } lo0 { unit 0 { family inet { address 192.168.0.2/32; } } } user@R2# show protocols bgp { group to_R1 { type external; neighbor 10.0.0.1 { peer-as 100; } } group to_R3 { type external; advertise-inactive; neighbor 10.0.0.6 { peer-as 300; } } } user@R2# show routing-options static { route 172.16.5.0/24 { discard; install; } } autonomous-system 200; 如果完成设备配置，请从配置模式输入 commit 。",
+          "sections": [
+            {
+              "title": "分步过程",
+              "level": 5,
+              "step_by_step": [
+                {
+                  "step": 1,
+                  "description": "配置设备接口。",
+                  "code": [
+                    "[edit interfaces]",
+                    "user@R2# set fe-1/2/0 unit 0 family inet address 10.0.0.2/30",
+                    "user@R2# set fe-1/2/1 unit 0 family inet address 10.0.0.5/30",
+                    "user@R2# set lo0 unit 0 family inet address 192.168.0.2/32"
+                  ]
+                },
+                {
+                  "step": 2,
+                  "description": "配置与设备 R1 的 EBGP 连接。",
+                  "code": [
+                    "[edit protocols bgp group to_R1]",
+                    "user@R2# set type external",
+                    "user@R2# set neighbor 10.0.0.1 peer-as 100"
+                  ]
+                },
+                {
+                  "step": 3,
+                  "description": "配置与设备 R3 的 EBGP 连接。",
+                  "code": [
+                    "[edit protocols bgp group to_R3]",
+                    "user@R2# set type external",
+                    "user@R2# set neighbor 10.0.0.6 peer-as 300"
+                  ]
+                },
+                {
+                  "step": 4,
+                  "description": "将该 advertise-inactive 语句添加到与设备 R3 的 EBGP 组对等会话。",
+                  "code": [
+                    "[edit protocols bgp group to_R3]",
+                    "user@R2# set advertise-inactive"
+                  ]
+                },
+                {
+                  "step": 5,
+                  "description": "配置到 172.16.5.0/24 网络的静态路由。",
+                  "code": [
+                    "[edit routing-options static]",
+                    "user@R2# set route 172.16.5.0/24 discard",
+                    "user@R2# set route 172.16.5.0/24 install"
+                  ]
+                },
+                {
+                  "step": 6,
+                  "description": "配置自治系统 (AS) 编号。",
+                  "code": [
+                    "[edit routing-options]",
+                    "user@R2# set autonomous-system 200"
+                  ]
+                }
+              ]
+            },
+            {
+              "title": "结果",
+              "level": 5,
+              "content": "在配置模式下，输入 show interfaces 、 show protocols 、 show policy-options 和 show routing-options 命令，以确认您的配置。如果输出未显示预期的配置，请重复此示例中的说明，以便进行更正。 如果完成设备配置，请从配置模式输入 commit 。",
+              "code": [
+                "user@R2#show interfacesfe-1/2/0 {\n    unit 0 {\n        family inet {\n            address 10.0.0.2/30;\n        }\n    }\n}\nfe-1/2/1 {\n    unit 0 {\n        family inet {\n            address 10.0.0.5/30;\n        }\n    }\n}\nlo0 {\n    unit 0 {\n        family inet {\n            address 192.168.0.2/32;\n        }\n    }\n}",
+                "user@R2#show protocolsbgp {\n    group to_R1 {\n        type external;\n        neighbor 10.0.0.1 {\n            peer-as 100;\n        }\n    }\n    group to_R3 {\n        type external;\n        advertise-inactive;\n        neighbor 10.0.0.6 {\n            peer-as 300;\n        }\n    }\n}",
+                "user@R2#show routing-optionsstatic {\n    route 172.16.5.0/24 {\n        discard;\n        install;\n    }\n}\nautonomous-system 200;"
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "content": "要求 配置此示例之前，不需要除设备初始化之外的特殊配置。 概述 在此示例中，设备 R2 有两个外部 BGP （EBGP） 对等方，即设备 R1 和设备 R3。 设备 R1 具有到 172.16.5/24 的静态路由。同样，设备 R2 也有到 172.16.5/24 的静态路由。设备 R1 通过 BGP 向设备 R2 发送有关其静态路由的信息。设备 R2 现在具有来自两个源的有关 172.16.5/24 的信息：它自己的静态路由和从设备 R1 接收的 BGP 获知路由。静态路由优先于 BGP 获知的路由，因此 BGP 路由在设备 R2 上处于非活动状态。通常，设备 R2 会将 BGP 获知的信息发送到设备 R3，但设备 R2 不会执行此操作，因为 BGP 路由处于非活动状态。因此，设备 R3 没有关于 172.16.5/24 的信息，除非您在设备 R2 上启用 advertise-inactive 命令，这会导致设备 R2 将获知的 BGP 发送到设备 R3。 拓扑学 图 4 显示了示例网络。 图 4： 用于广告非活动的 BGP 拓扑 CLI 快速配置 显示了 中 图 4所有设备的配置。 #d14e127__d14e254本节介绍设备 R2 上的步骤"
+}

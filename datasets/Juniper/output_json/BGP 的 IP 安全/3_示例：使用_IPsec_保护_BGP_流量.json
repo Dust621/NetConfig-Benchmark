@@ -1,0 +1,106 @@
+{
+  "title": "示例：使用 IPsec 保护 BGP 流量",
+  "sections": [
+    {
+      "title": "要求",
+      "level": 3,
+      "content": "准备工作： 配置路由器接口。 配置内部网关协议 （IGP）。 配置 BGP。 配置此功能不需要特定的 PIC 硬件。 准备工作： 配置路由器接口。 配置内部网关协议 （IGP）。 配置 BGP。 配置此功能不需要特定的 PIC 硬件。"
+    },
+    {
+      "title": "概述",
+      "level": 3,
+      "content": "SA 在层次结构级别进行 [edit security ipsec security-association name] 配置，语句 mode 设置为传输。在传输模式下，Junos OS 不支持身份验证标头 （AH） 或封装安全有效负载 （ESP） 标头捆绑包。Junos OS 在传输模式下仅支持 BGP 协议。 此示例指定双向 IPsec，以使用相同的算法、密钥和 SPI 在两个方向上解密和验证传入和传出流量，这与在两个方向上使用不同属性的入站和出站 SA 不同。 更具体的 SA 会覆盖更通用的 SA。例如，如果将特定 SA 应用于特定对等方，则该 SA 将覆盖应用于整个对等方组的 SA。 拓扑图 图 1 显示了此示例中使用的拓扑。 图 1： 用于 BGP 的 IPsec SA 在层次结构级别进行 [edit security ipsec security-association name] 配置，语句 mode 设置为传输。在传输模式下，Junos OS 不支持身份验证标头 （AH） 或封装安全有效负载 （ESP） 标头捆绑包。Junos OS 在传输模式下仅支持 BGP 协议。 此示例指定双向 IPsec，以使用相同的算法、密钥和 SPI 在两个方向上解密和验证传入和传出流量，这与在两个方向上使用不同属性的入站和出站 SA 不同。 更具体的 SA 会覆盖更通用的 SA。例如，如果将特定 SA 应用于特定对等方，则该 SA 将覆盖应用于整个对等方组的 SA。 拓扑图 图 1 显示了此示例中使用的拓扑。 图 1： 用于 BGP 的 IPsec 图 1 显示了此示例中使用的拓扑。 图 1： 用于 BGP 的 IPsec"
+    },
+    {
+      "title": "配置",
+      "level": 3,
+      "content": "要快速配置此示例，请复制以下命令，将其粘贴到文本文件中，删除所有换行符，更改任何必要的详细信息以匹配您的网络配置，然后将命令复制并粘贴到 [edit] 层次结构级别的 CLI 中。 [edit] set security ipsec security-association test-sa mode transport set security ipsec security-association test-sa manual direction bidirectional protocol esp set security ipsec security-association test-sa manual direction bidirectional spi 1000 set security ipsec security-association test-sa manual direction bidirectional encryption algorithm 3des-cbc set security ipsec security-association test-sa manual direction bidirectional encryption key ascii-text \"$9$kPT3AtO1hr6/u1IhvM8X7Vb2JGimfz.PtuB1hcs2goGDkqf5Qndb.5QzCA0BIRrvx7VsgJ\" set protocols bgp group 1 neighbor 10.1.1.1 ipsec-sa test-sa 以下示例要求您在配置层次结构中导航各个级别。有关导航 CLI 的信息，请参阅《Junos OS CLI 用户指南》中的在配置模式下使用 CLI 编辑器。 要配置路由器 R1： 配置 SA 模式。 [edit security ipsec security-association test-sa] user@R1# set mode transport 配置要使用的 IPsec 协议。 [edit security ipsec security-association test-sa] user@R1# set manual direction bidirectional protocol esp 配置为安全参数索引以唯一标识 SA。 [edit security ipsec security-association test-sa] user@R1# set manual direction bidirectional spi 1000 配置加密算法。 [edit security ipsec security-association test-sa] user@R1# set manual direction bidirectional encryption algorithm 3des-cbc 配置加密密钥。 [edit security ipsec security-association test-sa] user@R1# set manual direction bidirectional encryption key ascii-text \"$9$kPT3AtO1hr6/u1IhvM8X7Vb2JGimfz.PtuB1hcs2goGDkqf5Qndb.5QzCA0BIRrvx7VsgJ\" 使用 ASCII 文本密钥时，密钥必须正好包含 24 个字符。 将 SA 应用于 BGP 对等方。 [edit protocols bgp group 1 neighbor 10.1.1.1] user@R1# set ipsec-sa test-sa 在配置模式下，输入 show protocols 和 show security 命令，以确认您的配置。如果输出未显示预期的配置，请重复此示例中的说明，以便进行更正。 user@R1# show protocols bgp { group 1 { neighbor 10.1.1.1 { ipsec-sa test-sa; } } } user@R1# show security ipsec { security-association test-sa { mode transport; manual { direction bidirectional { protocol esp; spi 1000; encryption { algorithm 3des-cbc; key ascii-text \"$9$kPT3AtO1hr6/u1IhvM8X7Vb2JGimfz.PtuB1hcs2goGDkqf5Qndb.5QzCA0BIRrvx7VsgJ\"; ## SECRET-DATA } } } } } 如果完成设备配置，请从配置模式输入 commit 。在路由器 R0 上重复配置，仅更改邻居地址。",
+      "sections": [
+        {
+          "title": "CLI 快速配置",
+          "level": 4,
+          "content": "要快速配置此示例，请复制以下命令，将其粘贴到文本文件中，删除所有换行符，更改任何必要的详细信息以匹配您的网络配置，然后将命令复制并粘贴到 [edit] 层次结构级别的 CLI 中。 [edit] set security ipsec security-association test-sa mode transport set security ipsec security-association test-sa manual direction bidirectional protocol esp set security ipsec security-association test-sa manual direction bidirectional spi 1000 set security ipsec security-association test-sa manual direction bidirectional encryption algorithm 3des-cbc set security ipsec security-association test-sa manual direction bidirectional encryption key ascii-text \"$9$kPT3AtO1hr6/u1IhvM8X7Vb2JGimfz.PtuB1hcs2goGDkqf5Qndb.5QzCA0BIRrvx7VsgJ\" set protocols bgp group 1 neighbor 10.1.1.1 ipsec-sa test-sa",
+          "code": [
+            "set security ipsec security-association test-sa mode transport",
+            "set security ipsec security-association test-sa manual direction bidirectional protocol esp",
+            "set security ipsec security-association test-sa manual direction bidirectional spi 1000",
+            "set security ipsec security-association test-sa manual direction bidirectional encryption algorithm 3des-cbc",
+            "set security ipsec security-association test-sa manual direction bidirectional encryption key ascii-text \"$9$kPT3AtO1hr6/u1IhvM8X7Vb2JGimfz.PtuB1hcs2goGDkqf5Qndb.5QzCA0BIRrvx7VsgJ\"",
+            "set protocols bgp group 1 neighbor 10.1.1.1 ipsec-sa test-sa"
+          ]
+        },
+        {
+          "title": "程序",
+          "level": 4,
+          "content": "以下示例要求您在配置层次结构中导航各个级别。有关导航 CLI 的信息，请参阅《Junos OS CLI 用户指南》中的在配置模式下使用 CLI 编辑器。 要配置路由器 R1： 配置 SA 模式。 [edit security ipsec security-association test-sa] user@R1# set mode transport 配置要使用的 IPsec 协议。 [edit security ipsec security-association test-sa] user@R1# set manual direction bidirectional protocol esp 配置为安全参数索引以唯一标识 SA。 [edit security ipsec security-association test-sa] user@R1# set manual direction bidirectional spi 1000 配置加密算法。 [edit security ipsec security-association test-sa] user@R1# set manual direction bidirectional encryption algorithm 3des-cbc 配置加密密钥。 [edit security ipsec security-association test-sa] user@R1# set manual direction bidirectional encryption key ascii-text \"$9$kPT3AtO1hr6/u1IhvM8X7Vb2JGimfz.PtuB1hcs2goGDkqf5Qndb.5QzCA0BIRrvx7VsgJ\" 使用 ASCII 文本密钥时，密钥必须正好包含 24 个字符。 将 SA 应用于 BGP 对等方。 [edit protocols bgp group 1 neighbor 10.1.1.1] user@R1# set ipsec-sa test-sa 在配置模式下，输入 show protocols 和 show security 命令，以确认您的配置。如果输出未显示预期的配置，请重复此示例中的说明，以便进行更正。 user@R1# show protocols bgp { group 1 { neighbor 10.1.1.1 { ipsec-sa test-sa; } } } user@R1# show security ipsec { security-association test-sa { mode transport; manual { direction bidirectional { protocol esp; spi 1000; encryption { algorithm 3des-cbc; key ascii-text \"$9$kPT3AtO1hr6/u1IhvM8X7Vb2JGimfz.PtuB1hcs2goGDkqf5Qndb.5QzCA0BIRrvx7VsgJ\"; ## SECRET-DATA } } } } } 如果完成设备配置，请从配置模式输入 commit 。在路由器 R0 上重复配置，仅更改邻居地址。",
+          "sections": [
+            {
+              "title": "分步过程",
+              "level": 5,
+              "step_by_step": [
+                {
+                  "step": 1,
+                  "description": "配置 SA 模式。",
+                  "code": [
+                    "[edit security ipsec security-association test-sa]",
+                    "user@R1# set mode transport "
+                  ]
+                },
+                {
+                  "step": 2,
+                  "description": "配置要使用的 IPsec 协议。",
+                  "code": [
+                    "[edit security ipsec security-association test-sa]",
+                    "user@R1# set manual direction bidirectional protocol esp "
+                  ]
+                },
+                {
+                  "step": 3,
+                  "description": "配置为安全参数索引以唯一标识 SA。",
+                  "code": [
+                    "[edit security ipsec security-association test-sa]",
+                    "user@R1# set manual direction bidirectional spi 1000 "
+                  ]
+                },
+                {
+                  "step": 4,
+                  "description": "配置加密算法。",
+                  "code": [
+                    "[edit security ipsec security-association test-sa]",
+                    "user@R1# set manual direction bidirectional encryption algorithm 3des-cbc "
+                  ]
+                },
+                {
+                  "step": 5,
+                  "description": "配置加密密钥。",
+                  "code": [
+                    "[edit security ipsec security-association test-sa]",
+                    "user@R1# set manual direction bidirectional encryption key ascii-text \"$9$kPT3AtO1hr6/u1IhvM8X7Vb2JGimfz.PtuB1hcs2goGDkqf5Qndb.5QzCA0BIRrvx7VsgJ\""
+                  ]
+                },
+                {
+                  "step": 6,
+                  "description": "将 SA 应用于 BGP 对等方。",
+                  "code": [
+                    "[edit protocols bgp group 1 neighbor 10.1.1.1]",
+                    "user@R1# set ipsec-sa test-sa"
+                  ]
+                }
+              ]
+            },
+            {
+              "title": "结果",
+              "level": 5,
+              "content": "在配置模式下，输入 show protocols 和 show security 命令，以确认您的配置。如果输出未显示预期的配置，请重复此示例中的说明，以便进行更正。 如果完成设备配置，请从配置模式输入 commit 。在路由器 R0 上重复配置，仅更改邻居地址。",
+              "code": [
+                "user@R1#show protocolsbgp {\n    group 1 {\n        neighbor 10.1.1.1 {\n            ipsec-sa test-sa;\n        }\n    }\n}",
+                "user@R1#show securityipsec {\n    security-association test-sa {\n        mode transport;\n        manual {\n            direction bidirectional {\n                protocol esp;\n                spi 1000;\n                encryption {\n                    algorithm 3des-cbc;\n                    key ascii-text \"$9$kPT3AtO1hr6/u1IhvM8X7Vb2JGimfz.PtuB1hcs2goGDkqf5Qndb.5QzCA0BIRrvx7VsgJ\"; ## SECRET-DATA\n                }\n            }\n        }\n    }\n}"
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "content": "IPsec 是一套协议，用于在 IP 层提供安全的网络连接。它用于提供数据源身份验证、数据完整性、机密性和数据包重放保护。此示例说明如何配置 IPsec 功能以保护路由引擎到路由引擎 BGP 会话。Junos OS 在传输和隧道模式下支持 IPsec 身份验证标头 （AH） 和封装安全有效负载 （ESP），以及用于创建策略和手动配置密钥的实用程序。 要求 准备工作： 配置路由器接口。 配置内部网关协议 （IGP）。 配置 BGP。 配置此功能不需要特定的 PIC 硬件。 概述 SA 在层次结构级别进行 [edit security ipsec security-association name] 配置，语句 mode 设置为传输。在传输模式下，Junos OS 不支持身份验证标头 （AH） 或封装安全有效负载 （ESP） 标头捆绑包。Junos OS 在传输模式下仅支持 BGP 协议。 此示例指定双向 IPsec，以使用相同的算法、密钥和 SPI 在两个方向上解密和验证传入和传出流量，这与在两个方向上使用不同属性的入站和出站 SA 不同。 更具体的 SA 会覆盖更通用的 SA。例如，如果将特定 SA 应用于特定对等方，则该 SA 将覆盖应用于整个对等方组的 SA。 拓扑图 图 1 显示了此示例中使用的拓扑"
+}

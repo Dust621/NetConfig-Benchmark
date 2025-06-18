@@ -1,0 +1,10 @@
+{
+  "title": "了解多协议 BGP",
+  "sections": [
+    {
+      "title": "配置 BGP 路由表组",
+      "level": 3,
+      "content": "当 BGP 会话收到单播或组播 NLRI 时，它会在相应的表中安装路由（ inet.0 对于 inet6.0 单播和/或 inet6.2 组播 inet.2 ）。要将单播前缀同时添加到单播表和组播表，可以配置 BGP 路由表组。如果无法执行多播 NLRI 协商，这将非常有用。 要配置 BGP 路由表组，请包含以下 rib-group 语句： rib-group group-name ; 有关可包含此语句的层次结构级别的列表，请参阅此语句的语句摘要部分。"
+    }
+  ]
+}

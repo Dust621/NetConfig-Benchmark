@@ -1,0 +1,191 @@
+{
+  "title": "示例：根据 BGP 社区数量配置路由策略",
+  "sections": [
+    {
+      "title": "要求",
+      "level": 3,
+      "content": "在配置此示例之前，不需要除设备初始化之外的特殊配置。"
+    },
+    {
+      "title": "概述",
+      "level": 3,
+      "content": "此示例显示了两台路由设备之间具有外部 BGP （EBGP） 连接。设备 R2 使用 BGP 会话向设备 R1 发送两个静态路由。在设备 R1 上，导入策略指定 BGP 接收的路由最多可以包含五个社区，以被视为匹配。例如，如果路径包含三个社区，则会将其视为匹配并被接受。如果路径包含六个或更多社区，则会将其视为不匹配并被拒绝。 请务必记住，EBGP 的默认策略是接受所有路由。若要确保拒绝不匹配的路由，必须在策略定义的末尾包含一个 then reject 操作。 拓扑学 图 3 显示了示例网络。 图 3： 对接受的社区数量有限制的 BGP 策略 此示例显示了两台路由设备之间具有外部 BGP （EBGP） 连接。设备 R2 使用 BGP 会话向设备 R1 发送两个静态路由。在设备 R1 上，导入策略指定 BGP 接收的路由最多可以包含五个社区，以被视为匹配。例如，如果路径包含三个社区，则会将其视为匹配并被接受。如果路径包含六个或更多社区，则会将其视为不匹配并被拒绝。 请务必记住，EBGP 的默认策略是接受所有路由。若要确保拒绝不匹配的路由，必须在策略定义的末尾包含一个 then reject 操作。 拓扑学 图 3 显示了示例网络。 图 3： 对接受的社区数量有限制的 BGP 策略 图 3 显示了示例网络。 图 3： 对接受的社区数量有限制的 BGP 策略",
+      "sections": [
+        {
+          "title": "拓扑学",
+          "level": 4,
+          "content": "图 3 显示了示例网络。 图 3： 对接受的社区数量有限制的 BGP 策略",
+          "images": [
+            "BGP 社区的路由策略\\images\\5_示例：根据_BGP_社区数量配置路由策略_1.gif"
+          ]
+        }
+      ]
+    },
+    {
+      "title": "配置",
+      "level": 3,
+      "content": "要快速配置此示例，请复制以下命令，将其粘贴到文本文件中，删除所有换行符，更改与您的网络配置匹配所需的任何详细信息，然后将命令复制并粘贴到层次结构级别的 CLI [edit] 中。 设备 R1 set interfaces fe-1/1/0 unit 0 description to-R2 set interfaces fe-1/1/0 unit 0 family inet address 10.0.0.1/30 set interfaces lo0 unit 0 family inet address 192.168.0.1/32 set protocols bgp group external-peers type external set protocols bgp group external-peers peer-as 2 set protocols bgp group external-peers neighbor 10.0.0.2 import import-communities set policy-options policy-statement import-communities term 1 from protocol bgp set policy-options policy-statement import-communities term 1 from community-count 5 orlower set policy-options policy-statement import-communities term 1 then accept set policy-options policy-statement import-communities term 2 then reject set routing-options router-id 192.168.0.1 set routing-options autonomous-system 1 设备 R2 set interfaces fe-1/1/0 unit 0 description to-R1 set interfaces fe-1/1/0 unit 0 family inet address 10.0.0.2/30 set interfaces lo0 unit 0 family inet address 192.168.0.2/32 set protocols bgp group external-peers type external set protocols bgp group external-peers export statics set protocols bgp group external-peers peer-as 1 set protocols bgp group external-peers neighbor 10.0.0.1 set policy-options policy-statement statics from protocol static set policy-options policy-statement statics then community add 1 set policy-options policy-statement statics then accept set policy-options community 1 members 2:1 set policy-options community 1 members 2:2 set policy-options community 1 members 2:3 set policy-options community 1 members 2:4 set policy-options community 1 members 2:5 set policy-options community 1 members 2:6 set policy-options community 1 members 2:7 set policy-options community 1 members 2:8 set policy-options community 1 members 2:9 set policy-options community 1 members 2:10 set routing-options static route 10.2.0.0/16 reject set routing-options static route 10.2.0.0/16 install set routing-options static route 10.3.0.0/16 reject set routing-options static route 10.3.0.0/16 install set routing-options router-id 192.168.0.3 set routing-options autonomous-system 2 以下示例要求您在配置层次结构中导航各个级别。有关导航 CLI 的信息，请参阅《Junos OS CLI 用户指南》中的在配置模式下使用 CLI 编辑器。 要配置设备 R1： 配置接口。 [edit interfaces] user@R1# set fe-1/1/0 unit 0 description to-R2 user@R1# set fe-1/1/0 unit 0 family inet address 10.0.0.1/30 user@R1# set lo0 unit 0 family inet address 192.168.0.1/32 配置 BGP。 将导入策略应用于与设备 R2 的 BGP 对等会话。 [edit protocols bgp group external-peers] user@R1# set type external user@R1# set peer-as 2 user@R1# set neighbor 10.0.0.2 import import-communities 配置发送直接路由的路由策略。 [edit policy-options policy-statement import-communities] user@R1# set term 1 from protocol bgp user@R1# set term 1 from community-count 5 orlower user@R1# set term 1 then accept user@R1# set term 2 then reject 配置自治系统 (AS) 编号和路由器 ID。 [edit routing-options ] user@R1# set router-id 192.168.0.1 user@R1# set autonomous-system 1 要配置设备 R2： [edit interfaces] user@R2# set fe-1/1/0 unit 0 description to-R1 user@R2# set fe-1/1/0 unit 0 family inet address 10.0.0.2/30 user@R2# set lo0 unit 0 family inet address 192.168.0.2/32 配置路由器 ID 和自治系统 （AS） 编号。 [edit routing-options] user@R2# set router-id 192.168.0.3 user@R2# set autonomous-system 2 [edit protocols bgp group external-peers] user@R2# set type external user@R2# set peer-as 1 user@R2# set neighbor 10.0.0.1 配置多个社区，或配置具有多个成员的单个社区。 [edit policy-options community 1] user@R2# set members 2:1 user@R2# set members 2:2 user@R2# set members 2:3 user@R2# set members 2:4 user@R2# set members 2:5 user@R2# set members 2:6 user@R2# set members 2:7 user@R2# set members 2:8 user@R2# set members 2:9 user@R2# set members 2:10 配置静态路由。 [edit routing-options static] user@R2# set route 10.2.0.0/16 reject user@R2# set route 10.2.0.0/16 install user@R2# set route 10.3.0.0/16 reject user@R2# set route 10.3.0.0/16 install 配置路由策略，用于将静态路由播发到 BGP 中，并将 BGP 社区添加到路由。 [edit policy-options policy-statement statics] user@R2# set from protocol static user@R2# set then community add 1 user@R2# set then accept 应用导出策略。 [edit protocols bgp group external-peers] user@R2# set export statics 在配置模式下，输入 show interfaces 、 show protocols 、 show policy-options 和 show routing-options 命令，以确认您的配置。如果输出未显示预期的配置，请重复此示例中的说明，以便进行更正。 user@R1# show interfaces fe-1/1/0 { unit 0{ description to-R2; family inet { address 10.0.0.1/30; } } } lo0 { unit 0 { family inet { address 192.168.0.1/32; } } } } user@R1# show protocols bgp { group external-peers { type external; peer-as 2; neighbor 10.0.0.2 { import import-communities; } } } user@R1# show policy-options policy-statement import-communities { term 1 { from { protocol bgp; community-count 5 orlower; } then accept; } term 2 { then reject; } } user@R1# show routing-options router-id 192.168.0.1; autonomous-system 1; user@R2# show interfaces fe-1/1/0 { unit 0 { description to-R1; family inet { address 10.0.0.2/30; } } } lo0 { unit 0 { family inet { address 192.168.0.2/32; } } } user@R2# show protocols bgp { group external-peers { type external; export statics; peer-as 1; neighbor 10.0.0.1; } } user@R2# show policy-options policy-statement statics { from protocol static; then { community add 1; accept; } } community 1 members [ 2:1 2:2 2:3 2:4 2:5 2:6 2:7 2:8 2:9 2:10 ]; user@R2# show routing-options static { route 10.2.0.0/16 { reject; install; } route 10.3.0.0/16 { reject; install; } } router-id 192.168.0.3; autonomous-system 2; 如果完成设备配置，请从配置模式输入 commit 。",
+      "sections": [
+        {
+          "title": "CLI 快速配置",
+          "level": 4,
+          "content": "要快速配置此示例，请复制以下命令，将其粘贴到文本文件中，删除所有换行符，更改与您的网络配置匹配所需的任何详细信息，然后将命令复制并粘贴到层次结构级别的 CLI [edit] 中。 设备 R1 set interfaces fe-1/1/0 unit 0 description to-R2 set interfaces fe-1/1/0 unit 0 family inet address 10.0.0.1/30 set interfaces lo0 unit 0 family inet address 192.168.0.1/32 set protocols bgp group external-peers type external set protocols bgp group external-peers peer-as 2 set protocols bgp group external-peers neighbor 10.0.0.2 import import-communities set policy-options policy-statement import-communities term 1 from protocol bgp set policy-options policy-statement import-communities term 1 from community-count 5 orlower set policy-options policy-statement import-communities term 1 then accept set policy-options policy-statement import-communities term 2 then reject set routing-options router-id 192.168.0.1 set routing-options autonomous-system 1 设备 R2 set interfaces fe-1/1/0 unit 0 description to-R1 set interfaces fe-1/1/0 unit 0 family inet address 10.0.0.2/30 set interfaces lo0 unit 0 family inet address 192.168.0.2/32 set protocols bgp group external-peers type external set protocols bgp group external-peers export statics set protocols bgp group external-peers peer-as 1 set protocols bgp group external-peers neighbor 10.0.0.1 set policy-options policy-statement statics from protocol static set policy-options policy-statement statics then community add 1 set policy-options policy-statement statics then accept set policy-options community 1 members 2:1 set policy-options community 1 members 2:2 set policy-options community 1 members 2:3 set policy-options community 1 members 2:4 set policy-options community 1 members 2:5 set policy-options community 1 members 2:6 set policy-options community 1 members 2:7 set policy-options community 1 members 2:8 set policy-options community 1 members 2:9 set policy-options community 1 members 2:10 set routing-options static route 10.2.0.0/16 reject set routing-options static route 10.2.0.0/16 install set routing-options static route 10.3.0.0/16 reject set routing-options static route 10.3.0.0/16 install set routing-options router-id 192.168.0.3 set routing-options autonomous-system 2",
+          "commands_by_device": {
+            "设备 R1": "set interfaces fe-1/1/0 unit 0 description to-R2\nset interfaces fe-1/1/0 unit 0 family inet address 10.0.0.1/30\nset interfaces lo0 unit 0 family inet address 192.168.0.1/32\nset protocols bgp group external-peers type external\nset protocols bgp group external-peers peer-as 2\nset protocols bgp group external-peers neighbor 10.0.0.2 import import-communities\nset policy-options policy-statement import-communities term 1 from protocol bgp\nset policy-options policy-statement import-communities term 1 from community-count 5 orlower\nset policy-options policy-statement import-communities term 1 then accept\nset policy-options policy-statement import-communities term 2 then reject\nset routing-options router-id 192.168.0.1\nset routing-options autonomous-system 1",
+            "设备 R2": "set interfaces fe-1/1/0 unit 0 description to-R1\nset interfaces fe-1/1/0 unit 0 family inet address 10.0.0.2/30\nset interfaces lo0 unit 0 family inet address 192.168.0.2/32\nset protocols bgp group external-peers type external\nset protocols bgp group external-peers export statics\nset protocols bgp group external-peers peer-as 1\nset protocols bgp group external-peers neighbor 10.0.0.1\nset policy-options policy-statement statics from protocol static\nset policy-options policy-statement statics then community add 1\nset policy-options policy-statement statics then accept\nset policy-options community 1 members 2:1\nset policy-options community 1 members 2:2\nset policy-options community 1 members 2:3\nset policy-options community 1 members 2:4\nset policy-options community 1 members 2:5\nset policy-options community 1 members 2:6\nset policy-options community 1 members 2:7\nset policy-options community 1 members 2:8\nset policy-options community 1 members 2:9\nset policy-options community 1 members 2:10\nset routing-options static route 10.2.0.0/16 reject\nset routing-options static route 10.2.0.0/16 install\nset routing-options static route 10.3.0.0/16 reject\nset routing-options static route 10.3.0.0/16 install\nset routing-options router-id 192.168.0.3\nset routing-options autonomous-system 2"
+          }
+        },
+        {
+          "title": "程序",
+          "level": 4,
+          "content": "以下示例要求您在配置层次结构中导航各个级别。有关导航 CLI 的信息，请参阅《Junos OS CLI 用户指南》中的在配置模式下使用 CLI 编辑器。 要配置设备 R1： 配置接口。 [edit interfaces] user@R1# set fe-1/1/0 unit 0 description to-R2 user@R1# set fe-1/1/0 unit 0 family inet address 10.0.0.1/30 user@R1# set lo0 unit 0 family inet address 192.168.0.1/32 配置 BGP。 将导入策略应用于与设备 R2 的 BGP 对等会话。 [edit protocols bgp group external-peers] user@R1# set type external user@R1# set peer-as 2 user@R1# set neighbor 10.0.0.2 import import-communities 配置发送直接路由的路由策略。 [edit policy-options policy-statement import-communities] user@R1# set term 1 from protocol bgp user@R1# set term 1 from community-count 5 orlower user@R1# set term 1 then accept user@R1# set term 2 then reject 配置自治系统 (AS) 编号和路由器 ID。 [edit routing-options ] user@R1# set router-id 192.168.0.1 user@R1# set autonomous-system 1 要配置设备 R2： [edit interfaces] user@R2# set fe-1/1/0 unit 0 description to-R1 user@R2# set fe-1/1/0 unit 0 family inet address 10.0.0.2/30 user@R2# set lo0 unit 0 family inet address 192.168.0.2/32 配置路由器 ID 和自治系统 （AS） 编号。 [edit routing-options] user@R2# set router-id 192.168.0.3 user@R2# set autonomous-system 2 [edit protocols bgp group external-peers] user@R2# set type external user@R2# set peer-as 1 user@R2# set neighbor 10.0.0.1 配置多个社区，或配置具有多个成员的单个社区。 [edit policy-options community 1] user@R2# set members 2:1 user@R2# set members 2:2 user@R2# set members 2:3 user@R2# set members 2:4 user@R2# set members 2:5 user@R2# set members 2:6 user@R2# set members 2:7 user@R2# set members 2:8 user@R2# set members 2:9 user@R2# set members 2:10 配置静态路由。 [edit routing-options static] user@R2# set route 10.2.0.0/16 reject user@R2# set route 10.2.0.0/16 install user@R2# set route 10.3.0.0/16 reject user@R2# set route 10.3.0.0/16 install 配置路由策略，用于将静态路由播发到 BGP 中，并将 BGP 社区添加到路由。 [edit policy-options policy-statement statics] user@R2# set from protocol static user@R2# set then community add 1 user@R2# set then accept 应用导出策略。 [edit protocols bgp group external-peers] user@R2# set export statics 在配置模式下，输入 show interfaces 、 show protocols 、 show policy-options 和 show routing-options 命令，以确认您的配置。如果输出未显示预期的配置，请重复此示例中的说明，以便进行更正。 设备 R1 user@R1# show interfaces fe-1/1/0 { unit 0{ description to-R2; family inet { address 10.0.0.1/30; } } } lo0 { unit 0 { family inet { address 192.168.0.1/32; } } } } user@R1# show protocols bgp { group external-peers { type external; peer-as 2; neighbor 10.0.0.2 { import import-communities; } } } user@R1# show policy-options policy-statement import-communities { term 1 { from { protocol bgp; community-count 5 orlower; } then accept; } term 2 { then reject; } } user@R1# show routing-options router-id 192.168.0.1; autonomous-system 1; 设备 R2 user@R2# show interfaces fe-1/1/0 { unit 0 { description to-R1; family inet { address 10.0.0.2/30; } } } lo0 { unit 0 { family inet { address 192.168.0.2/32; } } } user@R2# show protocols bgp { group external-peers { type external; export statics; peer-as 1; neighbor 10.0.0.1; } } user@R2# show policy-options policy-statement statics { from protocol static; then { community add 1; accept; } } community 1 members [ 2:1 2:2 2:3 2:4 2:5 2:6 2:7 2:8 2:9 2:10 ]; user@R2# show routing-options static { route 10.2.0.0/16 { reject; install; } route 10.3.0.0/16 { reject; install; } } router-id 192.168.0.3; autonomous-system 2; 如果完成设备配置，请从配置模式输入 commit 。",
+          "sections": [
+            {
+              "title": "分步过程",
+              "level": 5,
+              "step_by_step": [
+                {
+                  "step": 1,
+                  "description": "配置接口。",
+                  "code": [
+                    "[edit interfaces]",
+                    "user@R1# set fe-1/1/0 unit 0 description to-R2",
+                    "user@R1# set fe-1/1/0 unit 0 family inet address 10.0.0.1/30",
+                    "user@R1# set lo0 unit 0 family inet address 192.168.0.1/32"
+                  ]
+                },
+                {
+                  "step": 2,
+                  "description": "配置 BGP。",
+                  "code": [
+                    "[edit protocols bgp group external-peers]",
+                    "user@R1# set type external",
+                    "user@R1# set peer-as 2",
+                    "user@R1# set neighbor 10.0.0.2 import import-communities"
+                  ]
+                },
+                {
+                  "step": 3,
+                  "description": "配置发送直接路由的路由策略。",
+                  "code": [
+                    "[edit policy-options policy-statement import-communities]",
+                    "user@R1# set term 1 from protocol bgp",
+                    "user@R1# set term 1 from community-count 5 orlower",
+                    "user@R1# set term 1 then accept",
+                    "user@R1# set term 2 then reject"
+                  ]
+                },
+                {
+                  "step": 4,
+                  "description": "配置自治系统 (AS) 编号和路由器 ID。",
+                  "code": [
+                    "[edit routing-options ]",
+                    "user@R1# set router-id 192.168.0.1",
+                    "user@R1# set autonomous-system 1"
+                  ]
+                }
+              ]
+            },
+            {
+              "title": "分步过程",
+              "level": 5,
+              "step_by_step": [
+                {
+                  "step": 1,
+                  "description": "配置接口。",
+                  "code": [
+                    "[edit interfaces]",
+                    "user@R2# set fe-1/1/0 unit 0 description to-R1",
+                    "user@R2# set fe-1/1/0 unit 0 family inet address 10.0.0.2/30",
+                    "user@R2# set lo0 unit 0 family inet address 192.168.0.2/32"
+                  ]
+                },
+                {
+                  "step": 2,
+                  "description": "配置路由器 ID 和自治系统 （AS） 编号。",
+                  "code": [
+                    "[edit routing-options]",
+                    "user@R2# set router-id 192.168.0.3",
+                    "user@R2# set autonomous-system 2"
+                  ]
+                },
+                {
+                  "step": 3,
+                  "description": "配置 BGP。",
+                  "code": [
+                    "[edit  protocols bgp group external-peers]",
+                    "user@R2# set type external",
+                    "user@R2# set peer-as 1",
+                    "user@R2# set neighbor 10.0.0.1"
+                  ]
+                },
+                {
+                  "step": 4,
+                  "description": "配置多个社区，或配置具有多个成员的单个社区。",
+                  "code": [
+                    "[edit policy-options community 1]",
+                    "user@R2# set members 2:1",
+                    "user@R2# set members 2:2",
+                    "user@R2# set members 2:3",
+                    "user@R2# set members 2:4",
+                    "user@R2# set members 2:5",
+                    "user@R2# set members 2:6",
+                    "user@R2# set members 2:7",
+                    "user@R2# set members 2:8",
+                    "user@R2# set members 2:9",
+                    "user@R2# set members 2:10"
+                  ]
+                },
+                {
+                  "step": 5,
+                  "description": "配置静态路由。",
+                  "code": [
+                    "[edit routing-options static]",
+                    "user@R2# set route 10.2.0.0/16 reject",
+                    "user@R2# set route 10.2.0.0/16 install",
+                    "user@R2# set route 10.3.0.0/16 reject",
+                    "user@R2# set route 10.3.0.0/16 install"
+                  ]
+                },
+                {
+                  "step": 6,
+                  "description": "配置路由策略，用于将静态路由播发到 BGP 中，并将 BGP 社区添加到路由。",
+                  "code": [
+                    "[edit policy-options policy-statement statics]",
+                    "user@R2# set from protocol static",
+                    "user@R2# set then community add 1",
+                    "user@R2# set then accept"
+                  ]
+                },
+                {
+                  "step": 7,
+                  "description": "应用导出策略。",
+                  "code": [
+                    "[edit protocols bgp group external-peers]",
+                    "user@R2# set export statics"
+                  ]
+                }
+              ]
+            },
+            {
+              "title": "结果",
+              "level": 5,
+              "content": "在配置模式下，输入 show interfaces 、 show protocols 、 show policy-options 和 show routing-options 命令，以确认您的配置。如果输出未显示预期的配置，请重复此示例中的说明，以便进行更正。 设备 R1 设备 R2 如果完成设备配置，请从配置模式输入 commit 。",
+              "code": [
+                "user@R1#show interfacesfe-1/1/0 {\n    unit 0{\n        description to-R2;\n        family inet {\n            address 10.0.0.1/30;\n        }\n    }\n}\nlo0 {\n    unit 0 {\n        family inet {\n            address 192.168.0.1/32;\n        }\n    }\n}\n}",
+                "user@R1#show protocolsbgp {\n    group external-peers {\n        type external;\n        peer-as 2;\n        neighbor 10.0.0.2 {\n            import import-communities;\n        }\n    }\n}",
+                "user@R1#show policy-optionspolicy-statement import-communities {\n    term 1 {\n        from {\n            protocol bgp;\n            community-count 5 orlower;\n        }\n        then accept;\n    }\n    term 2 {\n        then reject;\n    }\n}",
+                "user@R1#show routing-optionsrouter-id 192.168.0.1;\nautonomous-system 1;",
+                "user@R2#show interfacesfe-1/1/0 {\n    unit 0 {\n        description to-R1;\n        family inet {\n            address 10.0.0.2/30;\n        }\n    }\n}\nlo0 {\n    unit 0 {\n        family inet {\n            address 192.168.0.2/32;\n        }\n    }\n}",
+                "user@R2#show protocolsbgp {\n    group external-peers {\n        type external;\n        export statics;\n        peer-as 1;\n        neighbor 10.0.0.1;\n    }\n}",
+                "user@R2#show policy-optionspolicy-statement statics {\n    from protocol static;\n    then {\n        community add 1;\n        accept;\n    }\n}\ncommunity 1 members [ 2:1 2:2 2:3 2:4 2:5 2:6 2:7 2:8 2:9 2:10 ];",
+                "user@R2#show routing-optionsstatic {\n    route 10.2.0.0/16 {\n        reject;\n        install;\n    }\n    route 10.3.0.0/16 {\n        reject;\n        install;\n    }\n}\nrouter-id 192.168.0.3;\nautonomous-system 2;"
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "content": "此示例说明如何根据 BGP 社区的数量创建接受 BGP 路由的策略。 要求 在配置此示例之前，不需要除设备初始化之外的特殊配置。 概述 此示例显示了两台路由设备之间具有外部 BGP （EBGP） 连接。设备 R2 使用 BGP 会话向设备 R1 发送两个静态路由。在设备 R1 上，导入策略指定 BGP 接收的路由最多可以包含五个社区，以被视为匹配。例如，如果路径包含三个社区，则会将其视为匹配并被接受。如果路径包含六个或更多社区，则会将其视为不匹配并被拒绝。 请务必记住，EBGP 的默认策略是接受所有路由。若要确保拒绝不匹配的路由，必须在策略定义的末尾包含一个 then reject 操作。 拓扑学 图 3 显示了示例网络"
+}

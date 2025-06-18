@@ -1,0 +1,119 @@
+{
+  "title": "示例：在 BGP 网络的 AS 路径中强制实施正确的自治系统编号",
+  "sections": [
+    {
+      "title": "要求",
+      "level": 3,
+      "content": "开始之前，请设置至少包含三个自治系统的 BGP 网络。三个独立的路由器就足够了。"
+    },
+    {
+      "title": "概述",
+      "level": 3,
+      "content": "该 enforce-first-as 语句强制要求 AS 路径中的第一个（最左侧）自治系统编号 （ASN） 与播发邻接方的 ASN 一致。 在拓扑中，路由器 C 在 BGP 中播发到路由器 B 的静态路由，然后路由器 B 将路由重新播发到路由器 A。然后，将针对路由器 A 的导出策略添加到路由器 B，以将不相关的 ASN 添加到路由器 B。最后， enforce-first-as 在路由器 A 上针对路由器 B 配置语句。当路由器 A 获取 AS 路径时，它会检查 AS 路径中最左侧的 ASN 是否是前一个邻居的 ASN，并使来自路由器 B 的路由无效。",
+      "sections": [
+        {
+          "title": "拓扑学",
+          "level": 4,
+          "images": [
+            "BGP 4 字节 AS 编号\\images\\12_示例：在_BGP_网络的_AS_路径中强_1.gif"
+          ]
+        }
+      ]
+    },
+    {
+      "title": "配置 enforce-first-as 语句以检查路由",
+      "level": 3,
+      "content": "要快速配置此示例的初始配置，请复制以下命令，将其粘贴到文本文件中，删除所有换行符，更改任何必要的详细信息以匹配您的网络配置，然后将命令复制并粘贴到层次结构级别的 CLI [edit] 中。 路由器 A 上的初始配置 set interfaces ge-1/0/0 unit 0 family inet address 192.0.2.1/29 set interfaces ge-1/0/0 unit 0 family mpls set interfaces lo0 unit 0 family inet address 10.127.0.1/32 set routing-options router-id 10.127.0.1 set routing-options autonomous-system 65541 set protocols mpls interface ge-1/0/0.0 set protocols bgp group pe type external set protocols bgp group pe peer-as 65542 set protocols bgp group pe neighbor 192.0.2.2 set protocols ospf area 0.0.0.0 interface lo0.0 passive set protocols ospf area 0.0.0.0 interface ge-1/0/0.0 set protocols ldp interface ge-1/0/0.0 set protocols ldp interface lo0.0 路由器 B 上的初始配置 set interfaces ge-0/0/0 unit 0 family inet address 192.0.2.2/29 set interfaces ge-0/0/0 unit 0 family mpls set interfaces ge-0/0/1 unit 0 family inet address 198.51.100.1/29 set interfaces ge-0/0/1 unit 0 family mpls set interfaces lo0 unit 0 family inet address 10.127.0.2/32 set routing-options router-id 10.127.0.2 set routing-options autonomous-system 65542 set protocols bgp group pe1 type external set protocols bgp group pe1 peer-as 65541 set protocols bgp group pe1 neighbor 192.0.2.1 set protocols bgp group pe3 type external set protocols bgp group pe3 peer-as 65543 set protocols bgp group pe3 neighbor 198.51.100.2 路由器 C 上的初始配置 set interfaces ge-1/0/0 unit 0 family inet address 198.51.100.2/29 set interfaces ge-1/0/0 unit 0 family mpls set interfaces lo0 unit 0 family inet address 10.127.0.3/32 set routing-options router-id 10.127.0.3 set routing-options autonomous-system 65543 set protocols mpls interface ge-1/0/0.0 set protocols bgp group pe type external set protocols bgp group pe peer-as 65542 set protocols bgp group pe neighbor 198.51.100.1 set protocols ospf area 0.0.0.0 interface lo0.0 passive set protocols ospf area 0.0.0.0 interface ge-1/0/0.0 set protocols ldp interface ge-1/0/0.0 set protocols ldp interface lo0.0 在路由器 C 上配置静态路由。 C-re0# set routing-options static route 198.51.100.17/29 next-hop 198.51.100.20 C-re0# set routing-options static route 198.51.100.17/29 readvertise C-re0# commit 为静态路由配置导出策略。 C-re0# set policy-options policy-statement export-static from protocol bgp C-re0# set policy-options policy-statement export-static then accept C-re0# set protocols bgp group pe export export-static C-re0# commit 验证静态路由是否直通路由器 B 和路由器 A。 B-re0# run show route 198.51.100.17 inet.0: 49 destinations, 49 routes (49 active, 0 holddown, 0 hidden) + = Active Route, - = Last Active, * = Both 198.51.100.17/29 *[BGP/170] 00:11:40, localpref 100 AS path: 65543 I, validation-state: unverified > to 198.51.100.2 via ge-0/0/1.0 A-re0# run show route 198.51.100.17 inet.0: 49 destinations, 49 routes (49 active, 0 holddown, 0 hidden) + = Active Route, - = Last Active, * = Both 198.51.100.17/29 *[BGP/170] 00:10:31, localpref 100 AS path: 65542 65543 I, validation-state: unverified > to 192.0.2.2 via ge-1/0/0.0 请注意，在路由器 A 上，路由显示的 AS 路径为 65542 65543。从路由器 B 到路由器 A 的路由已在 AS 路径中前置路由器 A 的 ASN。 设置导出策略以从路由器 B 前置 ASN。 B-re0# set policy-options policy-statement as-prepender from neighbor 198.51.100.2 B-re0# set policy-options policy-statement as-prepender then as-path-prepend 65555 B-re0# set protocols bgp group pe1 export as-prepender B-re0# commit 验证路由器 A 上的路由 198.51.100.17。 A-re0# run show route 198.51.100.17 inet.0: 49 destinations, 49 routes (49 active, 0 holddown, 0 hidden) + = Active Route, - = Last Active, * = Both 198.51.100.17/29 *[BGP/170] 00:00:50, localpref 100 AS path: 65555 65542 65543 I, validation-state: unverified > to 192.0.2.2 via ge-1/0/0.0 [edit] A-re0# 请注意，ASN 65555 已前置到 AS 路径。 enforce-first-as 在路由器 A 上配置语句。 A-re0# set protocols bgp enforce-first-as A-re0# commit 当您再次检查路由时，您会看到路由 198.51.100.17 不再在路由器 A 上通过。",
+      "sections": [
+        {
+          "title": "CLI 快速配置",
+          "level": 4,
+          "content": "要快速配置此示例的初始配置，请复制以下命令，将其粘贴到文本文件中，删除所有换行符，更改任何必要的详细信息以匹配您的网络配置，然后将命令复制并粘贴到层次结构级别的 CLI [edit] 中。 路由器 A 上的初始配置 set interfaces ge-1/0/0 unit 0 family inet address 192.0.2.1/29 set interfaces ge-1/0/0 unit 0 family mpls set interfaces lo0 unit 0 family inet address 10.127.0.1/32 set routing-options router-id 10.127.0.1 set routing-options autonomous-system 65541 set protocols mpls interface ge-1/0/0.0 set protocols bgp group pe type external set protocols bgp group pe peer-as 65542 set protocols bgp group pe neighbor 192.0.2.2 set protocols ospf area 0.0.0.0 interface lo0.0 passive set protocols ospf area 0.0.0.0 interface ge-1/0/0.0 set protocols ldp interface ge-1/0/0.0 set protocols ldp interface lo0.0 路由器 B 上的初始配置 set interfaces ge-0/0/0 unit 0 family inet address 192.0.2.2/29 set interfaces ge-0/0/0 unit 0 family mpls set interfaces ge-0/0/1 unit 0 family inet address 198.51.100.1/29 set interfaces ge-0/0/1 unit 0 family mpls set interfaces lo0 unit 0 family inet address 10.127.0.2/32 set routing-options router-id 10.127.0.2 set routing-options autonomous-system 65542 set protocols bgp group pe1 type external set protocols bgp group pe1 peer-as 65541 set protocols bgp group pe1 neighbor 192.0.2.1 set protocols bgp group pe3 type external set protocols bgp group pe3 peer-as 65543 set protocols bgp group pe3 neighbor 198.51.100.2 路由器 C 上的初始配置 set interfaces ge-1/0/0 unit 0 family inet address 198.51.100.2/29 set interfaces ge-1/0/0 unit 0 family mpls set interfaces lo0 unit 0 family inet address 10.127.0.3/32 set routing-options router-id 10.127.0.3 set routing-options autonomous-system 65543 set protocols mpls interface ge-1/0/0.0 set protocols bgp group pe type external set protocols bgp group pe peer-as 65542 set protocols bgp group pe neighbor 198.51.100.1 set protocols ospf area 0.0.0.0 interface lo0.0 passive set protocols ospf area 0.0.0.0 interface ge-1/0/0.0 set protocols ldp interface ge-1/0/0.0 set protocols ldp interface lo0.0"
+        },
+        {
+          "title": "程序",
+          "level": 4,
+          "content": "在路由器 C 上配置静态路由。 C-re0# set routing-options static route 198.51.100.17/29 next-hop 198.51.100.20 C-re0# set routing-options static route 198.51.100.17/29 readvertise C-re0# commit 为静态路由配置导出策略。 C-re0# set policy-options policy-statement export-static from protocol bgp C-re0# set policy-options policy-statement export-static then accept C-re0# set protocols bgp group pe export export-static C-re0# commit 验证静态路由是否直通路由器 B 和路由器 A。 B-re0# run show route 198.51.100.17 inet.0: 49 destinations, 49 routes (49 active, 0 holddown, 0 hidden) + = Active Route, - = Last Active, * = Both 198.51.100.17/29 *[BGP/170] 00:11:40, localpref 100 AS path: 65543 I, validation-state: unverified > to 198.51.100.2 via ge-0/0/1.0 A-re0# run show route 198.51.100.17 inet.0: 49 destinations, 49 routes (49 active, 0 holddown, 0 hidden) + = Active Route, - = Last Active, * = Both 198.51.100.17/29 *[BGP/170] 00:10:31, localpref 100 AS path: 65542 65543 I, validation-state: unverified > to 192.0.2.2 via ge-1/0/0.0 请注意，在路由器 A 上，路由显示的 AS 路径为 65542 65543。从路由器 B 到路由器 A 的路由已在 AS 路径中前置路由器 A 的 ASN。 设置导出策略以从路由器 B 前置 ASN。 B-re0# set policy-options policy-statement as-prepender from neighbor 198.51.100.2 B-re0# set policy-options policy-statement as-prepender then as-path-prepend 65555 B-re0# set protocols bgp group pe1 export as-prepender B-re0# commit 验证路由器 A 上的路由 198.51.100.17。 A-re0# run show route 198.51.100.17 inet.0: 49 destinations, 49 routes (49 active, 0 holddown, 0 hidden) + = Active Route, - = Last Active, * = Both 198.51.100.17/29 *[BGP/170] 00:00:50, localpref 100 AS path: 65555 65542 65543 I, validation-state: unverified > to 192.0.2.2 via ge-1/0/0.0 [edit] A-re0# 请注意，ASN 65555 已前置到 AS 路径。 enforce-first-as 在路由器 A 上配置语句。 A-re0# set protocols bgp enforce-first-as A-re0# commit 当您再次检查路由时，您会看到路由 198.51.100.17 不再在路由器 A 上通过。",
+          "sections": [
+            {
+              "title": "分步过程",
+              "level": 5,
+              "step_by_step": [
+                {
+                  "step": 1,
+                  "description": "在路由器 C 上配置静态路由。",
+                  "code": [
+                    "C-re0# set routing-options static route 198.51.100.17/29 next-hop 198.51.100.20",
+                    "C-re0# set routing-options static route 198.51.100.17/29 readvertise",
+                    "C-re0# commit"
+                  ]
+                },
+                {
+                  "step": 2,
+                  "description": "为静态路由配置导出策略。",
+                  "code": [
+                    "C-re0# set policy-options policy-statement export-static from protocol bgp ",
+                    "C-re0# set policy-options policy-statement export-static then accept",
+                    "C-re0# set protocols bgp group pe export export-static",
+                    "C-re0# commit"
+                  ]
+                },
+                {
+                  "step": 3,
+                  "description": "验证静态路由是否直通路由器 B 和路由器 A。",
+                  "code": [
+                    "B-re0# run show route 198.51.100.17",
+                    "inet.0: 49 destinations, 49 routes (49 active, 0 holddown, 0 hidden)",
+                    "+ = Active Route, - = Last Active, * = Both",
+                    "198.51.100.17/29      *[BGP/170] 00:11:40, localpref 100",
+                    "                      AS path: 65543 I, validation-state: unverified",
+                    "                    > to 198.51.100.2 via ge-0/0/1.0",
+                    "A-re0# run show route 198.51.100.17",
+                    "inet.0: 49 destinations, 49 routes (49 active, 0 holddown, 0 hidden)",
+                    "+ = Active Route, - = Last Active, * = Both",
+                    "198.51.100.17/29      *[BGP/170] 00:10:31, localpref 100",
+                    "                      AS path: 65542 65543 I, validation-state: unverified",
+                    "                    > to 192.0.2.2 via ge-1/0/0.0"
+                  ]
+                },
+                {
+                  "step": 4,
+                  "description": "设置导出策略以从路由器 B 前置 ASN。",
+                  "code": [
+                    "B-re0# set policy-options policy-statement as-prepender from neighbor 198.51.100.2",
+                    "B-re0# set policy-options policy-statement as-prepender then as-path-prepend 65555",
+                    "B-re0# set protocols bgp group pe1 export as-prepender",
+                    "B-re0# commit"
+                  ]
+                },
+                {
+                  "step": 5,
+                  "description": "验证路由器 A 上的路由 198.51.100.17。",
+                  "code": [
+                    "A-re0# run show route 198.51.100.17     ",
+                    "inet.0: 49 destinations, 49 routes (49 active, 0 holddown, 0 hidden)",
+                    "+ = Active Route, - = Last Active, * = Both",
+                    "198.51.100.17/29      *[BGP/170] 00:00:50, localpref 100",
+                    "                      AS path: 65555 65542 65543 I, validation-state: unverified",
+                    "                    > to 192.0.2.2 via ge-1/0/0.0",
+                    "[edit]",
+                    "A-re0# "
+                  ]
+                },
+                {
+                  "step": 6,
+                  "description": "enforce-first-as 在路由器 A 上配置语句。",
+                  "code": [
+                    "A-re0# set protocols bgp enforce-first-as",
+                    "A-re0# commit"
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "content": "此示例说明如何将 enforce-first-as 在层次结构级别设置的 [edit protocols bgp] 语句用作安全措施。配置此语句可创建一致性检查，以确保 BGP 对等方是路由信息的合法发送方。 要求 开始之前，请设置至少包含三个自治系统的 BGP 网络。三个独立的路由器就足够了"
+}

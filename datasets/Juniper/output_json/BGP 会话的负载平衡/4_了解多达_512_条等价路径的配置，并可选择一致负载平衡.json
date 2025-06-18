@@ -1,0 +1,16 @@
+{
+  "title": "了解多达 512 条等价路径的配置，并可选择一致负载平衡",
+  "sections": [
+    {
+      "title": "配置 256 到 512 个等价路径的准则和限制，可以选择一致负载平衡",
+      "level": 3,
+      "content": "该功能仅适用于单跳外部 BGP 对等方。（此功能不适用于 MPLS 路由。 设备的路由进程 （RPD） 必须支持 64 位模式;不支持 32 位 RPD。 该功能仅适用于单播流量。 流量分布可能不会在所有组成员之间均匀分布 — 这取决于流量模式和硬件中散列流集表的组织。在组中添加或删除成员时，一致的散列可 最大程度地减少 流到目标链接的重新映射。 如果使用 、 inet inet6 或 layer2 选项 hash-mode 之一进行配置 set forwarding-options enhanced-hash-key ，某些流可能会更改目标链接，因为新的哈希参数可能会为流生成新的哈希索引，从而生成新的目标链接。 为了获得最佳哈希准确性，此功能使用 级联 拓扑为超过 128 个下一跃点的配置实现下一跃点结构。因此，散列精度略低于小于 128 的 ECMP 下一跃点配置，后者不需要级联拓扑。 受影响 ECMP 路径上的现有流量和流经这些受影响 ECMP 路径的新流量可能会在本地路由修复期间切换路径，并且流量倾斜可能很明显。但是，在随后的全球路由修复期间，任何此类倾斜都会得到纠正。 增加该 maximum-ecmp 值时，在路由前缀的 下一个 跃点更改事件期间，一致性哈希将丢失。 如果将新路径添加到现有 ECMP 组，则未受影响路径上的某些流量可能会移动到新添加的路径。 快速重新路由 （FRR） 可能无法使用一致散列。 无法实现完美的类似 ECMP 的流量分配。具有比其他路径更多的“存储桶”的路径比具有较少存储桶的路径具有更多的流量（ 存储桶 是负载平衡表的通讯组列表中映射到 ECMP 成员索引的条目）。 在网络拓扑更改事件期间，在某些情况下，网络前缀会丢失一致的哈希，因为这些前缀指向新的 ECMP 下一跃点，该跃点不具有前缀先前 ECMP 下一跃点的所有属性。 如果多个网络前缀指向同一个 ECMP 下一跃点，并且该语句启用了 consistent-hash 其中一个或多个前缀，则指向同一 ECMP 下一跃点 的所有 网络前缀将显示一致的散列行为。 仅在基于等价 BGP 路由的 ECMP 组上支持一致散列。如果配置了优先于 BGP 路由的其他协议或静态路由，则不支持一致哈希。 当配置与以下功能的配置结合使用时，一致性哈希可能会受到限制，因为这些功能具有不使用哈希来选择路径的隧道终止或流量工程 - GRE 隧道;流浪汉流量;EVPN-VXLAN;和 MPLS TE，自动带宽。"
+    },
+    {
+      "title": "有关配置最多 512 个 ECMP 下一跃点以及选择性地配置一致负载平衡的说明",
+      "level": 3,
+      "content": "当您准备好配置最多 512 个下一跃点时，请使用以下配置说明： 配置 ECMP 下一跃点的最大数量，例如，配置 512 个 ECMP 下一跃点： [edit] user@host# set chassis maximum-ecmp 512 创建路由策略并启用每个数据包的负载平衡，从而在系统上全局启用 ECMP： [edit] user@host# set routing-options forwarding-table export load-balancing-policy user@host# set policy-options policy-statement load-balancing-policy then load-balance per-packet 通过创建单独的路由策略将传入路由与一个或多个目标前缀匹配，在所选前缀上启用弹性，例如： [edit] user@host# set policy-options policy-statement c-hash from route-filter 20.0.0.0/24 orlonger user@host# set policy-options policy-statement c-hash then load-balance consistent-hash 将 eBGP 导入策略（例如，“c 哈希”）应用于外部对等方的 BGP 组： [edit] user@host# set protocols bgp import c-hash 有关配置等价路径的更多详细信息，请参阅 示例：负载平衡 BGP 流量，出现在本文档前面部分。 （可选）有关配置一致负载平衡（也称为一致性哈希）的更多详细信息，请参阅 为 ECMP 组配置一致负载平衡"
+    }
+  ],
+  "content": "另请参阅 了解 BGP 多路径"
+}

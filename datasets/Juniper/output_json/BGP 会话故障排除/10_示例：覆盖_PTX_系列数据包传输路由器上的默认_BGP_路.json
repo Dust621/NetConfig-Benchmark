@@ -1,0 +1,78 @@
+{
+  "title": "示例：覆盖 PTX 系列数据包传输路由器上的默认 BGP 路由策略",
+  "sections": [
+    {
+      "title": "要求",
+      "level": 3,
+      "content": "此示例需要 Junos OS 12.1 或更高版本。"
+    },
+    {
+      "title": "概述",
+      "level": 3,
+      "content": "默认情况下，PTX 系列路由器不会在转发表中安装 BGP 路由。 对于 PTX 系列路由器，使用操作配置 then accept 条件不会 from protocols bgp 产生在其他 Junos OS 路由设备上的通常结果。使用 PTX 系列路由器上的以下路由策略，BGP 路由不会安装在转发表中。 user@host# show policy-options policy-statement accept-no-install { term 1 { from protocol bgp; then accept; } } user@host# show routing-options forwarding-table { export accept-no-install; } user@host> show route forwarding-table Routing table: default.inet Internet: Destination Type RtRef Next hop Type Index NhRef Netif default perm 0 rjct 36 2 转发表中未安装 BGP 路由。这是预期行为。 此示例说明如何使用该 then install-to-fib 操作有效地覆盖默认 BGP 路由策略。"
+    },
+    {
+      "title": "配置",
+      "level": 3,
+      "content": "要快速配置此示例，请复制以下命令，将其粘贴到文本文件中，删除所有换行符，更改与您的网络配置匹配所需的任何详细信息，然后将命令复制并粘贴到层次结构级别的 CLI [edit] 中。 set policy-options prefix-list install-bgp 66.0.0.1/32 set policy-options policy-statement override-ptx-series-default term 1 from prefix-list install-bgp set policy-options policy-statement override-ptx-series-default term 1 then load-balance per-prefix set policy-options policy-statement override-ptx-series-default term 1 then install-to-fib set routing-options forwarding-table export override-ptx-series-default 下面的示例要求您在各个配置层级中进行导航。有关导航 CLI 的信息，请参阅《Junos OS CLI 用户指南》中的在配置模式下使用 CLI 编辑器。 要在转发表中安装选定的 BGP 路由，请执行以下操作： 配置要在转发表中安装的前缀列表。 [edit policy-options prefix-list install-bgp] user@host# set 66.0.0.1/32 配置路由策略，将前缀列表应用为条件。 [edit policy-options policy-statement override-ptx-series-default term 1] user@host# set from prefix-list install-bgp user@host# set then install-to-fib user@host# set then load-balance per-prefix 将路由策略应用于转发表。 [edit routing-options forwarding-table] user@host# set export override-ptx-series-default 在配置模式下，输入 show policy-options 和 show routing-options 命令，以确认您的配置。如果输出未显示预期的配置，请重复此示例中的说明，以便进行更正。 user@host# show policy-options prefix-list install-bgp { 66.0.0.1/32; } policy-statement override-ptx-series-default { term 1 { from { prefix-list install-bgp; } then { load-balance per-prefix; install-to-fib; } } } user@host# show routing-options forwarding-table { export override-ptx-series-default; } 如果完成设备配置，请从配置模式输入 commit 。",
+      "sections": [
+        {
+          "title": "CLI 快速配置",
+          "level": 4,
+          "content": "要快速配置此示例，请复制以下命令，将其粘贴到文本文件中，删除所有换行符，更改与您的网络配置匹配所需的任何详细信息，然后将命令复制并粘贴到层次结构级别的 CLI [edit] 中。 set policy-options prefix-list install-bgp 66.0.0.1/32 set policy-options policy-statement override-ptx-series-default term 1 from prefix-list install-bgp set policy-options policy-statement override-ptx-series-default term 1 then load-balance per-prefix set policy-options policy-statement override-ptx-series-default term 1 then install-to-fib set routing-options forwarding-table export override-ptx-series-default",
+          "code": [
+            "set policy-options prefix-list install-bgp 66.0.0.1/32",
+            "set policy-options policy-statement override-ptx-series-default term 1 from prefix-list install-bgp",
+            "set policy-options policy-statement override-ptx-series-default term 1 then load-balance per-prefix",
+            "set policy-options policy-statement override-ptx-series-default term 1 then install-to-fib",
+            "set routing-options forwarding-table export override-ptx-series-default"
+          ],
+          "sections": [
+            {
+              "title": "分步过程",
+              "level": 5,
+              "step_by_step": [
+                {
+                  "step": 1,
+                  "description": "配置要在转发表中安装的前缀列表。",
+                  "code": [
+                    "[edit policy-options prefix-list install-bgp]",
+                    "user@host# set 66.0.0.1/32"
+                  ]
+                },
+                {
+                  "step": 2,
+                  "description": "配置路由策略，将前缀列表应用为条件。",
+                  "code": [
+                    "[edit policy-options policy-statement override-ptx-series-default term 1]",
+                    "user@host# set from prefix-list install-bgp",
+                    "user@host# set then install-to-fib",
+                    "user@host# set then load-balance per-prefix"
+                  ]
+                },
+                {
+                  "step": 3,
+                  "description": "将路由策略应用于转发表。",
+                  "code": [
+                    "[edit routing-options forwarding-table]",
+                    "user@host# set export override-ptx-series-default"
+                  ]
+                }
+              ]
+            },
+            {
+              "title": "结果",
+              "level": 5,
+              "content": "在配置模式下，输入 show policy-options 和 show routing-options 命令，以确认您的配置。如果输出未显示预期的配置，请重复此示例中的说明，以便进行更正。 如果完成设备配置，请从配置模式输入 commit 。",
+              "code": [
+                "user@host#show policy-optionsprefix-list install-bgp {\n    66.0.0.1/32;\n}\npolicy-statement override-ptx-series-default {\n    term 1 {\n        from {\n            prefix-list install-bgp;\n        }\n        then {\n            load-balance per-prefix;\n            install-to-fib;\n        }\n    }\n}",
+                "user@host#show routing-optionsforwarding-table {\n    export override-ptx-series-default;\n}"
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "content": "此示例说明如何覆盖数据包传输路由器（如 PTX 系列数据包传输路由器）上的默认路由策略。 要求 此示例需要 Junos OS 12.1 或更高版本"
+}

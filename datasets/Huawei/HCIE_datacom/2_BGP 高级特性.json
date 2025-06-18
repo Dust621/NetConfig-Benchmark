@@ -1,0 +1,21 @@
+{
+  "topology": "设备连接方式、IP 地址规划、BGP AS 号、BGP 对等体关系如图所示，接口互联地址均为10.0.0.Y/30，其中 Y 值已在图中标注。所有设备均创建 Loopback0 接口，Loopback 接口 IP 地址为 10.0.X.X，其中 X 值会在对应配置步骤中使用表格标明。在本实验中我们将会使用 P2、PE2、PE4 模拟 Backbone 网络，P1 模拟企业总部，PE1、PE3 分别模拟企业分支，我们将会在 PE1、PE3、P1 上创建不同的环回接口用于模拟终端用户，通过Community Filter、AS_Path Filter、ORF 特性来实现业务网络路由传递的控制。PE1: Loopback0 接口 IP: 10.0.1.1, PE2: Loopback0 接口 IP: 10.0.2.2, PE3: Loopback0 接口 IP: 10.0.3.3, PE4: Loopback0 接口 IP: 10.0.4.4, P1: Loopback0 接口 IP: 10.0.5.5, P2: Loopback0 接口 IP: 10.0.6.6",
+  "requirement": "实现 BGP 路由策略配置，实现 BGP 安全特性配置，实现 BGP ORF 特性配置",
+  "steps": [
+    "设备 IP 地址配置",
+    "在骨干区域配置 OSPF，构建底层网络",
+    "在骨干网络与企业网络之间完成 BGP 配置，部署 GTSM 与 BGP 认证，保证 BGP 网络安全",
+    "完成骨干网络的 IBGP 对等体关系配置，为简化配置使用对等体组完成对等体关系建立，同时配置 P2 为 RR，PE2、PE4 作为 RR Client",
+    "在 P1、PE1、PE3 上均创建 Loopback1、2，分别用于模拟业务网段 OA、财政，同时配置路由策略，给 Loopback1 接口路由打上 community 值，用于标注路由的始发 AS",
+    "在 P2、PE2、PE4 上配置路由策略，实现 OA、财政业务网段路由的传递控制",
+    "在 P1、P2 上配置 ORF 特性，限制 P1 接收的路由"
+  ],
+  "configs": {
+    "PE1": "",
+    "PE2": "",
+    "PE3": "",
+    "PE4": "",
+    "P1": "",
+    "P2": ""
+  }
+}

@@ -1,0 +1,160 @@
+{
+  "title": "示例：配置 BGP 以承载 IPv6 流量规范路由",
+  "sections": [
+    {
+      "title": "要求",
+      "level": 3,
+      "content": "此示例使用以下硬件和软件组件： 两台 MX 系列路由器 Junos OS 16.1 或更高版本 在启用 BGP 以承载 IPv6 流规范路由之前： 在设备接口上配置 IP 地址。 配置 BGP。 配置路由策略，用于将路由（例如静态路由、直接路由或 IGP 路由）从路由表导出到 BGP。 此示例使用以下硬件和软件组件： 两台 MX 系列路由器 Junos OS 16.1 或更高版本 在启用 BGP 以承载 IPv6 流规范路由之前： 在设备接口上配置 IP 地址。 配置 BGP。 配置路由策略，用于将路由（例如静态路由、直接路由或 IGP 路由）从路由表导出到 BGP。"
+    },
+    {
+      "title": "概述",
+      "level": 3,
+      "content": "流规范提供针对拒绝服务攻击的保护，并限制消耗带宽并在源附近停止带宽的不良流量。在早期的 Junos OS 版本中，通过 BGP 传播 IPv4 的流规范规则作为网络层可达性信息。从 Junos OS 16.1 版开始，IPv6 系列支持流规范功能，并允许传播 IPv6 和 IPv6 VPN 的流量规范规则。 图 7 显示了示例拓扑。路由器 R1 和路由器 R2 属于不同的自治系统。在路由器 R2 上配置 IPv6 流规范。所有传入流量都根据流规范条件进行过滤，并根据指定的操作对流量进行不同的处理。在此示例中，与流规范条件匹配的所有流向 abcd：：11：11：11：10/128 的流量都将被丢弃;而接受发往 ABCD：：11：11：11：30/128 且符合流规范条件的流量。",
+      "sections": [
+        {
+          "title": "拓扑学",
+          "level": 4,
+          "content": "图 7 显示了示例拓扑。路由器 R1 和路由器 R2 属于不同的自治系统。在路由器 R2 上配置 IPv6 流规范。所有传入流量都根据流规范条件进行过滤，并根据指定的操作对流量进行不同的处理。在此示例中，与流规范条件匹配的所有流向 abcd：：11：11：11：10/128 的流量都将被丢弃;而接受发往 ABCD：：11：11：11：30/128 且符合流规范条件的流量。",
+          "images": [
+            "多协议 BGP\\images\\11_示例：配置_BGP_以承载_IPv6_流_1.png"
+          ]
+        }
+      ]
+    },
+    {
+      "title": "配置",
+      "level": 3,
+      "content": "要快速配置此示例，请复制以下命令，将其粘贴到文本文件中，删除所有换行符，更改详细信息，以便与网络配置匹配，将命令复制并粘贴到 [edit] 层级的 CLI 中，然后从配置模式进入 commit 。 路由器 R1 set interfaces ge-1/1/4 unit 0 family inet6 address abcd::13:14:2:1/120 set interfaces lo0 unit 0 family inet6 address abcd::128:220:21:197/128 set routing-options router-id 128.220.21.197 set routing-options autonomous-system 64496 set protocols bgp group ebgp type external set protocols bgp group ebgp family inet6 unicast set protocols bgp group ebgp family inet6 flow set protocols bgp group ebgp peer-as 64497 set protocols bgp group ebgp neighbor abcd::13:14:2:2 路由器 R2 set interfaces ge-1/0/0 unit 0 family inet6 address abcd::192:2:1:1/120 set interfaces ge-1/1/5 unit 0 family inet6 address abcd::13:14:2:2/120 set interfaces lo0 unit 0 family inet6 address abcd::128:220:41:229/128 set routing-options rib inet6.0 static route abcd::11:11:11:0/120 next-hop abcd::192:2:1:2 set routing-options rib inet6.0 flow route route-1 match destination abcd::11:11:11:10/128 set routing-options rib inet6.0 flow route route-1 match protocol tcp set routing-options rib inet6.0 flow route route-1 match destination-port http set routing-options rib inet6.0 flow route route-1 match source-port 65535 set routing-options rib inet6.0 flow route route-1 then discard set routing-options rib inet6.0 flow route route-2 match destination abcd::11:11:11:30/128 set routing-options rib inet6.0 flow route route-2 match icmp6-type echo-request set routing-options rib inet6.0 flow route route-2 match packet-length 100 set routing-options rib inet6.0 flow route route-2 match dscp 10 set routing-options rib inet6.0 flow route route-2 then accept set routing-options router-id 128.220.41.229 set routing-options autonomous-system 64497 set protocols bgp group ebgp type external set protocols bgp group ebgp family inet6 unicast set protocols bgp group ebgp family inet6 flow set protocols bgp group ebgp export redis set protocols bgp group ebgp peer-as 64496 set protocols bgp group ebgp neighbor abcd::13:14:2:1 set policy-options policy-statement redis from protocol static set policy-options policy-statement redis then accept 以下示例要求您在配置层次结构中导航各个级别。有关导航 CLI 的信息，请参阅 CLI 用户指南中的在配置模式下使用 CLI 编辑器。 要配置路由器 R2： 注： 修改相应的接口名称、地址和其他参数后，对路由器 R1 重复此过程。 修改相应的接口名称、地址和其他参数后，对路由器 R1 重复此过程。 使用 IPv6 地址配置接口。 [edit interfaces] user@R2# set ge-1/0/0 unit 0 family inet6 address abcd::192:2:1:1/120 user@R2# set ge-1/1/5 unit 0 family inet6 address abcd::13:14:2:2/120 配置 IPv6 环路地址。 [edit interfaces] user@R2# set lo0 unit 0 family inet6 address abcd::128:220:41:229/128 配置路由器 ID 和自治系统 (AS) 编号。 [edit routing-options] user@R2# set router-id 128.220.41.229 user@R2# set autonomous-system 64497 配置路由器 R1 和路由器 R2 之间的 EBGP 对等会话。 [edit protocols] user@R2# set bgp group ebgp type external user@R2# set bgp group ebgp family inet6 unicast user@R2# set bgp group ebgp family inet6 flow user@R2# set bgp group ebgp export redis user@R2# set bgp group ebgp peer-as 64496 user@R2# set bgp group ebgp neighbor abcd::13:14:2:1 配置静态路由和下一跃点。因此，路由将添加到路由表中以验证此示例中的要素。 [edit routing-options] user@R2# set rib inet6.0 static route abcd::11:11:11:0/120 next-hop abcd::192:2:1:2 指定流规范条件。 [edit routing-options] user@R2# set rib inet6.0 flow route route-1 match destination abcd::11:11:11:10/128 user@R2# set rib inet6.0 flow route route-1 match protocol tcp user@R2# set rib inet6.0 flow route route-1 match destination-port http user@R2# set rib inet6.0 flow route route-1 match source-port 65535 配置操作 discard 以丢弃与指定匹配条件匹配的数据包。 [edit routing-options] user@R2# set rib inet6.0 flow route route-1 then discard [edit routing-options] user@R2# set rib inet6.0 flow route route-2 match destination abcd::11:11:11:30/128 user@R2# set rib inet6.0 flow route route-2 match icmp6-type echo-request user@R2# set rib inet6.0 flow route route-2 match packet-length 100 user@R2# set rib inet6.0 flow route route-2 match dscp 10 配置 accept 操作以接受与指定匹配条件匹配的数据包 [edit routing-options] user@R2# set rib inet6.0 flow route route-2 then accept 定义允许 BGP 接受静态路由的策略。 [edit policy-options] user@R2# set policy-statement redis from protocol static user@R2# set policy-statement redis then accept 在配置模式下，输入 show interfaces 、 show protocols 、 show routing-options 和 show policy-options 命令，以确认您的配置。如果输出未显示预期的配置，请重复此示例中的说明，以便进行更正。 [edit] user@R2# show interfaces ge-1/0/0 { unit 0 { family inet6 { address abcd::192:2:1:1/120; } } } ge-1/1/5 { unit 0 { family inet6 { address abcd::13:14:2:2/120; } } } lo0 { unit 0 { family inet6 { address abcd::128:220:41:229/128; } } } [edit] user@R2# show protocols bgp { group ebgp { type external; family inet6 { unicast; flow; } export redis; peer-as 64496; neighbor abcd::13:14:2:1; } } [edit] user@R2# show routing-options rib inet6.0 { static { route abcd::11:11:11:0/120 next-hop abcd::192:2:1:2; } flow { route route-1 { match { destination abcd::11:11:11:10/128; protocol tcp; destination-port http; source-port 65535; } then discard; } route route-2 { match { destination abcd::11:11:11:30/128; icmp6-type echo-request; packet-length 100; dscp 10; } then accept; } } } router-id 128.220.41.229; autonomous-system 64497; [edit] user@R2# show policy-options policy-statement redis { from protocol static; then accept; }",
+      "sections": [
+        {
+          "title": "CLI 快速配置",
+          "level": 4,
+          "content": "要快速配置此示例，请复制以下命令，将其粘贴到文本文件中，删除所有换行符，更改详细信息，以便与网络配置匹配，将命令复制并粘贴到 [edit] 层级的 CLI 中，然后从配置模式进入 commit 。 路由器 R1 set interfaces ge-1/1/4 unit 0 family inet6 address abcd::13:14:2:1/120 set interfaces lo0 unit 0 family inet6 address abcd::128:220:21:197/128 set routing-options router-id 128.220.21.197 set routing-options autonomous-system 64496 set protocols bgp group ebgp type external set protocols bgp group ebgp family inet6 unicast set protocols bgp group ebgp family inet6 flow set protocols bgp group ebgp peer-as 64497 set protocols bgp group ebgp neighbor abcd::13:14:2:2 路由器 R2 set interfaces ge-1/0/0 unit 0 family inet6 address abcd::192:2:1:1/120 set interfaces ge-1/1/5 unit 0 family inet6 address abcd::13:14:2:2/120 set interfaces lo0 unit 0 family inet6 address abcd::128:220:41:229/128 set routing-options rib inet6.0 static route abcd::11:11:11:0/120 next-hop abcd::192:2:1:2 set routing-options rib inet6.0 flow route route-1 match destination abcd::11:11:11:10/128 set routing-options rib inet6.0 flow route route-1 match protocol tcp set routing-options rib inet6.0 flow route route-1 match destination-port http set routing-options rib inet6.0 flow route route-1 match source-port 65535 set routing-options rib inet6.0 flow route route-1 then discard set routing-options rib inet6.0 flow route route-2 match destination abcd::11:11:11:30/128 set routing-options rib inet6.0 flow route route-2 match icmp6-type echo-request set routing-options rib inet6.0 flow route route-2 match packet-length 100 set routing-options rib inet6.0 flow route route-2 match dscp 10 set routing-options rib inet6.0 flow route route-2 then accept set routing-options router-id 128.220.41.229 set routing-options autonomous-system 64497 set protocols bgp group ebgp type external set protocols bgp group ebgp family inet6 unicast set protocols bgp group ebgp family inet6 flow set protocols bgp group ebgp export redis set protocols bgp group ebgp peer-as 64496 set protocols bgp group ebgp neighbor abcd::13:14:2:1 set policy-options policy-statement redis from protocol static set policy-options policy-statement redis then accept",
+          "commands_by_device": {
+            "路由器 R1": "set interfaces ge-1/1/4 unit 0 family inet6 address abcd::13:14:2:1/120\nset interfaces lo0 unit 0 family inet6 address abcd::128:220:21:197/128\nset routing-options router-id 128.220.21.197\nset routing-options autonomous-system 64496\nset protocols bgp group ebgp type external\nset protocols bgp group ebgp family inet6 unicast\nset protocols bgp group ebgp family inet6 flow\nset protocols bgp group ebgp peer-as 64497\nset protocols bgp group ebgp neighbor abcd::13:14:2:2",
+            "路由器 R2": "set interfaces ge-1/0/0 unit 0 family inet6 address abcd::192:2:1:1/120\nset interfaces ge-1/1/5 unit 0 family inet6 address abcd::13:14:2:2/120\nset interfaces lo0 unit 0 family inet6 address abcd::128:220:41:229/128\nset routing-options rib inet6.0 static route abcd::11:11:11:0/120 next-hop abcd::192:2:1:2\nset routing-options rib inet6.0 flow route route-1 match destination abcd::11:11:11:10/128\nset routing-options rib inet6.0 flow route route-1 match protocol tcp\nset routing-options rib inet6.0 flow route route-1 match destination-port http\nset routing-options rib inet6.0 flow route route-1 match source-port 65535\nset routing-options rib inet6.0 flow route route-1 then discard\nset routing-options rib inet6.0 flow route route-2 match destination abcd::11:11:11:30/128\nset routing-options rib inet6.0 flow route route-2 match icmp6-type echo-request\nset routing-options rib inet6.0 flow route route-2 match packet-length 100\nset routing-options rib inet6.0 flow route route-2 match dscp 10\nset routing-options rib inet6.0 flow route route-2 then accept\nset routing-options router-id 128.220.41.229\nset routing-options autonomous-system 64497\nset protocols bgp group ebgp type external\nset protocols bgp group ebgp family inet6 unicast\nset protocols bgp group ebgp family inet6 flow\nset protocols bgp group ebgp export redis\nset protocols bgp group ebgp peer-as 64496\nset protocols bgp group ebgp neighbor abcd::13:14:2:1\nset policy-options policy-statement redis from protocol static\nset policy-options policy-statement redis then accept"
+          }
+        },
+        {
+          "title": "配置路由器 R2",
+          "level": 4,
+          "content": "以下示例要求您在配置层次结构中导航各个级别。有关导航 CLI 的信息，请参阅 CLI 用户指南中的在配置模式下使用 CLI 编辑器。 要配置路由器 R2： 注： 修改相应的接口名称、地址和其他参数后，对路由器 R1 重复此过程。 修改相应的接口名称、地址和其他参数后，对路由器 R1 重复此过程。 使用 IPv6 地址配置接口。 [edit interfaces] user@R2# set ge-1/0/0 unit 0 family inet6 address abcd::192:2:1:1/120 user@R2# set ge-1/1/5 unit 0 family inet6 address abcd::13:14:2:2/120 配置 IPv6 环路地址。 [edit interfaces] user@R2# set lo0 unit 0 family inet6 address abcd::128:220:41:229/128 配置路由器 ID 和自治系统 (AS) 编号。 [edit routing-options] user@R2# set router-id 128.220.41.229 user@R2# set autonomous-system 64497 配置路由器 R1 和路由器 R2 之间的 EBGP 对等会话。 [edit protocols] user@R2# set bgp group ebgp type external user@R2# set bgp group ebgp family inet6 unicast user@R2# set bgp group ebgp family inet6 flow user@R2# set bgp group ebgp export redis user@R2# set bgp group ebgp peer-as 64496 user@R2# set bgp group ebgp neighbor abcd::13:14:2:1 配置静态路由和下一跃点。因此，路由将添加到路由表中以验证此示例中的要素。 [edit routing-options] user@R2# set rib inet6.0 static route abcd::11:11:11:0/120 next-hop abcd::192:2:1:2 指定流规范条件。 [edit routing-options] user@R2# set rib inet6.0 flow route route-1 match destination abcd::11:11:11:10/128 user@R2# set rib inet6.0 flow route route-1 match protocol tcp user@R2# set rib inet6.0 flow route route-1 match destination-port http user@R2# set rib inet6.0 flow route route-1 match source-port 65535 配置操作 discard 以丢弃与指定匹配条件匹配的数据包。 [edit routing-options] user@R2# set rib inet6.0 flow route route-1 then discard [edit routing-options] user@R2# set rib inet6.0 flow route route-2 match destination abcd::11:11:11:30/128 user@R2# set rib inet6.0 flow route route-2 match icmp6-type echo-request user@R2# set rib inet6.0 flow route route-2 match packet-length 100 user@R2# set rib inet6.0 flow route route-2 match dscp 10 配置 accept 操作以接受与指定匹配条件匹配的数据包 [edit routing-options] user@R2# set rib inet6.0 flow route route-2 then accept 定义允许 BGP 接受静态路由的策略。 [edit policy-options] user@R2# set policy-statement redis from protocol static user@R2# set policy-statement redis then accept",
+          "sections": [
+            {
+              "title": "分步过程",
+              "level": 5,
+              "step_by_step": [
+                {
+                  "step": 1,
+                  "description": "使用 IPv6 地址配置接口。",
+                  "code": [
+                    "[edit interfaces]",
+                    "user@R2# set ge-1/0/0 unit 0 family inet6 address abcd::192:2:1:1/120",
+                    "user@R2# set ge-1/1/5 unit 0 family inet6 address abcd::13:14:2:2/120"
+                  ]
+                },
+                {
+                  "step": 2,
+                  "description": "配置 IPv6 环路地址。",
+                  "code": [
+                    "[edit interfaces]",
+                    "user@R2# set lo0 unit 0 family inet6 address abcd::128:220:41:229/128"
+                  ]
+                },
+                {
+                  "step": 3,
+                  "description": "配置路由器 ID 和自治系统 (AS) 编号。",
+                  "code": [
+                    "[edit routing-options]",
+                    "user@R2# set router-id 128.220.41.229",
+                    "user@R2# set autonomous-system 64497"
+                  ]
+                },
+                {
+                  "step": 4,
+                  "description": "配置路由器 R1 和路由器 R2 之间的 EBGP 对等会话。",
+                  "code": [
+                    "[edit protocols]",
+                    "user@R2# set bgp group ebgp type external",
+                    "user@R2# set bgp group ebgp family inet6 unicast",
+                    "user@R2# set bgp group ebgp family inet6 flow",
+                    "user@R2# set bgp group ebgp export redis",
+                    "user@R2# set bgp group ebgp peer-as 64496",
+                    "user@R2# set bgp group ebgp neighbor abcd::13:14:2:1"
+                  ]
+                },
+                {
+                  "step": 5,
+                  "description": "配置静态路由和下一跃点。因此，路由将添加到路由表中以验证此示例中的要素。",
+                  "code": [
+                    "[edit routing-options]",
+                    "user@R2# set rib inet6.0 static route abcd::11:11:11:0/120 next-hop abcd::192:2:1:2"
+                  ]
+                },
+                {
+                  "step": 6,
+                  "description": "指定流规范条件。",
+                  "code": [
+                    "[edit routing-options]",
+                    "user@R2# set rib inet6.0 flow route route-1 match destination abcd::11:11:11:10/128",
+                    "user@R2# set rib inet6.0 flow route route-1 match protocol tcp",
+                    "user@R2# set rib inet6.0 flow route route-1 match destination-port http",
+                    "user@R2# set rib inet6.0 flow route route-1 match source-port 65535"
+                  ]
+                },
+                {
+                  "step": 7,
+                  "description": "配置操作 discard 以丢弃与指定匹配条件匹配的数据包。",
+                  "code": [
+                    "[edit routing-options]",
+                    "user@R2# set rib inet6.0 flow route route-1 then discard"
+                  ]
+                },
+                {
+                  "step": 8,
+                  "description": "指定流规范条件。",
+                  "code": [
+                    "[edit routing-options]",
+                    "user@R2# set rib inet6.0 flow route route-2 match destination abcd::11:11:11:30/128",
+                    "user@R2# set rib inet6.0 flow route route-2 match icmp6-type echo-request",
+                    "user@R2# set rib inet6.0 flow route route-2 match packet-length 100",
+                    "user@R2# set rib inet6.0 flow route route-2 match dscp 10"
+                  ]
+                },
+                {
+                  "step": 9,
+                  "description": "配置 accept 操作以接受与指定匹配条件匹配的数据包",
+                  "code": [
+                    "[edit routing-options]",
+                    "user@R2# set rib inet6.0 flow route route-2 then accept"
+                  ]
+                },
+                {
+                  "step": 10,
+                  "description": "定义允许 BGP 接受静态路由的策略。",
+                  "code": [
+                    "[edit policy-options]",
+                    "user@R2# set policy-statement redis from protocol static",
+                    "user@R2# set policy-statement redis then accept"
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "结果",
+          "level": 4,
+          "content": "在配置模式下，输入 show interfaces 、 show protocols 、 show routing-options 和 show policy-options 命令，以确认您的配置。如果输出未显示预期的配置，请重复此示例中的说明，以便进行更正。",
+          "code": [
+            "[edit]\nuser@R2#show interfacesge-1/0/0 {\n    unit 0 {\n        family inet6 {\n            address abcd::192:2:1:1/120;\n        }\n    }\n}\nge-1/1/5 {\n    unit 0 {\n        family inet6 {\n            address abcd::13:14:2:2/120;\n        }\n    }\n}\nlo0 {\n    unit 0 {\n        family inet6 {\n            address abcd::128:220:41:229/128;\n        }\n    }\n}",
+            "[edit]\nuser@R2#show protocolsbgp {\n    group ebgp {\n        type external;\n        family inet6 {\n            unicast;\n            flow;\n        }\n        export redis;\n        peer-as 64496;\n        neighbor abcd::13:14:2:1;\n    }\n}",
+            "[edit]\nuser@R2#show routing-optionsrib inet6.0 {\n    static {\n        route abcd::11:11:11:0/120 next-hop abcd::192:2:1:2;\n    }\n    flow {\n        route route-1 {\n            match {\n                destination abcd::11:11:11:10/128;\n                protocol tcp;\n                destination-port http;\n                source-port 65535;\n            }\n            then discard;\n        }\n        route route-2 {\n            match {\n                destination abcd::11:11:11:30/128;\n                icmp6-type echo-request;\n                packet-length 100;\n                dscp 10;\n            }\n            then accept;\n        }\n    }\n}\nrouter-id 128.220.41.229;\nautonomous-system 64497;",
+            "[edit]\nuser@R2#show policy-optionspolicy-statement redis {\n    from protocol static;\n    then accept;\n}"
+          ]
+        }
+      ]
+    }
+  ],
+  "content": "此示例说明如何为流量筛选配置 IPv6 流规范。BGP 流规范可用于自动执行流量过滤规则的域间和域内协调，以减轻拒绝服务攻击。 要求 此示例使用以下硬件和软件组件： 两台 MX 系列路由器 Junos OS 16.1 或更高版本 在启用 BGP 以承载 IPv6 流规范路由之前： 在设备接口上配置 IP 地址。 配置 BGP。 配置路由策略，用于将路由（例如静态路由、直接路由或 IGP 路由）从路由表导出到 BGP"
+}

@@ -1,0 +1,671 @@
+{
+  "title": "示例：在 BGP 中通告多条路径",
+  "sections": [
+    {
+      "title": "要求",
+      "level": 3,
+      "content": "此示例使用以下硬件和软件组件： 八个支持 BGP 的设备。 启用 BGP 的设备中有五台不一定需要是路由器。例如，它们可以是 EX 系列以太网交换机。 其中三个支持 BGP 的设备配置为发送多个路径或接收多个路径（或同时发送和接收多个路径）。这三台支持 BGP 的设备必须是 M 系列多服务边缘路由器、MX 系列 5G 通用路由平台或 T 系列核心路由器。 这三台路由器必须运行 Junos OS 11.4 或更高版本。 此示例使用以下硬件和软件组件： 八个支持 BGP 的设备。 启用 BGP 的设备中有五台不一定需要是路由器。例如，它们可以是 EX 系列以太网交换机。 其中三个支持 BGP 的设备配置为发送多个路径或接收多个路径（或同时发送和接收多个路径）。这三台支持 BGP 的设备必须是 M 系列多服务边缘路由器、MX 系列 5G 通用路由平台或 T 系列核心路由器。 这三台路由器必须运行 Junos OS 11.4 或更高版本。"
+    },
+    {
+      "title": "概述",
+      "level": 3,
+      "content": "以下语句用于配置到目标的多个路径： [edit protocols bgp group group-name family family ] add-path { receive; send { include-backup-path include-backup-path ; multipath; path-count path-count ; path-selection-mode { (all-paths | equal-cost-paths); } prefix-policy [ policy-names ... ]; } } 在此示例中，路由器 R5、路由器 R6 和路由器 R7 将静态路由重新分发到 BGP 中。路由器 R1 和路由器 R4 是路由反射器。路由器 R2 和路由器 R3 是路由反射器 R1 的客户端。路由器 R8 是路由反射器 R4 的客户端。 在 BGP 中启用多路径通告时，路由反射是可选的。 通过此 add-path send path-count 6 配置，路由器 R1 配置为向路由器 R4 发送最多 6 条路径（每个目标）。 通过此 add-path receive 配置，路由器 R4 配置为从路由器 R1 接收多条路径。 通过此 add-path send path-count 6 配置，路由器 R4 配置为向路由器 R8 发送最多 6 条路径。 通过此 add-path receive 配置，路由器 R8 配置为从路由器 R4 接收多条路径。 策略配置（以及相应的路由过滤器）将 add-path send prefix-policy allow_199 路由器 R4 限制为仅发送 172.16.199.1/32 路由的多个路径。 图 6 显示了此示例中使用的拓扑。"
+    },
+    {
+      "title": "配置",
+      "level": 3,
+      "content": "要快速配置此示例，请复制以下命令，将其粘贴到文本文件中，删除所有换行符，更改与您的网络配置匹配所需的任何详细信息，然后将命令复制并粘贴到层次结构级别的 CLI [edit] 中。 路由器 R1 set interfaces fe-0/0/0 unit 12 family inet address 10.0.12.1/24 set interfaces fe-0/0/1 unit 13 family inet address 10.0.13.1/24 set interfaces fe-1/0/0 unit 14 family inet address 10.0.14.1/24 set interfaces fe-1/2/0 unit 15 family inet address 10.0.15.1/24 set interfaces lo0 unit 10 family inet address 10.0.0.10/32 set protocols bgp group rr type internal set protocols bgp group rr local-address 10.0.0.10 set protocols bgp group rr cluster 10.0.0.10 set protocols bgp group rr neighbor 10.0.0.20 set protocols bgp group rr neighbor 10.0.0.30 set protocols bgp group e1 type external set protocols bgp group e1 neighbor 10.0.15.2 local-address 10.0.15.1 set protocols bgp group e1 neighbor 10.0.15.2 peer-as 2 set protocols bgp group rr_rr type internal set protocols bgp group rr_rr local-address 10.0.0.10 set protocols bgp group rr_rr neighbor 10.0.0.40 family inet unicast add-path send path-count 6 set protocols ospf area 0.0.0.0 interface lo0.10 passive set protocols ospf area 0.0.0.0 interface fe-0/0/0.12 set protocols ospf area 0.0.0.0 interface fe-0/0/1.13 set protocols ospf area 0.0.0.0 interface fe-1/0/0.14 set protocols ospf area 0.0.0.0 interface fe-1/2/0.15 set routing-options router-id 10.0.0.10 set routing-options autonomous-system 1 路由器 R2 set interfaces fe-1/2/0 unit 21 family inet address 10.0.12.2/24 set interfaces fe-1/2/1 unit 26 family inet address 10.0.26.1/24 set interfaces lo0 unit 20 family inet address 10.0.0.20/32 set protocols bgp group rr type internal set protocols bgp group rr local-address 10.0.0.20 set protocols bgp group rr neighbor 10.0.0.10 export set_nh_self set protocols bgp group e1 type external set protocols bgp group e1 neighbor 10.0.26.2 peer-as 2 set protocols ospf area 0.0.0.0 interface lo0.20 passive set protocols ospf area 0.0.0.0 interface fe-1/2/0.21 set protocols ospf area 0.0.0.0 interface fe-1/2/1.28 set policy-options policy-statement set_nh_self then next-hop self set routing-options autonomous-system 1 路由器 R3 set interfaces fe-1/0/1 unit 31 family inet address 10.0.13.2/24 set interfaces fe-1/0/2 unit 37 family inet address 10.0.37.1/24 set interfaces lo0 unit 30 family inet address 10.0.0.30/32 set protocols bgp group rr type internal set protocols bgp group rr local-address 10.0.0.30 set protocols bgp group rr neighbor 10.0.0.10 export set_nh_self set protocols bgp group e1 type external set protocols bgp group e1 neighbor 10.0.37.2 peer-as 2 set protocols ospf area 0.0.0.0 interface lo0.30 passive set protocols ospf area 0.0.0.0 interface fe-1/0/1.31 set protocols ospf area 0.0.0.0 interface fe-1/0/2.37 set policy-options policy-statement set_nh_self then next-hop self set routing-options autonomous-system 1 路由器 R4 set interfaces fe-1/2/0 unit 41 family inet address 10.0.14.2/24 set interfaces fe-1/2/1 unit 48 family inet address 10.0.48.1/24 set interfaces lo0 unit 40 family inet address 10.0.0.40/32 set protocols bgp group rr type internal set protocols bgp group rr local-address 10.0.0.40 set protocols bgp group rr family inet unicast add-path receive set protocols bgp group rr neighbor 10.0.0.10 set protocols bgp group rr_client type internal set protocols bgp group rr_client local-address 10.0.0.40 set protocols bgp group rr_client cluster 10.0.0.40 set protocols bgp group rr_client neighbor 10.0.0.80 family inet unicast add-path send path-count 6 set protocols bgp group rr_client neighbor 10.0.0.80 family inet unicast add-path send prefix-policy allow_199 set protocols ospf area 0.0.0.0 interface fe-1/2/0.41 set protocols ospf area 0.0.0.0 interface lo0.40 passive set protocols ospf area 0.0.0.0 interface fe-1/2/1.48 set policy-options policy-statement allow_199 from route-filter 172.16.199.1/32 exact set policy-options policy-statement allow_199 term match_199 from prefix-list match_199 set policy-options policy-statement allow_199 then add-path send-count 20 set policy-options policy-statement allow_199 then accept set routing-options autonomous-system 1 路由器 R5 set interfaces fe-1/2/0 unit 51 family inet address 10.0.15.2/24 set interfaces lo0 unit 50 family inet address 10.0.0.50/32 set protocols bgp group e1 type external set protocols bgp group e1 neighbor 10.0.15.1 export s2b set protocols bgp group e1 neighbor 10.0.15.1 peer-as 1 set policy-options policy-statement s2b from protocol static set policy-options policy-statement s2b from protocol direct set policy-options policy-statement s2b then as-path-expand 2 set policy-options policy-statement s2b then accept set routing-options autonomous-system 2 set routing-options static route 172.16.199.1/32 reject set routing-options static route 172.16.198.1/32 reject 路由器 R6 set interfaces fe-1/2/0 unit 62 family inet address 10.0.26.2/24 set interfaces lo0 unit 60 family inet address 10.0.0.60/32 set protocols bgp group e1 type external set protocols bgp group e1 neighbor 10.0.26.1 export s2b set protocols bgp group e1 neighbor 10.0.26.1 peer-as 1 set policy-options policy-statement s2b from protocol static set policy-options policy-statement s2b from protocol direct set policy-options policy-statement s2b then accept set routing-options autonomous-system 2 set routing-options static route 172.16.199.1/32 reject set routing-options static route 172.16.198.1/32 reject 路由器 R7 set interfaces fe-1/2/0 unit 73 family inet address 10.0.37.2/24 set interfaces lo0 unit 70 family inet address 10.0.0.70/32 set protocols bgp group e1 type external set protocols bgp group e1 neighbor 10.0.37.1 export s2b set protocols bgp group e1 neighbor 10.0.37.1 peer-as 1 set policy-options policy-statement s2b from protocol static set policy-options policy-statement s2b from protocol direct set policy-options policy-statement s2b then accept set routing-options autonomous-system 2 set routing-options static route 172.16.199.1/32 reject 路由器 R8 set interfaces fe-1/2/0 unit 84 family inet address 10.0.48.2/24 set interfaces lo0 unit 80 family inet address 10.0.0.80/32 set protocols bgp group rr type internal set protocols bgp group rr local-address 10.0.0.80 set protocols bgp group rr neighbor 10.0.0.40 family inet unicast add-path receive set protocols ospf area 0.0.0.0 interface lo0.80 passive set protocols ospf area 0.0.0.0 interface fe-1/2/0.84 set routing-options autonomous-system 1 下面的示例要求您在各个配置层级中进行导航。有关导航 CLI 的信息，请参阅《Junos OS CLI 用户指南》中的在配置模式下使用 CLI 编辑器。 要配置路由器 R1： 配置路由器 R2、路由器 R3、路由器 R4 和路由器 R5 的接口，并配置环路 （lo0） 接口。 [edit interfaces] user@R1# set fe-0/0/0 unit 12 family inet address 10.0.12.1/24 user@R1# set fe-0/0/1 unit 13 family inet address 10.0.13.1/24 user@R1# set fe-1/0/0 unit 14 family inet address 10.0.14.1/24 user@R1# set fe-1/2/0 unit 15 family inet address 10.0.15.1/24 user@R1# set lo0 unit 10 family inet address 10.0.0.10/32 在接口上配置 BGP，并配置 IBGP 路由反射。 [edit protocols bgp] user@R1# set group rr type internal user@R1# set group rr local-address 10.0.0.10 user@R1# set group rr cluster 10.0.0.10 user@R1# set group rr neighbor 10.0.0.20 user@R1# set group rr neighbor 10.0.0.30 user@R1# set group rr_rr type internal user@R1# set group rr_rr local-address 10.0.0.10 user@R1# set group e1 type external user@R1# set group e1 neighbor 10.0.15.2 local-address 10.0.15.1 user@R1# set group e1 neighbor 10.0.15.2 peer-as 2 将路由器 R1 配置为向其邻居路由器 R4 发送最多六条路径。 路径的目标可以是路由器 R1 可以通过多个路径到达的任何目标。 [edit protocols bgp] user@R1# set group rr_rr neighbor 10.0.0.40 family inet unicast add-path send path-count 6 在接口上配置 OSPF。 [edit protocols ospf] user@R1# set area 0.0.0.0 interface lo0.10 passive user@R1# set area 0.0.0.0 interface fe-0/0/0.12 user@R1# set area 0.0.0.0 interface fe-0/0/1.13 user@R1# set area 0.0.0.0 interface fe-1/0/0.14 user@R1# set area 0.0.0.0 interface fe-1/2/0.15 配置路由器 ID 和自治系统编号。 [edit routing-options] user@R1# set router-id 10.0.0.10 user@R1# set autonomous-system 1 如果完成设备配置，请提交配置。 user@R1# commit 在配置模式下，输入 show interfaces 、 show protocols 、 show policy-options 和 show routing-options 命令，以确认您的配置。如果输出未显示预期的配置，请重复此示例中的说明，以便进行更正。 user@R1# show interfaces fe-0/0/0 { unit 12 { family inet { address 10.0.12.1/24; } } } fe-0/0/1 { unit 13 { family inet { address 10.0.13.1/24; } } } fe-1/0/0 { unit 14 { family inet { address 10.0.14.1/24; } } } fe-1/2/0 { unit 15 { family inet { address 10.0.15.1/24; } } } lo0 { unit 10 { family inet { address 10.0.0.10/32; } } } user@R1# show protocols bgp { group rr { type internal; local-address 10.0.0.10; cluster 10.0.0.10; neighbor 10.0.0.20; neighbor 10.0.0.30; } group e1 { type external; neighbor 10.0.15.2 { local-address 10.0.15.1; peer-as 2; } } group rr_rr { type internal; local-address 10.0.0.10; neighbor 10.0.0.40 { family inet { unicast { add-path { send { path-count 6; } } } } } } } ospf { area 0.0.0.0 { interface lo0.10 { passive; } interface fe-0/0/0.12; interface fe-0/0/1.13; interface fe-1/0/0.14; interface fe-1/2/0.15; } } user@R1# show routing-options router-id 10.0.0.10; autonomous-system 1; 要配置路由器 R2： 配置环路 （lo0） 接口以及路由器 R6 和路由器 R1 的接口。 [edit interfaces] user@R2# set fe-1/2/0 unit 21 family inet address 10.0.12.2/24 user@R2# set fe-1/2/1 unit 26 family inet address 10.0.26.1/24 user@R2# set lo0 unit 20 family inet address 10.0.0.20/32 在路由器 R2 的接口上配置 BGP 和 OSPF。 [edit protocols] user@R2# set bgp group rr type internal user@R2# set bgp group rr local-address 10.0.0.20 user@R2# set bgp group e1 type external user@R2# set bgp group e1 neighbor 10.0.26.2 peer-as 2 user@R2# set ospf area 0.0.0.0 interface lo0.20 passive user@R2# set ospf area 0.0.0.0 interface fe-1/2/0.21 user@R2# set ospf area 0.0.0.0 interface fe-1/2/1.28 对于从路由器 R2 发送到路由器 R1 的路由，请将路由器 R2 播发为下一跃点，因为路由器 R1 在 10.0.26.0/24 网络上没有到路由器 R6 地址的路由。 [edit] user@R2# set policy-options policy-statement set_nh_self then next-hop self user@R2# set protocols bgp group rr neighbor 10.0.0.10 export set_nh_self 配置自治系统编号。 [edit] user@R2# set routing-options autonomous-system 1 user@R2# commit 在配置模式下，输入 show interfaces 、 show protocols 、 show policy-options 和 show routing-options 命令确认您的配置。如果输出未显示预期的配置，请重复此示例中的说明，以便进行更正。 user@R2# show interfaces fe-1/2/0 { unit 21 { family inet { address 10.0.12.2/24; } } } fe-1/2/1 { unit 26 { family inet { address 10.0.26.1/24; } } } lo0 { unit 20 { family inet { address 10.0.0.20/32; } } } user@R2# show protocols bgp { group rr { type internal; local-address 10.0.0.20; neighbor 10.0.0.10 { export set_nh_self; } } group e1 { type external; neighbor 10.0.26.2 { peer-as 2; } } } ospf { area 0.0.0.0 { interface lo0.20 { passive; } interface fe-1/2/0.21; interface fe-1/2/1.28; } } user@R2# show policy-options policy-statement set_nh_self { then { next-hop self; } } user@R2# show routing-options autonomous-system 1; 要配置路由器 R3： 配置环路 （lo0） 接口以及路由器 R7 和路由器 R1 的接口。 [edit interfaces] user@R3# set fe-1/0/1 unit 31 family inet address 10.0.13.2/24 user@R3# set fe-1/0/2 unit 37 family inet address 10.0.37.1/24 user@R3# set lo0 unit 30 family inet address 10.0.0.30/32 在路由器 R3 的接口上配置 BGP 和 OSPF。 [edit protocols] user@R3# set bgp group rr type internal user@R3# set bgp group rr local-address 10.0.0.30 user@R3# set bgp group e1 type external user@R3# set bgp group e1 neighbor 10.0.37.2 peer-as 2 user@R3# set ospf area 0.0.0.0 interface lo0.30 passive user@R3# set ospf area 0.0.0.0 interface fe-1/0/1.31 user@R3# set ospf area 0.0.0.0 interface fe-1/0/2.37 对于从路由器 R3 发送到路由器 R1 的路由，请将路由器 R3 播发为下一跃点，因为路由器 R1 在 10.0.37.0/24 网络上没有到路由器 R7 地址的路由。 [edit] user@R3# set policy-options policy-statement set_nh_self then next-hop self user@R3# set protocols bgp group rr neighbor 10.0.0.10 export set_nh_self [edit] user@R3# set routing-options autonomous-system 1 user@R3# commit user@R3# show interfaces fe-1/0/1 { unit 31 { family inet { address 10.0.13.2/24; } } } fe-1/0/2 { unit 37 { family inet { address 10.0.37.1/24; } } } lo0 { unit 30 { family inet { address 10.0.0.30/32; } } } user@R3# show protocols bgp { group rr { type internal; local-address 10.0.0.30; neighbor 10.0.0.10 { export set_nh_self; } } group e1 { type external; neighbor 10.0.37.2 { peer-as 2; } } } ospf { area 0.0.0.0 { interface lo0.30 { passive; } interface fe-1/0/1.31; interface fe-1/0/2.37; } } user@R3# show policy-options policy-statement set_nh_self { then { next-hop self; } } user@R3# show routing-options autonomous-system 1; 要配置路由器 R4： 配置路由器 R1 和路由器 R8 的接口，并配置环路 （lo0） 接口。 [edit interfaces] user@R4# set fe-1/2/0 unit 41 family inet address 10.0.14.2/24 user@R4# set fe-1/2/1 unit 48 family inet address 10.0.48.1/24 user@R4# set lo0 unit 40 family inet address 10.0.0.40/32 [edit protocols bgp] user@R4# set group rr type internal user@R4# set group rr local-address 10.0.0.40 user@R4# set group rr neighbor 10.0.0.10 user@R4# set group rr_client type internal user@R4# set group rr_client local-address 10.0.0.40 user@R4# set group rr_client cluster 10.0.0.40 将路由器 R4 配置为向其邻居路由器 R8 发送最多 6 条路径。 路径的目的地可以是路由器 R4 可以通过多个路径到达的任何目标。 [edit protocols bgp] user@R4# set group rr_client neighbor 10.0.0.80 family inet unicast add-path send path-count 6 将路由器 R4 配置为从其邻居路由器 R1 接收多条路径。 [edit protocols bgp group rr family inet unicast] user@R4# set add-path receive [edit protocols ospf area 0.0.0.0] user@R4# set interface fe-1/2/0.41 user@R4# set interface lo0.40 passive user@R4# set interface fe-1/2/1.48 配置允许路由器 R4 将路由器 R8 多个路径发送到 172.16.199.1/32 路由的策略。 路由器 R4 接收 172.16.198.1/32 路由和 172.16.199.1/32 路由的多条路径。但是，由于此策略，路由器 R4 仅发送 172.16.199.1/32 路由的多个路径。 [edit protocols bgp group rr_client neighbor 10.0.0.80 family inet unicast] user@R4# set add-path send prefix-policy allow_199 [edit policy-options policy-statement allow_199] user@R4# set from route-filter 172.16.199.1/32 exact user@R4# set then accept 路由器 R4 还可以配置为为 添加路径播发前缀 的子集发送多达 20 个 BGP add-path 路由。 [edit policy-options policy-statement allow_199] user@R4# set term match_199 from prefix-list match_199 user@R4# set then add-path send-count 20 [edit routing-options] user@R4# set autonomous-system 1 user@R4# commit user@R4# show interfaces fe-1/2/0 { unit 41 { family inet { address 10.0.14.2/24; } } } fe-1/2/1 { unit 48 { family inet { address 10.0.48.1/24; } } } lo0 { unit 40 { family inet { address 10.0.0.40/32; } } } user@R4# show protocols bgp { group rr { type internal; local-address 10.0.0.40; family inet { unicast { add-path { receive; } } } neighbor 10.0.0.10; } group rr_client { type internal; local-address 10.0.0.40; cluster 10.0.0.40; neighbor 10.0.0.80 { family inet { unicast { add-path { send { path-count 6; prefix-policy allow_199; } } } } } } } ospf { area 0.0.0.0 { interface lo0.40 { passive; } interface fe-1/2/0.41; interface fe-1/2/1.48; } } user@R4# show policy-options policy-statement allow_199 { from { route-filter 172.16.199.1/32 exact; } from term match_199 { prefix-list match_199; } then add-path send-count 20; then accept; } user@R4# show routing-options autonomous-system 1; 要配置路由器 R5： 配置环路 （lo0） 接口和路由器 R1 接口。 [edit interfaces] user@R5# set fe-1/2/0 unit 51 family inet address 10.0.15.2/24 user@R5# set lo0 unit 50 family inet address 10.0.0.50/32 在路由器 R5 的接口上配置 BGP。 [edit protocols bgp group e1] user@R5# set type external user@R5# set neighbor 10.0.15.1 peer-as 1 创建静态路由以重新分发到 BGP。 [edit routing-options] user@R5# set static route 172.16.199.1/32 reject user@R5# set static route 172.16.198.1/32 reject 将静态和直接路由重新分发到 BGP 中。 [edit protocols bgp group e1 neighbor 10.0.15.1] user@R5# set export s2b [edit policy-options policy-statement s2b] user@R5# set from protocol static user@R5# set from protocol direct user@R5# set then as-path-expand 2 user@R5# set then accept [edit routing-options] user@R5# set autonomous-system 2 user@R5# commit user@R5# show interfaces fe-1/2/0 { unit 51 { family inet { address 10.0.15.2/24; } } } lo0 { unit 50 { family inet { address 10.0.0.50/32; } } } user@R5# show protocols bgp { group e1 { type external; neighbor 10.0.15.1 { export s2b; peer-as 1; } } } user@R5# show policy-options policy-statement s2b { from protocol [ static direct ]; then { as-path-expand 2; accept; } } user@R5# show routing-options static { route 172.16.198.1/32 reject; route 172.16.199.1/32 reject; } autonomous-system 2; 要配置路由器 R6： 配置环路 （lo0） 接口和路由器 R2 接口。 [edit interfaces] user@R6# set fe-1/2/0 unit 62 family inet address 10.0.26.2/24 user@R6# set lo0 unit 60 family inet address 10.0.0.60/32 在路由器 R6 的接口上配置 BGP。 [edit protocols] user@R6# set bgp group e1 type external user@R6# set bgp group e1 neighbor 10.0.26.1 peer-as 1 [edit] user@R6# set routing-options static route 172.16.199.1/32 reject user@R6# set routing-options static route 172.16.198.1/32 reject 将来自路由器 R6 路由表的静态和直接路由重新分配到 BGP。 [edit protocols bgp group e1 neighbor 10.0.26.1] user@R6# set export s2b [edit policy-options policy-statement s2b] user@R6# set from protocol static user@R6# set from protocol direct user@R6# set then accept [edit routing-options] user@R6# set autonomous-system 2 user@R6# commit user@R6# show interfaces fe-1/2/0 { unit 62 { family inet { address 10.0.26.2/24; } } } lo0 { unit 60 { family inet { address 10.0.0.60/32; } } } user@R6# show protocols bgp { group e1 { type external; neighbor 10.0.26.1 { export s2b; peer-as 1; } } } user@R6# show policy-options policy-statement s2b { from protocol [ static direct ]; then accept; } user@R6# show routing-options static { route 172.16.198.1/32 reject; route 172.16.199.1/32 reject; } autonomous-system 2; 要配置路由器 R7： 配置环路 （lo0） 接口和路由器 R3 接口。 [edit interfaces] user@R7# set fe-1/2/0 unit 73 family inet address 10.0.37.2/24 user@R7# set lo0 unit 70 family inet address 10.0.0.70/32 在路由器 R7 的接口上配置 BGP。 [edit protocols bgp group e1] user@R7# set type external user@R7# set neighbor 10.0.37.1 peer-as 1 [edit] user@R7# set routing-options static route 172.16.199.1/32 reject 将来自路由器 R7 路由表的静态和直接路由重新分发到 BGP 中。 [edit protocols bgp group e1 neighbor 10.0.37.1] user@R7# set export s2b [edit policy-options policy-statement s2b] user@R7# set from protocol static user@R7# set from protocol direct user@R7# set then accept [edit routing-options] user@R7# set autonomous-system 2 user@R7# commit user@R7# show interfaces fe-1/2/0 { unit 73 { family inet { address 10.0.37.2/24; } } } lo0 { unit 70 { family inet { address 10.0.0.70/32; } } } user@R7# show protocols bgp { group e1 { type external; neighbor 10.0.37.1 { export s2b; peer-as 1; } } } user@R7# show policy-options policy-statement s2b { from protocol [ static direct ]; then accept; } user@R7# show routing-options static { route 172.16.199.1/32 reject; } autonomous-system 2; 要配置路由器 R8： 配置环路 （lo0） 接口和路由器 R4 接口。 [edit interfaces] user@R8# set fe-1/2/0 unit 84 family inet address 10.0.48.2/24 user@R8# set lo0 unit 80 family inet address 10.0.0.80/32 在路由器 R8 的接口上配置 BGP 和 OSPF。 [edit protocols] user@R8# set bgp group rr type internal user@R8# set bgp group rr local-address 10.0.0.80 user@R8# set ospf area 0.0.0.0 interface lo0.80 passive user@R8# set ospf area 0.0.0.0 interface fe-1/2/0.84 将路由器 R8 配置为从其邻居路由器 R4 接收多条路径。 [edit protocols] user@R8# set bgp group rr neighbor 10.0.0.40 family inet unicast add-path receive [edit] user@R8# set routing-options autonomous-system 1 user@R8# commit user@R8# show interfaces fe-1/2/0 { unit 84 { family inet { address 10.0.48.2/24; } } } lo0 { unit 80 { family inet { address 10.0.0.80/32; } } } user@R8# show protocols bgp { group rr { type internal; local-address 10.0.0.80; neighbor 10.0.0.40 { family inet { unicast { add-path { receive; } } } } } } ospf { area 0.0.0.0 { interface lo0.80 { passive; } interface fe-1/2/0.84; } } user@R8# show routing-options autonomous-system 1;",
+      "sections": [
+        {
+          "title": "CLI 快速配置",
+          "level": 4,
+          "content": "要快速配置此示例，请复制以下命令，将其粘贴到文本文件中，删除所有换行符，更改与您的网络配置匹配所需的任何详细信息，然后将命令复制并粘贴到层次结构级别的 CLI [edit] 中。 路由器 R1 set interfaces fe-0/0/0 unit 12 family inet address 10.0.12.1/24 set interfaces fe-0/0/1 unit 13 family inet address 10.0.13.1/24 set interfaces fe-1/0/0 unit 14 family inet address 10.0.14.1/24 set interfaces fe-1/2/0 unit 15 family inet address 10.0.15.1/24 set interfaces lo0 unit 10 family inet address 10.0.0.10/32 set protocols bgp group rr type internal set protocols bgp group rr local-address 10.0.0.10 set protocols bgp group rr cluster 10.0.0.10 set protocols bgp group rr neighbor 10.0.0.20 set protocols bgp group rr neighbor 10.0.0.30 set protocols bgp group e1 type external set protocols bgp group e1 neighbor 10.0.15.2 local-address 10.0.15.1 set protocols bgp group e1 neighbor 10.0.15.2 peer-as 2 set protocols bgp group rr_rr type internal set protocols bgp group rr_rr local-address 10.0.0.10 set protocols bgp group rr_rr neighbor 10.0.0.40 family inet unicast add-path send path-count 6 set protocols ospf area 0.0.0.0 interface lo0.10 passive set protocols ospf area 0.0.0.0 interface fe-0/0/0.12 set protocols ospf area 0.0.0.0 interface fe-0/0/1.13 set protocols ospf area 0.0.0.0 interface fe-1/0/0.14 set protocols ospf area 0.0.0.0 interface fe-1/2/0.15 set routing-options router-id 10.0.0.10 set routing-options autonomous-system 1 路由器 R2 set interfaces fe-1/2/0 unit 21 family inet address 10.0.12.2/24 set interfaces fe-1/2/1 unit 26 family inet address 10.0.26.1/24 set interfaces lo0 unit 20 family inet address 10.0.0.20/32 set protocols bgp group rr type internal set protocols bgp group rr local-address 10.0.0.20 set protocols bgp group rr neighbor 10.0.0.10 export set_nh_self set protocols bgp group e1 type external set protocols bgp group e1 neighbor 10.0.26.2 peer-as 2 set protocols ospf area 0.0.0.0 interface lo0.20 passive set protocols ospf area 0.0.0.0 interface fe-1/2/0.21 set protocols ospf area 0.0.0.0 interface fe-1/2/1.28 set policy-options policy-statement set_nh_self then next-hop self set routing-options autonomous-system 1 路由器 R3 set interfaces fe-1/0/1 unit 31 family inet address 10.0.13.2/24 set interfaces fe-1/0/2 unit 37 family inet address 10.0.37.1/24 set interfaces lo0 unit 30 family inet address 10.0.0.30/32 set protocols bgp group rr type internal set protocols bgp group rr local-address 10.0.0.30 set protocols bgp group rr neighbor 10.0.0.10 export set_nh_self set protocols bgp group e1 type external set protocols bgp group e1 neighbor 10.0.37.2 peer-as 2 set protocols ospf area 0.0.0.0 interface lo0.30 passive set protocols ospf area 0.0.0.0 interface fe-1/0/1.31 set protocols ospf area 0.0.0.0 interface fe-1/0/2.37 set policy-options policy-statement set_nh_self then next-hop self set routing-options autonomous-system 1 路由器 R4 set interfaces fe-1/2/0 unit 41 family inet address 10.0.14.2/24 set interfaces fe-1/2/1 unit 48 family inet address 10.0.48.1/24 set interfaces lo0 unit 40 family inet address 10.0.0.40/32 set protocols bgp group rr type internal set protocols bgp group rr local-address 10.0.0.40 set protocols bgp group rr family inet unicast add-path receive set protocols bgp group rr neighbor 10.0.0.10 set protocols bgp group rr_client type internal set protocols bgp group rr_client local-address 10.0.0.40 set protocols bgp group rr_client cluster 10.0.0.40 set protocols bgp group rr_client neighbor 10.0.0.80 family inet unicast add-path send path-count 6 set protocols bgp group rr_client neighbor 10.0.0.80 family inet unicast add-path send prefix-policy allow_199 set protocols ospf area 0.0.0.0 interface fe-1/2/0.41 set protocols ospf area 0.0.0.0 interface lo0.40 passive set protocols ospf area 0.0.0.0 interface fe-1/2/1.48 set policy-options policy-statement allow_199 from route-filter 172.16.199.1/32 exact set policy-options policy-statement allow_199 term match_199 from prefix-list match_199 set policy-options policy-statement allow_199 then add-path send-count 20 set policy-options policy-statement allow_199 then accept set routing-options autonomous-system 1 路由器 R5 set interfaces fe-1/2/0 unit 51 family inet address 10.0.15.2/24 set interfaces lo0 unit 50 family inet address 10.0.0.50/32 set protocols bgp group e1 type external set protocols bgp group e1 neighbor 10.0.15.1 export s2b set protocols bgp group e1 neighbor 10.0.15.1 peer-as 1 set policy-options policy-statement s2b from protocol static set policy-options policy-statement s2b from protocol direct set policy-options policy-statement s2b then as-path-expand 2 set policy-options policy-statement s2b then accept set routing-options autonomous-system 2 set routing-options static route 172.16.199.1/32 reject set routing-options static route 172.16.198.1/32 reject 路由器 R6 set interfaces fe-1/2/0 unit 62 family inet address 10.0.26.2/24 set interfaces lo0 unit 60 family inet address 10.0.0.60/32 set protocols bgp group e1 type external set protocols bgp group e1 neighbor 10.0.26.1 export s2b set protocols bgp group e1 neighbor 10.0.26.1 peer-as 1 set policy-options policy-statement s2b from protocol static set policy-options policy-statement s2b from protocol direct set policy-options policy-statement s2b then accept set routing-options autonomous-system 2 set routing-options static route 172.16.199.1/32 reject set routing-options static route 172.16.198.1/32 reject 路由器 R7 set interfaces fe-1/2/0 unit 73 family inet address 10.0.37.2/24 set interfaces lo0 unit 70 family inet address 10.0.0.70/32 set protocols bgp group e1 type external set protocols bgp group e1 neighbor 10.0.37.1 export s2b set protocols bgp group e1 neighbor 10.0.37.1 peer-as 1 set policy-options policy-statement s2b from protocol static set policy-options policy-statement s2b from protocol direct set policy-options policy-statement s2b then accept set routing-options autonomous-system 2 set routing-options static route 172.16.199.1/32 reject 路由器 R8 set interfaces fe-1/2/0 unit 84 family inet address 10.0.48.2/24 set interfaces lo0 unit 80 family inet address 10.0.0.80/32 set protocols bgp group rr type internal set protocols bgp group rr local-address 10.0.0.80 set protocols bgp group rr neighbor 10.0.0.40 family inet unicast add-path receive set protocols ospf area 0.0.0.0 interface lo0.80 passive set protocols ospf area 0.0.0.0 interface fe-1/2/0.84 set routing-options autonomous-system 1",
+          "commands_by_device": {
+            "路由器 R1": "set interfaces fe-0/0/0 unit 12 family inet address 10.0.12.1/24\nset interfaces fe-0/0/1 unit 13 family inet address 10.0.13.1/24\nset interfaces fe-1/0/0 unit 14 family inet address 10.0.14.1/24\nset interfaces fe-1/2/0 unit 15 family inet address 10.0.15.1/24\nset interfaces lo0 unit 10 family inet address 10.0.0.10/32\nset protocols bgp group rr type internal\nset protocols bgp group rr local-address 10.0.0.10\nset protocols bgp group rr cluster 10.0.0.10\nset protocols bgp group rr neighbor 10.0.0.20\nset protocols bgp group rr neighbor 10.0.0.30\nset protocols bgp group e1 type external\nset protocols bgp group e1 neighbor 10.0.15.2 local-address 10.0.15.1\nset protocols bgp group e1 neighbor 10.0.15.2 peer-as 2\nset protocols bgp group rr_rr type internal\nset protocols bgp group rr_rr local-address 10.0.0.10\nset protocols bgp group rr_rr neighbor 10.0.0.40 family inet unicast add-path send path-count 6\nset protocols ospf area 0.0.0.0 interface lo0.10 passive\nset protocols ospf area 0.0.0.0 interface fe-0/0/0.12\nset protocols ospf area 0.0.0.0 interface fe-0/0/1.13\nset protocols ospf area 0.0.0.0 interface fe-1/0/0.14\nset protocols ospf area 0.0.0.0 interface fe-1/2/0.15\nset routing-options router-id 10.0.0.10\nset routing-options autonomous-system 1",
+            "路由器 R2": "set interfaces fe-1/2/0 unit 21 family inet address 10.0.12.2/24\nset interfaces fe-1/2/1 unit 26 family inet address 10.0.26.1/24\nset interfaces lo0 unit 20 family inet address 10.0.0.20/32\nset protocols bgp group rr type internal\nset protocols bgp group rr local-address 10.0.0.20\nset protocols bgp group rr neighbor 10.0.0.10 export set_nh_self\nset protocols bgp group e1 type external\nset protocols bgp group e1 neighbor 10.0.26.2 peer-as 2\nset protocols ospf area 0.0.0.0 interface lo0.20 passive\nset protocols ospf area 0.0.0.0 interface fe-1/2/0.21\nset protocols ospf area 0.0.0.0 interface fe-1/2/1.28\nset policy-options policy-statement set_nh_self then next-hop self\nset routing-options autonomous-system 1",
+            "路由器 R3": "set interfaces fe-1/0/1 unit 31 family inet address 10.0.13.2/24\nset interfaces fe-1/0/2 unit 37 family inet address 10.0.37.1/24\nset interfaces lo0 unit 30 family inet address 10.0.0.30/32\nset protocols bgp group rr type internal\nset protocols bgp group rr local-address 10.0.0.30\nset protocols bgp group rr neighbor 10.0.0.10 export set_nh_self\nset protocols bgp group e1 type external\nset protocols bgp group e1 neighbor 10.0.37.2 peer-as 2\nset protocols ospf area 0.0.0.0 interface lo0.30 passive\nset protocols ospf area 0.0.0.0 interface fe-1/0/1.31\nset protocols ospf area 0.0.0.0 interface fe-1/0/2.37\nset policy-options policy-statement set_nh_self then next-hop self\nset routing-options autonomous-system 1",
+            "路由器 R4": "set interfaces fe-1/2/0 unit 41 family inet address 10.0.14.2/24\nset interfaces fe-1/2/1 unit 48 family inet address 10.0.48.1/24\nset interfaces lo0 unit 40 family inet address 10.0.0.40/32\nset protocols bgp group rr type internal\nset protocols bgp group rr local-address 10.0.0.40\nset protocols bgp group rr family inet unicast add-path receive\nset protocols bgp group rr neighbor 10.0.0.10\nset protocols bgp group rr_client type internal\nset protocols bgp group rr_client local-address 10.0.0.40\nset protocols bgp group rr_client cluster 10.0.0.40\nset protocols bgp group rr_client neighbor 10.0.0.80 family inet unicast add-path send path-count 6\nset protocols bgp group rr_client neighbor 10.0.0.80 family inet unicast add-path send prefix-policy allow_199\nset protocols ospf area 0.0.0.0 interface fe-1/2/0.41\nset protocols ospf area 0.0.0.0 interface lo0.40 passive\nset protocols ospf area 0.0.0.0 interface fe-1/2/1.48\nset policy-options policy-statement allow_199 from route-filter 172.16.199.1/32 exact\nset policy-options policy-statement allow_199 term match_199 from prefix-list match_199\nset policy-options policy-statement allow_199 then add-path send-count 20\nset policy-options policy-statement allow_199 then accept\nset routing-options autonomous-system 1",
+            "路由器 R5": "set interfaces fe-1/2/0 unit 51 family inet address 10.0.15.2/24\nset interfaces lo0 unit 50 family inet address 10.0.0.50/32\nset protocols bgp group e1 type external\nset protocols bgp group e1 neighbor 10.0.15.1 export s2b\nset protocols bgp group e1 neighbor 10.0.15.1 peer-as 1\nset policy-options policy-statement s2b from protocol static\nset policy-options policy-statement s2b from protocol direct\nset policy-options policy-statement s2b then as-path-expand 2\nset policy-options policy-statement s2b then accept\nset routing-options autonomous-system 2\nset routing-options static route 172.16.199.1/32 reject\nset routing-options static route 172.16.198.1/32 reject",
+            "路由器 R6": "set interfaces fe-1/2/0 unit 62 family inet address 10.0.26.2/24\nset interfaces lo0 unit 60 family inet address 10.0.0.60/32\nset protocols bgp group e1 type external\nset protocols bgp group e1 neighbor 10.0.26.1 export s2b\nset protocols bgp group e1 neighbor 10.0.26.1 peer-as 1\nset policy-options policy-statement s2b from protocol static\nset policy-options policy-statement s2b from protocol direct\nset policy-options policy-statement s2b then accept\nset routing-options autonomous-system 2\nset routing-options static route 172.16.199.1/32 reject\nset routing-options static route 172.16.198.1/32 reject",
+            "路由器 R7": "set interfaces fe-1/2/0 unit 73 family inet address 10.0.37.2/24\nset interfaces lo0 unit 70 family inet address 10.0.0.70/32\nset protocols bgp group e1 type external\nset protocols bgp group e1 neighbor 10.0.37.1 export s2b\nset protocols bgp group e1 neighbor 10.0.37.1 peer-as 1\nset policy-options policy-statement s2b from protocol static\nset policy-options policy-statement s2b from protocol direct\nset policy-options policy-statement s2b then accept\nset routing-options autonomous-system 2\nset routing-options static route 172.16.199.1/32 reject",
+            "路由器 R8": "set interfaces fe-1/2/0 unit 84 family inet address 10.0.48.2/24\nset interfaces lo0 unit 80 family inet address 10.0.0.80/32\nset protocols bgp group rr type internal\nset protocols bgp group rr local-address 10.0.0.80\nset protocols bgp group rr neighbor 10.0.0.40 family inet unicast add-path receive\nset protocols ospf area 0.0.0.0 interface lo0.80 passive\nset protocols ospf area 0.0.0.0 interface fe-1/2/0.84\nset routing-options autonomous-system 1"
+          }
+        },
+        {
+          "title": "配置路由器 R1",
+          "level": 4,
+          "content": "下面的示例要求您在各个配置层级中进行导航。有关导航 CLI 的信息，请参阅《Junos OS CLI 用户指南》中的在配置模式下使用 CLI 编辑器。 要配置路由器 R1： 配置路由器 R2、路由器 R3、路由器 R4 和路由器 R5 的接口，并配置环路 （lo0） 接口。 [edit interfaces] user@R1# set fe-0/0/0 unit 12 family inet address 10.0.12.1/24 user@R1# set fe-0/0/1 unit 13 family inet address 10.0.13.1/24 user@R1# set fe-1/0/0 unit 14 family inet address 10.0.14.1/24 user@R1# set fe-1/2/0 unit 15 family inet address 10.0.15.1/24 user@R1# set lo0 unit 10 family inet address 10.0.0.10/32 在接口上配置 BGP，并配置 IBGP 路由反射。 [edit protocols bgp] user@R1# set group rr type internal user@R1# set group rr local-address 10.0.0.10 user@R1# set group rr cluster 10.0.0.10 user@R1# set group rr neighbor 10.0.0.20 user@R1# set group rr neighbor 10.0.0.30 user@R1# set group rr_rr type internal user@R1# set group rr_rr local-address 10.0.0.10 user@R1# set group e1 type external user@R1# set group e1 neighbor 10.0.15.2 local-address 10.0.15.1 user@R1# set group e1 neighbor 10.0.15.2 peer-as 2 将路由器 R1 配置为向其邻居路由器 R4 发送最多六条路径。 路径的目标可以是路由器 R1 可以通过多个路径到达的任何目标。 [edit protocols bgp] user@R1# set group rr_rr neighbor 10.0.0.40 family inet unicast add-path send path-count 6 在接口上配置 OSPF。 [edit protocols ospf] user@R1# set area 0.0.0.0 interface lo0.10 passive user@R1# set area 0.0.0.0 interface fe-0/0/0.12 user@R1# set area 0.0.0.0 interface fe-0/0/1.13 user@R1# set area 0.0.0.0 interface fe-1/0/0.14 user@R1# set area 0.0.0.0 interface fe-1/2/0.15 配置路由器 ID 和自治系统编号。 [edit routing-options] user@R1# set router-id 10.0.0.10 user@R1# set autonomous-system 1 如果完成设备配置，请提交配置。 user@R1# commit 在配置模式下，输入 show interfaces 、 show protocols 、 show policy-options 和 show routing-options 命令，以确认您的配置。如果输出未显示预期的配置，请重复此示例中的说明，以便进行更正。 user@R1# show interfaces fe-0/0/0 { unit 12 { family inet { address 10.0.12.1/24; } } } fe-0/0/1 { unit 13 { family inet { address 10.0.13.1/24; } } } fe-1/0/0 { unit 14 { family inet { address 10.0.14.1/24; } } } fe-1/2/0 { unit 15 { family inet { address 10.0.15.1/24; } } } lo0 { unit 10 { family inet { address 10.0.0.10/32; } } } user@R1# show protocols bgp { group rr { type internal; local-address 10.0.0.10; cluster 10.0.0.10; neighbor 10.0.0.20; neighbor 10.0.0.30; } group e1 { type external; neighbor 10.0.15.2 { local-address 10.0.15.1; peer-as 2; } } group rr_rr { type internal; local-address 10.0.0.10; neighbor 10.0.0.40 { family inet { unicast { add-path { send { path-count 6; } } } } } } } ospf { area 0.0.0.0 { interface lo0.10 { passive; } interface fe-0/0/0.12; interface fe-0/0/1.13; interface fe-1/0/0.14; interface fe-1/2/0.15; } } user@R1# show routing-options router-id 10.0.0.10; autonomous-system 1;",
+          "sections": [
+            {
+              "title": "分步过程",
+              "level": 5,
+              "step_by_step": [
+                {
+                  "step": 1,
+                  "description": "配置路由器 R2、路由器 R3、路由器 R4 和路由器 R5 的接口，并配置环路 （lo0） 接口。",
+                  "code": [
+                    "[edit interfaces]",
+                    "user@R1# set fe-0/0/0 unit 12 family inet address 10.0.12.1/24",
+                    "user@R1# set fe-0/0/1 unit 13 family inet address 10.0.13.1/24",
+                    "user@R1# set fe-1/0/0 unit 14 family inet address 10.0.14.1/24",
+                    "user@R1# set fe-1/2/0 unit 15 family inet address 10.0.15.1/24",
+                    "user@R1#set lo0 unit 10 family inet address 10.0.0.10/32"
+                  ]
+                },
+                {
+                  "step": 2,
+                  "description": "在接口上配置 BGP，并配置 IBGP 路由反射。",
+                  "code": [
+                    "[edit protocols bgp]",
+                    "user@R1# set group rr type internal",
+                    "user@R1# set group rr local-address 10.0.0.10",
+                    "user@R1# set group rr cluster 10.0.0.10",
+                    "user@R1# set group rr neighbor 10.0.0.20",
+                    "user@R1# set group rr neighbor 10.0.0.30",
+                    "user@R1# set group rr_rr type internal",
+                    "user@R1# set group rr_rr local-address 10.0.0.10",
+                    "user@R1# set group e1 type external",
+                    "user@R1# set group e1 neighbor 10.0.15.2 local-address 10.0.15.1",
+                    "user@R1# set group e1 neighbor 10.0.15.2 peer-as 2"
+                  ]
+                },
+                {
+                  "step": 3,
+                  "description": "将路由器 R1 配置为向其邻居路由器 R4 发送最多六条路径。",
+                  "code": [
+                    "[edit protocols bgp]",
+                    "user@R1# set group rr_rr neighbor 10.0.0.40 family inet unicast add-path send path-count 6"
+                  ]
+                },
+                {
+                  "step": 4,
+                  "description": "在接口上配置 OSPF。",
+                  "code": [
+                    "[edit protocols ospf]",
+                    "user@R1# set area 0.0.0.0 interface lo0.10 passive",
+                    "user@R1# set area 0.0.0.0 interface fe-0/0/0.12",
+                    "user@R1# set area 0.0.0.0 interface fe-0/0/1.13",
+                    "user@R1# set area 0.0.0.0 interface fe-1/0/0.14",
+                    "user@R1# set area 0.0.0.0 interface fe-1/2/0.15"
+                  ]
+                },
+                {
+                  "step": 5,
+                  "description": "配置路由器 ID 和自治系统编号。",
+                  "code": [
+                    "[edit routing-options]",
+                    "user@R1# set router-id 10.0.0.10",
+                    "user@R1# set autonomous-system 1"
+                  ]
+                },
+                {
+                  "step": 6,
+                  "description": "如果完成设备配置，请提交配置。",
+                  "code": [
+                    "user@R1# commit"
+                  ]
+                }
+              ]
+            },
+            {
+              "title": "结果",
+              "level": 5,
+              "content": "在配置模式下，输入 show interfaces 、 show protocols 、 show policy-options 和 show routing-options 命令，以确认您的配置。如果输出未显示预期的配置，请重复此示例中的说明，以便进行更正。",
+              "code": [
+                "user@R1#show interfacesfe-0/0/0 {\n    unit 12 {\n        family inet {\n            address 10.0.12.1/24;\n        }\n    }\n}\nfe-0/0/1 {\n    unit 13 {\n        family inet {\n            address 10.0.13.1/24;\n        }\n    }\n}\nfe-1/0/0 {\n    unit 14 {\n        family inet {\n            address 10.0.14.1/24;\n        }\n    }\n}\nfe-1/2/0 {\n    unit 15 {\n        family inet {\n            address 10.0.15.1/24;\n        }\n    }\n}\nlo0 {\n    unit 10 {\n        family inet {\n            address 10.0.0.10/32;\n        }\n    }\n}",
+                "user@R1#show protocolsbgp {\n    group rr {\n        type internal;\n        local-address 10.0.0.10;\n        cluster 10.0.0.10;\n        neighbor 10.0.0.20;\n        neighbor 10.0.0.30;\n    }\n    group e1 {\n        type external;\n        neighbor 10.0.15.2 {\n            local-address 10.0.15.1;\n            peer-as 2;\n        }\n    }\n    group rr_rr {\n        type internal;\n        local-address 10.0.0.10;\n        neighbor 10.0.0.40 {\n            family inet {\n                unicast {\n                    add-path {\n                        send {\n                            path-count 6;\n                        }\n                    }\n                }\n            }\n        }\n    }\n}\nospf {\n    area 0.0.0.0 {\n        interface lo0.10 {\n            passive;\n        }\n        interface fe-0/0/0.12;\n        interface fe-0/0/1.13;\n        interface fe-1/0/0.14;\n        interface fe-1/2/0.15;\n    }\n}",
+                "user@R1#show routing-optionsrouter-id 10.0.0.10;\n autonomous-system 1;"
+              ]
+            }
+          ]
+        },
+        {
+          "title": "配置路由器 R2",
+          "level": 4,
+          "content": "要配置路由器 R2： 配置环路 （lo0） 接口以及路由器 R6 和路由器 R1 的接口。 [edit interfaces] user@R2# set fe-1/2/0 unit 21 family inet address 10.0.12.2/24 user@R2# set fe-1/2/1 unit 26 family inet address 10.0.26.1/24 user@R2# set lo0 unit 20 family inet address 10.0.0.20/32 在路由器 R2 的接口上配置 BGP 和 OSPF。 [edit protocols] user@R2# set bgp group rr type internal user@R2# set bgp group rr local-address 10.0.0.20 user@R2# set bgp group e1 type external user@R2# set bgp group e1 neighbor 10.0.26.2 peer-as 2 user@R2# set ospf area 0.0.0.0 interface lo0.20 passive user@R2# set ospf area 0.0.0.0 interface fe-1/2/0.21 user@R2# set ospf area 0.0.0.0 interface fe-1/2/1.28 对于从路由器 R2 发送到路由器 R1 的路由，请将路由器 R2 播发为下一跃点，因为路由器 R1 在 10.0.26.0/24 网络上没有到路由器 R6 地址的路由。 [edit] user@R2# set policy-options policy-statement set_nh_self then next-hop self user@R2# set protocols bgp group rr neighbor 10.0.0.10 export set_nh_self 配置自治系统编号。 [edit] user@R2# set routing-options autonomous-system 1 如果完成设备配置，请提交配置。 user@R2# commit 在配置模式下，输入 show interfaces 、 show protocols 、 show policy-options 和 show routing-options 命令确认您的配置。如果输出未显示预期的配置，请重复此示例中的说明，以便进行更正。 user@R2# show interfaces fe-1/2/0 { unit 21 { family inet { address 10.0.12.2/24; } } } fe-1/2/1 { unit 26 { family inet { address 10.0.26.1/24; } } } lo0 { unit 20 { family inet { address 10.0.0.20/32; } } } user@R2# show protocols bgp { group rr { type internal; local-address 10.0.0.20; neighbor 10.0.0.10 { export set_nh_self; } } group e1 { type external; neighbor 10.0.26.2 { peer-as 2; } } } ospf { area 0.0.0.0 { interface lo0.20 { passive; } interface fe-1/2/0.21; interface fe-1/2/1.28; } } user@R2# show policy-options policy-statement set_nh_self { then { next-hop self; } } user@R2# show routing-options autonomous-system 1;",
+          "sections": [
+            {
+              "title": "分步过程",
+              "level": 5,
+              "step_by_step": [
+                {
+                  "step": 1,
+                  "description": "配置环路 （lo0） 接口以及路由器 R6 和路由器 R1 的接口。",
+                  "code": [
+                    "[edit interfaces]",
+                    "user@R2# set fe-1/2/0 unit 21 family inet address 10.0.12.2/24",
+                    "user@R2# set fe-1/2/1 unit 26 family inet address 10.0.26.1/24",
+                    "user@R2# set lo0 unit 20 family inet address 10.0.0.20/32"
+                  ]
+                },
+                {
+                  "step": 2,
+                  "description": "在路由器 R2 的接口上配置 BGP 和 OSPF。",
+                  "code": [
+                    "[edit protocols]",
+                    "user@R2# set bgp group rr type internal",
+                    "user@R2# set bgp group rr local-address 10.0.0.20",
+                    "user@R2# set bgp group e1 type external",
+                    "user@R2# set bgp group e1 neighbor 10.0.26.2 peer-as 2",
+                    "user@R2# set ospf area 0.0.0.0 interface lo0.20 passive",
+                    "user@R2# set ospf area 0.0.0.0 interface fe-1/2/0.21",
+                    "user@R2# set ospf area 0.0.0.0 interface fe-1/2/1.28"
+                  ]
+                },
+                {
+                  "step": 3,
+                  "description": "对于从路由器 R2 发送到路由器 R1 的路由，请将路由器 R2 播发为下一跃点，因为路由器 R1 在 10.0.26.0/24 网络上没有到路由器 R6 地址的路由。",
+                  "code": [
+                    "[edit]",
+                    "user@R2# set policy-options policy-statement set_nh_self then next-hop self",
+                    "user@R2# set protocols bgp group rr neighbor 10.0.0.10 export set_nh_self"
+                  ]
+                },
+                {
+                  "step": 4,
+                  "description": "配置自治系统编号。",
+                  "code": [
+                    "[edit]",
+                    "user@R2# set routing-options autonomous-system 1"
+                  ]
+                },
+                {
+                  "step": 5,
+                  "description": "如果完成设备配置，请提交配置。",
+                  "code": [
+                    "user@R2# commit"
+                  ]
+                }
+              ]
+            },
+            {
+              "title": "结果",
+              "level": 5,
+              "content": "在配置模式下，输入 show interfaces 、 show protocols 、 show policy-options 和 show routing-options 命令确认您的配置。如果输出未显示预期的配置，请重复此示例中的说明，以便进行更正。",
+              "code": [
+                "user@R2#show interfacesfe-1/2/0 {\n    unit 21 {\n        family inet {\n            address 10.0.12.2/24;\n        }\n    }\n}\nfe-1/2/1 {\n    unit 26 {\n        family inet {\n            address 10.0.26.1/24;\n        }\n    }\n}\nlo0 {\n    unit 20 {\n        family inet {\n            address 10.0.0.20/32;\n        }\n    }\n}",
+                "user@R2#show protocolsbgp {\n    group rr {\n        type internal;\n        local-address 10.0.0.20;\n        neighbor 10.0.0.10 {\n            export set_nh_self;\n        }\n    }\n    group e1 {\n        type external;\n        neighbor 10.0.26.2 {\n            peer-as 2;\n        }\n    }\n}\nospf {\n    area 0.0.0.0 {\n        interface lo0.20 {\n            passive;\n        }\n        interface fe-1/2/0.21;\n        interface fe-1/2/1.28;\n    }\n}",
+                "user@R2#show policy-optionspolicy-statement set_nh_self {\n    then {\n        next-hop self;\n    }\n}",
+                "user@R2#show routing-optionsautonomous-system 1;"
+              ]
+            }
+          ]
+        },
+        {
+          "title": "配置路由器 R3",
+          "level": 4,
+          "content": "要配置路由器 R3： 配置环路 （lo0） 接口以及路由器 R7 和路由器 R1 的接口。 [edit interfaces] user@R3# set fe-1/0/1 unit 31 family inet address 10.0.13.2/24 user@R3# set fe-1/0/2 unit 37 family inet address 10.0.37.1/24 user@R3# set lo0 unit 30 family inet address 10.0.0.30/32 在路由器 R3 的接口上配置 BGP 和 OSPF。 [edit protocols] user@R3# set bgp group rr type internal user@R3# set bgp group rr local-address 10.0.0.30 user@R3# set bgp group e1 type external user@R3# set bgp group e1 neighbor 10.0.37.2 peer-as 2 user@R3# set ospf area 0.0.0.0 interface lo0.30 passive user@R3# set ospf area 0.0.0.0 interface fe-1/0/1.31 user@R3# set ospf area 0.0.0.0 interface fe-1/0/2.37 对于从路由器 R3 发送到路由器 R1 的路由，请将路由器 R3 播发为下一跃点，因为路由器 R1 在 10.0.37.0/24 网络上没有到路由器 R7 地址的路由。 [edit] user@R3# set policy-options policy-statement set_nh_self then next-hop self user@R3# set protocols bgp group rr neighbor 10.0.0.10 export set_nh_self 配置自治系统编号。 [edit] user@R3# set routing-options autonomous-system 1 如果完成设备配置，请提交配置。 user@R3# commit 在配置模式下，输入 show interfaces 、 show protocols 、 show policy-options 和 show routing-options 命令，以确认您的配置。如果输出未显示预期的配置，请重复此示例中的说明，以便进行更正。 user@R3# show interfaces fe-1/0/1 { unit 31 { family inet { address 10.0.13.2/24; } } } fe-1/0/2 { unit 37 { family inet { address 10.0.37.1/24; } } } lo0 { unit 30 { family inet { address 10.0.0.30/32; } } } user@R3# show protocols bgp { group rr { type internal; local-address 10.0.0.30; neighbor 10.0.0.10 { export set_nh_self; } } group e1 { type external; neighbor 10.0.37.2 { peer-as 2; } } } ospf { area 0.0.0.0 { interface lo0.30 { passive; } interface fe-1/0/1.31; interface fe-1/0/2.37; } } user@R3# show policy-options policy-statement set_nh_self { then { next-hop self; } } user@R3# show routing-options autonomous-system 1;",
+          "sections": [
+            {
+              "title": "分步过程",
+              "level": 5,
+              "step_by_step": [
+                {
+                  "step": 1,
+                  "description": "配置环路 （lo0） 接口以及路由器 R7 和路由器 R1 的接口。",
+                  "code": [
+                    "[edit interfaces]",
+                    "user@R3# set fe-1/0/1 unit 31 family inet address 10.0.13.2/24",
+                    "user@R3# set fe-1/0/2 unit 37 family inet address 10.0.37.1/24",
+                    "user@R3# set lo0 unit 30 family inet address 10.0.0.30/32"
+                  ]
+                },
+                {
+                  "step": 2,
+                  "description": "在路由器 R3 的接口上配置 BGP 和 OSPF。",
+                  "code": [
+                    "[edit protocols]",
+                    "user@R3# set bgp group rr type internal",
+                    "user@R3# set bgp group rr local-address 10.0.0.30",
+                    "user@R3# set bgp group e1 type external",
+                    "user@R3# set bgp group e1 neighbor 10.0.37.2 peer-as 2",
+                    "user@R3# set ospf area 0.0.0.0 interface lo0.30 passive",
+                    "user@R3# set ospf area 0.0.0.0 interface fe-1/0/1.31",
+                    "user@R3# set ospf area 0.0.0.0 interface fe-1/0/2.37"
+                  ]
+                },
+                {
+                  "step": 3,
+                  "description": "对于从路由器 R3 发送到路由器 R1 的路由，请将路由器 R3 播发为下一跃点，因为路由器 R1 在 10.0.37.0/24 网络上没有到路由器 R7 地址的路由。",
+                  "code": [
+                    "[edit]",
+                    "user@R3# set policy-options policy-statement set_nh_self then next-hop self",
+                    "user@R3# set protocols bgp group rr neighbor 10.0.0.10 export set_nh_self"
+                  ]
+                },
+                {
+                  "step": 4,
+                  "description": "配置自治系统编号。",
+                  "code": [
+                    "[edit]",
+                    "user@R3# set routing-options autonomous-system 1"
+                  ]
+                },
+                {
+                  "step": 5,
+                  "description": "如果完成设备配置，请提交配置。",
+                  "code": [
+                    "user@R3# commit"
+                  ]
+                }
+              ]
+            },
+            {
+              "title": "结果",
+              "level": 5,
+              "content": "在配置模式下，输入 show interfaces 、 show protocols 、 show policy-options 和 show routing-options 命令，以确认您的配置。如果输出未显示预期的配置，请重复此示例中的说明，以便进行更正。",
+              "code": [
+                "user@R3#show interfacesfe-1/0/1 {\n    unit 31 {\n        family inet {\n            address 10.0.13.2/24;\n        }\n    }\n}\nfe-1/0/2 {\n    unit 37 {\n        family inet {\n            address 10.0.37.1/24;\n        }\n    }\n}\nlo0 {\n    unit 30 {\n        family inet {\n            address 10.0.0.30/32;\n        }\n    }\n}",
+                "user@R3#show protocolsbgp {\n    group rr {\n        type internal;\n        local-address 10.0.0.30;\n        neighbor 10.0.0.10 {\n            export set_nh_self;\n        }\n    }\n    group e1 {\n        type external;\n        neighbor 10.0.37.2 {\n            peer-as 2;\n        }\n    }\n}\nospf {\n    area 0.0.0.0 {\n        interface lo0.30 {\n            passive;\n        }\n        interface fe-1/0/1.31;\n        interface fe-1/0/2.37;\n    }\n}\nuser@R3#show policy-optionspolicy-statement set_nh_self {\n    then {\n        next-hop self;\n    }\n}",
+                "user@R3#show routing-optionsautonomous-system 1;"
+              ]
+            }
+          ]
+        },
+        {
+          "title": "配置路由器 R4",
+          "level": 4,
+          "content": "要配置路由器 R4： 配置路由器 R1 和路由器 R8 的接口，并配置环路 （lo0） 接口。 [edit interfaces] user@R4# set fe-1/2/0 unit 41 family inet address 10.0.14.2/24 user@R4# set fe-1/2/1 unit 48 family inet address 10.0.48.1/24 user@R4# set lo0 unit 40 family inet address 10.0.0.40/32 在接口上配置 BGP，并配置 IBGP 路由反射。 [edit protocols bgp] user@R4# set group rr type internal user@R4# set group rr local-address 10.0.0.40 user@R4# set group rr neighbor 10.0.0.10 user@R4# set group rr_client type internal user@R4# set group rr_client local-address 10.0.0.40 user@R4# set group rr_client cluster 10.0.0.40 将路由器 R4 配置为向其邻居路由器 R8 发送最多 6 条路径。 路径的目的地可以是路由器 R4 可以通过多个路径到达的任何目标。 [edit protocols bgp] user@R4# set group rr_client neighbor 10.0.0.80 family inet unicast add-path send path-count 6 将路由器 R4 配置为从其邻居路由器 R1 接收多条路径。 路径的目标可以是路由器 R1 可以通过多个路径到达的任何目标。 [edit protocols bgp group rr family inet unicast] user@R4# set add-path receive 在接口上配置 OSPF。 [edit protocols ospf area 0.0.0.0] user@R4# set interface fe-1/2/0.41 user@R4# set interface lo0.40 passive user@R4# set interface fe-1/2/1.48 配置允许路由器 R4 将路由器 R8 多个路径发送到 172.16.199.1/32 路由的策略。 路由器 R4 接收 172.16.198.1/32 路由和 172.16.199.1/32 路由的多条路径。但是，由于此策略，路由器 R4 仅发送 172.16.199.1/32 路由的多个路径。 [edit protocols bgp group rr_client neighbor 10.0.0.80 family inet unicast] user@R4# set add-path send prefix-policy allow_199 [edit policy-options policy-statement allow_199] user@R4# set from route-filter 172.16.199.1/32 exact user@R4# set then accept 路由器 R4 还可以配置为为 添加路径播发前缀 的子集发送多达 20 个 BGP add-path 路由。 [edit policy-options policy-statement allow_199] user@R4# set term match_199 from prefix-list match_199 user@R4# set then add-path send-count 20 配置自治系统编号。 [edit routing-options] user@R4# set autonomous-system 1 如果完成设备配置，请提交配置。 user@R4# commit 在配置模式下，输入 show interfaces 、 show protocols 、 show policy-options 和 show routing-options 命令，以确认您的配置。如果输出未显示预期的配置，请重复此示例中的说明，以便进行更正。 user@R4# show interfaces fe-1/2/0 { unit 41 { family inet { address 10.0.14.2/24; } } } fe-1/2/1 { unit 48 { family inet { address 10.0.48.1/24; } } } lo0 { unit 40 { family inet { address 10.0.0.40/32; } } } user@R4# show protocols bgp { group rr { type internal; local-address 10.0.0.40; family inet { unicast { add-path { receive; } } } neighbor 10.0.0.10; } group rr_client { type internal; local-address 10.0.0.40; cluster 10.0.0.40; neighbor 10.0.0.80 { family inet { unicast { add-path { send { path-count 6; prefix-policy allow_199; } } } } } } } ospf { area 0.0.0.0 { interface lo0.40 { passive; } interface fe-1/2/0.41; interface fe-1/2/1.48; } } user@R4# show policy-options policy-statement allow_199 { from { route-filter 172.16.199.1/32 exact; } from term match_199 { prefix-list match_199; } then add-path send-count 20; then accept; } user@R4# show routing-options autonomous-system 1;",
+          "sections": [
+            {
+              "title": "分步过程",
+              "level": 5,
+              "step_by_step": [
+                {
+                  "step": 1,
+                  "description": "配置路由器 R1 和路由器 R8 的接口，并配置环路 （lo0） 接口。",
+                  "code": [
+                    "[edit interfaces]",
+                    "user@R4# set fe-1/2/0 unit 41 family inet address 10.0.14.2/24",
+                    "user@R4# set fe-1/2/1 unit 48 family inet address 10.0.48.1/24",
+                    "user@R4# set lo0 unit 40 family inet address 10.0.0.40/32"
+                  ]
+                },
+                {
+                  "step": 2,
+                  "description": "在接口上配置 BGP，并配置 IBGP 路由反射。",
+                  "code": [
+                    "[edit protocols bgp]",
+                    "user@R4# set group rr type internal",
+                    "user@R4# set group rr local-address 10.0.0.40",
+                    "user@R4# set group rr neighbor 10.0.0.10",
+                    "user@R4# set group rr_client type internal",
+                    "user@R4# set group rr_client local-address 10.0.0.40",
+                    "user@R4# set group rr_client cluster 10.0.0.40"
+                  ]
+                },
+                {
+                  "step": 3,
+                  "description": "将路由器 R4 配置为向其邻居路由器 R8 发送最多 6 条路径。",
+                  "code": [
+                    "[edit protocols bgp]",
+                    "user@R4# set group rr_client neighbor 10.0.0.80 family inet unicast add-path send path-count 6"
+                  ]
+                },
+                {
+                  "step": 4,
+                  "description": "将路由器 R4 配置为从其邻居路由器 R1 接收多条路径。",
+                  "code": [
+                    "[edit protocols bgp group rr family inet unicast]",
+                    "user@R4# set add-path receive"
+                  ]
+                },
+                {
+                  "step": 5,
+                  "description": "在接口上配置 OSPF。",
+                  "code": [
+                    "[edit protocols ospf area 0.0.0.0]",
+                    "user@R4# set interface fe-1/2/0.41",
+                    "user@R4# set interface lo0.40 passive",
+                    "user@R4# set interface fe-1/2/1.48"
+                  ]
+                },
+                {
+                  "step": 6,
+                  "description": "配置允许路由器 R4 将路由器 R8 多个路径发送到 172.16.199.1/32 路由的策略。",
+                  "code": [
+                    "[edit protocols bgp group rr_client neighbor 10.0.0.80 family inet unicast]",
+                    "user@R4# set add-path send prefix-policy allow_199 ",
+                    "[edit policy-options policy-statement allow_199]",
+                    "user@R4# set from route-filter 172.16.199.1/32 exact ",
+                    "user@R4# set then accept",
+                    "[edit policy-options policy-statement allow_199]",
+                    "user@R4# set term match_199 from prefix-list match_199",
+                    "user@R4# set then add-path send-count 20"
+                  ]
+                },
+                {
+                  "step": 7,
+                  "description": "配置自治系统编号。",
+                  "code": [
+                    "[edit routing-options]",
+                    "user@R4# set autonomous-system 1"
+                  ]
+                },
+                {
+                  "step": 8,
+                  "description": "如果完成设备配置，请提交配置。",
+                  "code": [
+                    "user@R4# commit"
+                  ]
+                }
+              ]
+            },
+            {
+              "title": "结果",
+              "level": 5,
+              "content": "在配置模式下，输入 show interfaces 、 show protocols 、 show policy-options 和 show routing-options 命令，以确认您的配置。如果输出未显示预期的配置，请重复此示例中的说明，以便进行更正。",
+              "code": [
+                "user@R4#show interfacesfe-1/2/0 {\n    unit 41 {\n        family inet {\n            address 10.0.14.2/24;\n        }\n    }\n}\nfe-1/2/1 {\n    unit 48 {\n        family inet {\n            address 10.0.48.1/24;\n        }\n    }\n}\nlo0 {\n    unit 40 {\n        family inet {\n            address 10.0.0.40/32;\n        }\n    }\n}",
+                "user@R4#show protocolsbgp {\n    group rr {\n        type internal;\n        local-address 10.0.0.40;\n        family inet {\n            unicast {\n                add-path {\n                    receive;\n                }\n            }\n        }\n        neighbor 10.0.0.10;\n    }\n    group rr_client {\n        type internal;\n        local-address 10.0.0.40;\n        cluster 10.0.0.40;\n        neighbor 10.0.0.80 {\n            family inet {\n                unicast {\n                    add-path {\n                        send {\n                            path-count 6;\n                            prefix-policy allow_199;\n                        }\n                    }\n                }\n            }\n        }\n    }\n}\nospf {\n    area 0.0.0.0 {\n        interface lo0.40 {\n            passive;\n        }\n        interface fe-1/2/0.41;\n        interface fe-1/2/1.48;\n    }\n}",
+                "user@R4#show policy-optionspolicy-statement allow_199 {\n    from {\n        route-filter 172.16.199.1/32 exact;\n    }\n    from term match_199 {\n        prefix-list match_199;\n    }\n        then add-path send-count 20;\n    then accept;\n}",
+                "user@R4#show routing-optionsautonomous-system 1;"
+              ]
+            }
+          ]
+        },
+        {
+          "title": "配置路由器 R5",
+          "level": 4,
+          "content": "要配置路由器 R5： 配置环路 （lo0） 接口和路由器 R1 接口。 [edit interfaces] user@R5# set fe-1/2/0 unit 51 family inet address 10.0.15.2/24 user@R5# set lo0 unit 50 family inet address 10.0.0.50/32 在路由器 R5 的接口上配置 BGP。 [edit protocols bgp group e1] user@R5# set type external user@R5# set neighbor 10.0.15.1 peer-as 1 创建静态路由以重新分发到 BGP。 [edit routing-options] user@R5# set static route 172.16.199.1/32 reject user@R5# set static route 172.16.198.1/32 reject 将静态和直接路由重新分发到 BGP 中。 [edit protocols bgp group e1 neighbor 10.0.15.1] user@R5# set export s2b [edit policy-options policy-statement s2b] user@R5# set from protocol static user@R5# set from protocol direct user@R5# set then as-path-expand 2 user@R5# set then accept 配置自治系统编号。 [edit routing-options] user@R5# set autonomous-system 2 如果完成设备配置，请提交配置。 user@R5# commit 在配置模式下，输入 show interfaces 、 show protocols 、 show policy-options 和 show routing-options 命令，以确认您的配置。如果输出未显示预期的配置，请重复此示例中的说明，以便进行更正。 user@R5# show interfaces fe-1/2/0 { unit 51 { family inet { address 10.0.15.2/24; } } } lo0 { unit 50 { family inet { address 10.0.0.50/32; } } } user@R5# show protocols bgp { group e1 { type external; neighbor 10.0.15.1 { export s2b; peer-as 1; } } } user@R5# show policy-options policy-statement s2b { from protocol [ static direct ]; then { as-path-expand 2; accept; } } user@R5# show routing-options static { route 172.16.198.1/32 reject; route 172.16.199.1/32 reject; } autonomous-system 2;",
+          "sections": [
+            {
+              "title": "分步过程",
+              "level": 5,
+              "step_by_step": [
+                {
+                  "step": 1,
+                  "description": "配置环路 （lo0） 接口和路由器 R1 接口。",
+                  "code": [
+                    "[edit interfaces]",
+                    "user@R5# set fe-1/2/0 unit 51 family inet address 10.0.15.2/24",
+                    "user@R5# set lo0 unit 50 family inet address 10.0.0.50/32"
+                  ]
+                },
+                {
+                  "step": 2,
+                  "description": "在路由器 R5 的接口上配置 BGP。",
+                  "code": [
+                    "[edit protocols bgp group e1]",
+                    "user@R5# set type external",
+                    "user@R5# set neighbor 10.0.15.1 peer-as 1"
+                  ]
+                },
+                {
+                  "step": 3,
+                  "description": "创建静态路由以重新分发到 BGP。",
+                  "code": [
+                    "[edit routing-options]",
+                    "user@R5# set static route 172.16.199.1/32 reject",
+                    "user@R5# set static route 172.16.198.1/32 reject"
+                  ]
+                },
+                {
+                  "step": 4,
+                  "description": "将静态和直接路由重新分发到 BGP 中。",
+                  "code": [
+                    "[edit protocols bgp group e1 neighbor 10.0.15.1]",
+                    "user@R5# set export s2b",
+                    "[edit policy-options policy-statement s2b]",
+                    "user@R5# set from protocol static",
+                    "user@R5# set from protocol direct",
+                    "user@R5# set then as-path-expand 2",
+                    "user@R5# set then accept"
+                  ]
+                },
+                {
+                  "step": 5,
+                  "description": "配置自治系统编号。",
+                  "code": [
+                    "[edit routing-options]",
+                    "user@R5# set autonomous-system 2"
+                  ]
+                },
+                {
+                  "step": 6,
+                  "description": "如果完成设备配置，请提交配置。",
+                  "code": [
+                    "user@R5# commit"
+                  ]
+                }
+              ]
+            },
+            {
+              "title": "结果",
+              "level": 5,
+              "content": "在配置模式下，输入 show interfaces 、 show protocols 、 show policy-options 和 show routing-options 命令，以确认您的配置。如果输出未显示预期的配置，请重复此示例中的说明，以便进行更正。",
+              "code": [
+                "user@R5#show interfacesfe-1/2/0 {\n    unit 51 {\n        \n        family inet {\n            address 10.0.15.2/24;\n        }\n    }\n}\nlo0 {\n    unit 50 {\n        family inet {\n            address 10.0.0.50/32;\n        }\n    }\n}",
+                "user@R5#show protocolsbgp {\n    group e1 {\n        type external;\n        neighbor 10.0.15.1 {\n            export s2b;\n            peer-as 1;\n        }\n    }\n}",
+                "user@R5#show policy-optionspolicy-statement s2b {\n    from protocol [ static direct ];\n    then {\n        as-path-expand 2;\n        accept;\n    }\n}",
+                "user@R5#show routing-optionsstatic {\n    route 172.16.198.1/32 reject;\n    route 172.16.199.1/32 reject;\n}\n autonomous-system 2;"
+              ]
+            }
+          ]
+        },
+        {
+          "title": "配置路由器 R6",
+          "level": 4,
+          "content": "要配置路由器 R6： 配置环路 （lo0） 接口和路由器 R2 接口。 [edit interfaces] user@R6# set fe-1/2/0 unit 62 family inet address 10.0.26.2/24 user@R6# set lo0 unit 60 family inet address 10.0.0.60/32 在路由器 R6 的接口上配置 BGP。 [edit protocols] user@R6# set bgp group e1 type external user@R6# set bgp group e1 neighbor 10.0.26.1 peer-as 1 创建静态路由以重新分发到 BGP。 [edit] user@R6# set routing-options static route 172.16.199.1/32 reject user@R6# set routing-options static route 172.16.198.1/32 reject 将来自路由器 R6 路由表的静态和直接路由重新分配到 BGP。 [edit protocols bgp group e1 neighbor 10.0.26.1] user@R6# set export s2b [edit policy-options policy-statement s2b] user@R6# set from protocol static user@R6# set from protocol direct user@R6# set then accept 配置自治系统编号。 [edit routing-options] user@R6# set autonomous-system 2 如果完成设备配置，请提交配置。 user@R6# commit 在配置模式下，输入 show interfaces 、 show protocols 、 show policy-options 和 show routing-options 命令，以确认您的配置。如果输出未显示预期的配置，请重复此示例中的说明，以便进行更正。 user@R6# show interfaces fe-1/2/0 { unit 62 { family inet { address 10.0.26.2/24; } } } lo0 { unit 60 { family inet { address 10.0.0.60/32; } } } user@R6# show protocols bgp { group e1 { type external; neighbor 10.0.26.1 { export s2b; peer-as 1; } } } user@R6# show policy-options policy-statement s2b { from protocol [ static direct ]; then accept; } user@R6# show routing-options static { route 172.16.198.1/32 reject; route 172.16.199.1/32 reject; } autonomous-system 2;",
+          "sections": [
+            {
+              "title": "分步过程",
+              "level": 5,
+              "step_by_step": [
+                {
+                  "step": 1,
+                  "description": "配置环路 （lo0） 接口和路由器 R2 接口。",
+                  "code": [
+                    "[edit interfaces]",
+                    "user@R6# set fe-1/2/0 unit 62 family inet address 10.0.26.2/24",
+                    "user@R6# set lo0 unit 60 family inet address 10.0.0.60/32"
+                  ]
+                },
+                {
+                  "step": 2,
+                  "description": "在路由器 R6 的接口上配置 BGP。",
+                  "code": [
+                    "[edit protocols]",
+                    "user@R6# set bgp group e1 type external",
+                    "user@R6# set bgp group e1 neighbor 10.0.26.1 peer-as 1"
+                  ]
+                },
+                {
+                  "step": 3,
+                  "description": "创建静态路由以重新分发到 BGP。",
+                  "code": [
+                    "[edit]",
+                    "user@R6# set routing-options static route 172.16.199.1/32 reject",
+                    "user@R6# set routing-options static route 172.16.198.1/32 reject"
+                  ]
+                },
+                {
+                  "step": 4,
+                  "description": "将来自路由器 R6 路由表的静态和直接路由重新分配到 BGP。",
+                  "code": [
+                    "[edit protocols bgp group e1 neighbor 10.0.26.1]",
+                    "user@R6# set export s2b",
+                    "[edit policy-options policy-statement s2b]",
+                    "user@R6# set from protocol static",
+                    "user@R6# set from protocol direct",
+                    "user@R6# set then accept"
+                  ]
+                },
+                {
+                  "step": 5,
+                  "description": "配置自治系统编号。",
+                  "code": [
+                    "[edit routing-options]",
+                    "user@R6# set autonomous-system 2"
+                  ]
+                },
+                {
+                  "step": 6,
+                  "description": "如果完成设备配置，请提交配置。",
+                  "code": [
+                    "user@R6# commit"
+                  ]
+                }
+              ]
+            },
+            {
+              "title": "结果",
+              "level": 5,
+              "content": "在配置模式下，输入 show interfaces 、 show protocols 、 show policy-options 和 show routing-options 命令，以确认您的配置。如果输出未显示预期的配置，请重复此示例中的说明，以便进行更正。",
+              "code": [
+                "user@R6#show interfacesfe-1/2/0 {\n    unit 62 {\n        \n        family inet {\n            address 10.0.26.2/24;\n        }\n    }\n}\nlo0 {\n    unit 60 {\n        family inet {\n            address 10.0.0.60/32;\n        }\n    }\n}",
+                "user@R6#show protocolsbgp {\n    group e1 {\n        type external;\n        neighbor 10.0.26.1 {\n            export s2b;\n            peer-as 1;\n        }\n    }\n}",
+                "user@R6#show policy-optionspolicy-statement s2b {\n    from protocol [ static direct ];\n    then accept;\n}",
+                "user@R6#show routing-optionsstatic {\n    route 172.16.198.1/32 reject;\n    route 172.16.199.1/32 reject;\n}\n autonomous-system 2;"
+              ]
+            }
+          ]
+        },
+        {
+          "title": "配置路由器 R7",
+          "level": 4,
+          "content": "要配置路由器 R7： 配置环路 （lo0） 接口和路由器 R3 接口。 [edit interfaces] user@R7# set fe-1/2/0 unit 73 family inet address 10.0.37.2/24 user@R7# set lo0 unit 70 family inet address 10.0.0.70/32 在路由器 R7 的接口上配置 BGP。 [edit protocols bgp group e1] user@R7# set type external user@R7# set neighbor 10.0.37.1 peer-as 1 创建静态路由以重新分发到 BGP。 [edit] user@R7# set routing-options static route 172.16.199.1/32 reject 将来自路由器 R7 路由表的静态和直接路由重新分发到 BGP 中。 [edit protocols bgp group e1 neighbor 10.0.37.1] user@R7# set export s2b [edit policy-options policy-statement s2b] user@R7# set from protocol static user@R7# set from protocol direct user@R7# set then accept 配置自治系统编号。 [edit routing-options] user@R7# set autonomous-system 2 如果完成设备配置，请提交配置。 user@R7# commit 在配置模式下，输入 show interfaces 、 show protocols 、 show policy-options 和 show routing-options 命令，以确认您的配置。如果输出未显示预期的配置，请重复此示例中的说明，以便进行更正。 user@R7# show interfaces fe-1/2/0 { unit 73 { family inet { address 10.0.37.2/24; } } } lo0 { unit 70 { family inet { address 10.0.0.70/32; } } } user@R7# show protocols bgp { group e1 { type external; neighbor 10.0.37.1 { export s2b; peer-as 1; } } } user@R7# show policy-options policy-statement s2b { from protocol [ static direct ]; then accept; } user@R7# show routing-options static { route 172.16.199.1/32 reject; } autonomous-system 2;",
+          "sections": [
+            {
+              "title": "分步过程",
+              "level": 5,
+              "step_by_step": [
+                {
+                  "step": 1,
+                  "description": "配置环路 （lo0） 接口和路由器 R3 接口。",
+                  "code": [
+                    "[edit interfaces]",
+                    "user@R7# set fe-1/2/0 unit 73 family inet address 10.0.37.2/24",
+                    "user@R7# set lo0 unit 70 family inet address 10.0.0.70/32"
+                  ]
+                },
+                {
+                  "step": 2,
+                  "description": "在路由器 R7 的接口上配置 BGP。",
+                  "code": [
+                    "[edit protocols bgp group e1]",
+                    "user@R7# set type external",
+                    "user@R7# set neighbor 10.0.37.1 peer-as 1"
+                  ]
+                },
+                {
+                  "step": 3,
+                  "description": "创建静态路由以重新分发到 BGP。",
+                  "code": [
+                    "[edit]",
+                    "user@R7# set routing-options static route 172.16.199.1/32 reject"
+                  ]
+                },
+                {
+                  "step": 4,
+                  "description": "将来自路由器 R7 路由表的静态和直接路由重新分发到 BGP 中。",
+                  "code": [
+                    "[edit protocols bgp group e1 neighbor 10.0.37.1]",
+                    "user@R7# set export s2b",
+                    "[edit policy-options policy-statement s2b]",
+                    "user@R7# set from protocol static",
+                    "user@R7# set from protocol direct",
+                    "user@R7# set then accept"
+                  ]
+                },
+                {
+                  "step": 5,
+                  "description": "配置自治系统编号。",
+                  "code": [
+                    "[edit routing-options]",
+                    "user@R7# set autonomous-system 2"
+                  ]
+                },
+                {
+                  "step": 6,
+                  "description": "如果完成设备配置，请提交配置。",
+                  "code": [
+                    "user@R7# commit"
+                  ]
+                }
+              ]
+            },
+            {
+              "title": "结果",
+              "level": 5,
+              "content": "在配置模式下，输入 show interfaces 、 show protocols 、 show policy-options 和 show routing-options 命令，以确认您的配置。如果输出未显示预期的配置，请重复此示例中的说明，以便进行更正。",
+              "code": [
+                "user@R7#show interfacesfe-1/2/0 {\n    unit 73 {\n        \n        family inet {\n            address 10.0.37.2/24;\n        }\n    }\n}\nlo0 {\n    unit 70 {\n        family inet {\n            address 10.0.0.70/32;\n        }\n    }\n}",
+                "user@R7#show protocolsbgp {\n    group e1 {\n        type external;\n        neighbor 10.0.37.1 {\n            export s2b;\n            peer-as 1;\n        }\n    }\n}",
+                "user@R7#show policy-optionspolicy-statement s2b {\n    from protocol [ static direct ];\n    then accept;\n}",
+                "user@R7#show routing-optionsstatic {\n    route 172.16.199.1/32 reject;\n}\n autonomous-system 2;"
+              ]
+            }
+          ]
+        },
+        {
+          "title": "配置路由器 R8",
+          "level": 4,
+          "content": "要配置路由器 R8： 配置环路 （lo0） 接口和路由器 R4 接口。 [edit interfaces] user@R8# set fe-1/2/0 unit 84 family inet address 10.0.48.2/24 user@R8# set lo0 unit 80 family inet address 10.0.0.80/32 在路由器 R8 的接口上配置 BGP 和 OSPF。 [edit protocols] user@R8# set bgp group rr type internal user@R8# set bgp group rr local-address 10.0.0.80 user@R8# set ospf area 0.0.0.0 interface lo0.80 passive user@R8# set ospf area 0.0.0.0 interface fe-1/2/0.84 将路由器 R8 配置为从其邻居路由器 R4 接收多条路径。 路径的目的地可以是路由器 R4 可以通过多个路径到达的任何目标。 [edit protocols] user@R8# set bgp group rr neighbor 10.0.0.40 family inet unicast add-path receive 配置自治系统编号。 [edit] user@R8# set routing-options autonomous-system 1 如果完成设备配置，请提交配置。 user@R8# commit",
+          "sections": [
+            {
+              "title": "分步过程",
+              "level": 5,
+              "step_by_step": [
+                {
+                  "step": 1,
+                  "description": "配置环路 （lo0） 接口和路由器 R4 接口。",
+                  "code": [
+                    "[edit interfaces]",
+                    "user@R8# set fe-1/2/0 unit 84 family inet address 10.0.48.2/24",
+                    "user@R8# set lo0 unit 80 family inet address 10.0.0.80/32"
+                  ]
+                },
+                {
+                  "step": 2,
+                  "description": "在路由器 R8 的接口上配置 BGP 和 OSPF。",
+                  "code": [
+                    "[edit protocols]",
+                    "user@R8# set bgp group rr type internal",
+                    "user@R8# set bgp group rr local-address 10.0.0.80",
+                    "user@R8# set ospf area 0.0.0.0 interface lo0.80 passive",
+                    "user@R8# set ospf area 0.0.0.0 interface fe-1/2/0.84"
+                  ]
+                },
+                {
+                  "step": 3,
+                  "description": "将路由器 R8 配置为从其邻居路由器 R4 接收多条路径。",
+                  "code": [
+                    "[edit protocols]",
+                    "user@R8# set bgp group rr neighbor 10.0.0.40 family inet unicast add-path receive"
+                  ]
+                },
+                {
+                  "step": 4,
+                  "description": "配置自治系统编号。",
+                  "code": [
+                    "[edit]",
+                    "user@R8# set routing-options autonomous-system 1"
+                  ]
+                },
+                {
+                  "step": 5,
+                  "description": "如果完成设备配置，请提交配置。",
+                  "code": [
+                    "user@R8# commit"
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "结果",
+          "level": 4,
+          "content": "在配置模式下，输入 show interfaces 、 show protocols 、 show policy-options 和 show routing-options 命令，以确认您的配置。如果输出未显示预期的配置，请重复此示例中的说明，以便进行更正。",
+          "code": [
+            "user@R8#show interfacesfe-1/2/0 {\n    \n    unit 84 {\n        \n        family inet {\n            address 10.0.48.2/24;\n        }\n    }\n}\nlo0 {\n    unit 80 {\n        family inet {\n            address 10.0.0.80/32;\n        }\n    }\n}",
+            "user@R8#show protocolsbgp {\n    group rr {\n        type internal;\n        local-address 10.0.0.80;\n        neighbor 10.0.0.40 {\n            family inet {\n                unicast {\n                    add-path {\n                        receive;\n                    }\n                }\n            }\n        }\n    }\n}\nospf {\n    area 0.0.0.0 {\n        interface lo0.80 {\n            passive;\n        }\n        interface fe-1/2/0.84;\n    }\n}",
+            "user@R8#show routing-optionsautonomous-system 1;"
+          ]
+        }
+      ]
+    }
+  ],
+  "content": "在此示例中，BGP 路由器配置为播发多个路径，而不是仅播发活动路径。RFC 7911， BGP 中的多路径播发 中指定了 BGP 中的多条路径播发。 要求 此示例使用以下硬件和软件组件： 八个支持 BGP 的设备。 启用 BGP 的设备中有五台不一定需要是路由器。例如，它们可以是 EX 系列以太网交换机。 其中三个支持 BGP 的设备配置为发送多个路径或接收多个路径（或同时发送和接收多个路径）。这三台支持 BGP 的设备必须是 M 系列多服务边缘路由器、MX 系列 5G 通用路由平台或 T 系列核心路由器。 这三台路由器必须运行 Junos OS 11.4 或更高版本"
+}

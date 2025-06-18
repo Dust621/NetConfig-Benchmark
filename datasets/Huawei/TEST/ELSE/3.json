@@ -1,0 +1,15 @@
+{
+  "requirement": "在 R1 和 R2 上配置本地AAA认证，控制用户访问特定资源，使用域管理用户，并配置认证后的用户权限级别。",
+  "steps": [
+    "1. 配置 R1 和 R2 互联的 IP 地址",
+    "2. 配置 AAA 认证和授权方案",
+    "3. 创建域并在域下应用 AAA 方案",
+    "4. 配置本地用户及权限",
+    "5. 开启 R2 上的 Telnet 功能",
+    "6. 检验配置效果"
+  ],
+  "configs": {
+    "R1": "# \ninterface GigabitEthernet0/0/0 \n ip address 10.0.12.1 255.255.255.0 \nreturn",
+    "R2": "# \ninterface GigabitEthernet0/0/0 \n ip address 10.0.12.2 255.255.255.0 \n# \n# 配置 AAA 认证和授权方案\n# 进入 aaa 视图，创建名为 datacom 的认证方案\naaa \n authentication-scheme datacom \n authentication-mode local \n# 创建名为 datacom 的授权方案\nauthorization-scheme datacom \n authorization-mode local \n# 配置域并应用 AAA 认证和授权方案\ndomain datacom \n authentication-scheme datacom \n authorization-scheme datacom \n# 创建本地用户并设置密码和接入类型\nlocal-user hcia@datacom password cipher HCIA-Datacom \n local-user hcia@datacom service-type telnet \n local-user hcia@datacom privilege level 3 \n# 开启 R2 上的 telnet 功能\ntelnet server enable \n# 设置登录用户界面的验证方式\nuser-interface vty 0 4 \n authentication-mode aaa \n# \nreturn"
+  }
+}

@@ -1,0 +1,21 @@
+{
+    "topology": "网络包含5台AR路由器（AR1-AR5）和4个OSPF区域，拓扑架构如下：\n\n1. 物理连接拓扑：\n   - Area 2（Stub区域）：\n     • AR1(GE0/0/0) ↔ S3700-LSW1 ↔ AR3(GE0/0/0)：10.0.13.0/24\n   - Area 3：\n     • AR2(GE0/0/0) ↔ AR3(GE0/0/2)：10.0.23.0/24\n   - Area 0（骨干区域）：\n     • AR3(GE0/0/1) ↔ AR4(GE0/0/1)：10.0.34.0/24\n   - Area 1（NSSA区域）：\n     • AR4(GE0/0/0) ↔ AR5(GE0/0/0)：10.0.45.0/24\n\n2. 逻辑区域划分：\n   - 骨干区域0：\n     • AR3(10.0.3.3/24)和AR4(10.0.4.4/24)互联链路\n   - Stub区域2：\n     • AR1的Loopback0(10.0.1.1/24)\n     • AR1-AR3互联链路(10.0.13.0/24)\n   - NSSA区域1：\n     • AR5的Loopback0(10.0.5.5/24)\n     • AR4-AR5互联链路(10.0.45.0/24)\n   - 区域3：\n     • AR2的Loopback0(10.0.2.2/24)\n     • AR2-AR3互联链路(10.0.23.0/24)\n\n3. 关键地址规划：\n   - 管理环回地址（/24）：\n     • AR1:10.0.1.1  AR2:10.0.2.2  AR3:10.0.3.3\n     • AR4:10.0.4.4  AR5:10.0.5.5\n   - 互联地址段：\n     • 区域2：10.0.13.0/24\n     • 区域3：10.0.23.0/24\n     • 骨干区域：10.0.34.0/24\n     • NSSA区域：10.0.45.0/24",
+    "requirement": "配置五台AR路由器的OSPF区域，设置区域1为NSSA区域、区域2为Stub区域，并配置路由器ID。",
+    "steps": [
+      "1. 配置设备IP地址。",
+      "2. 配置OSPF区域，手动指定Loopback0接口地址为OSPF Router ID，修改Loopback0接口的网络类型为Broadcast。",
+      "3. 检查OSPF配置结果，检查OSPF邻居关系状态和OSPF路由表。",
+      "4. 在R2、R5上将外部路由引入到OSPF中。",
+      "5. 配置区域2为Stub区域，观察区域2内OSPF路由表、LSDB的变化。",
+      "6. 配置区域1为NSSA区域，观察区域1内OSPF路由表、LSDB的变化。",
+      "7. 查看R4的OSPF路由器身份，在R4上观察Type-7 LSA向Type-5 LSA的转换。"
+    ],
+    "configs": {
+      "R1": "# \nsysname R1 \n# \ninterface LoopBack 0 \n ip address 10.0.1.1 255.255.255.0 \n# \ninterface GigabitEthernet0/0/0 \n ip address 10.0.13.1 255.255.255.0 \n# \nospf 1 router-id 10.0.1.1 \n area 2 \n network 10.0.1.1 0.0.0.0 \n network 10.0.13.1 0.0.0.0 \n interface LoopBack 0 \n ospf network-type broadcast \nreturn",
+      "R2": "# \nsysname R2 \n# \ninterface GigabitEthernet0/0/0 \n ip address 10.0.23.2 255.255.255.0 \n# \ninterface LoopBack 0 \n ip address 10.0.2.2 255.255.255.0 \n# \nospf 1 router-id 10.0.2.2 \n area 3 \n network 10.0.23.1 0.0.0.0 \n network 10.0.2.2 0.0.0.0 \n interface LoopBack 0 \n ospf network-type broadcast \n return",
+      "R3": "# \nsysname R3 \n# \ninterface LoopBack 0 \n ip address 10.0.3.3 255.255.255.0 \n# \ninterface GigabitEthernet0/0/0 \n ip address 10.0.13.3 255.255.255.0 \n# \ninterface GigabitEthernet0/0/1 \n ip address 10.0.34.3 255.255.255.0 \n# \ninterface GigabitEthernet0/0/2 \n ip address 10.0.23.3 255.255.255.0 \n# \nospf 1 router-id 10.0.3.3 \n area 0 \n network 10.0.3.3 0.0.0.0 \n network 10.0.34.3 0.0.0.0 \n area 2 \n network 10.0.13.3 0.0.0.0 \n area 3 \n network 10.0.23.3 0.0.0.0 \n interface LoopBack 0 \n ospf network-type broadcast \n return",
+      "R4": "# \nsysname R4 \n# \ninterface LoopBack 0 \n ip address 10.0.4.4 255.255.255.0 \n# \ninterface GigabitEthernet0/0/0 \n ip address 10.0.45.4 255.255.255.0 \n# \ninterface GigabitEthernet0/0/1 \n ip address 10.0.34.4 255.255.255.0 \n# \nospf 1 router-id 10.0.4.4 \n area 0 \n network 10.0.4.4 0.0.0.0 \n network 10.0.34.4 0.0.0.0 \n area 1 \n network 10.0.45.4 0.0.0.0 \n interface LoopBack 0 \n ospf network-type broadcast \n return",
+      "R5": "# \nsysname R5 \n# \ninterface LoopBack 0 \n ip address 10.0.5.5 255.255.255.0 \n# \ninterface GigabitEthernet0/0/0 \n ip address 10.0.45.5 255.255.255.0 \n# \nospf 1 router-id 10.0.5.5 \n area 1 \n network 10.0.45.5 0.0.0.0 \n interface LoopBack 0 \n ospf network-type broadcast \n return"
+    }
+  }
+  

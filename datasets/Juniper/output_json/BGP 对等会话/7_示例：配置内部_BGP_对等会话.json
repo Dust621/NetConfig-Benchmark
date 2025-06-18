@@ -1,0 +1,262 @@
+{
+  "title": "示例：配置内部 BGP 对等会话",
+  "sections": [
+    {
+      "title": "要求",
+      "level": 3,
+      "content": "在配置此示例之前，不需要除设备初始化之外的特殊配置。"
+    },
+    {
+      "title": "概述",
+      "level": 3,
+      "content": "在此示例中，您将配置内部 BGP （IBGP） 对等会话。环路接口 （lo0） 用于在 IBGP 对等方之间建立连接。只要设备正在运行，环路接口就始终处于打开状态。如果存在到环路地址的路由，IBGP 对等会话将保持运行。如果改用物理接口地址，并且该接口上升和关闭，则 IBGP 对等会话也会上升和关闭。因此，如果设备具有链路冗余，则环路接口可在物理接口或其中一个链路出现故障时提供容错能力。 当设备与远程设备的环路接口地址对等时，本地设备期望 BGP 更新消息来自远程设备的环路接口地址（由远程设备的环路接口地址提供）。使用该 local-address 语句，可以在 BGP 更新消息中指定源信息。如果省略 local-address 该语句，则 BGP 更新消息的预期源基于设备的源地址选择规则，这通常会导致出口接口地址成为更新消息的预期源。发生这种情况时，不会建立对等会话，因为预期的源地址（对等方的出口接口）和实际源地址（对等方的环路接口）之间存在不匹配。要确保预期的源地址与实际源地址匹配，请在语句中 local-address 指定环路接口地址。 由于 IBGP 支持多跃点连接，因此 IBGP 邻接方可以位于自治系统 （AS） 内的任何位置，并且通常不共享链路。递归路由查找将环路对等方地址解析为下一跃点转发的 IP 地址。在此示例中，此服务由 OSPF 提供。虽然内部网关协议 （IGP） 邻居不需要直接连接，但它们需要完全网状连接。在这种情况下，全网状意味着每个设备通过邻居对等关系在逻辑上连接到所有其他设备。该语句创建 neighbor 网格。 注： 如果配置联合体或路由反射，则无需全网状网络。 建立 BGP 对等方后，BGP 对等方不会自动播发本地路由。在每个启用 BGP 的设备上，都需要进行策略配置，以将本地、静态或 IGP 获知的路由导出到 BGP 路由信息库 （RIB），然后将其作为 BGP 路由播发给其他对等方。默认情况下，BGP 的播发策略不会向对等方播发任何非 BGP 路由（例如本地路由）。 在示例网络中，AS 17 中的设备在组中 internal-peers 完全网状。这些设备的环路地址为 192.168.6.5、192.163.6.4 和 192.168.40.4。 图 5 显示了具有内部对等会话的典型网络。 图 5： 具有 IBGP 会话的典型网络 在此示例中，您将配置内部 BGP （IBGP） 对等会话。环路接口 （lo0） 用于在 IBGP 对等方之间建立连接。只要设备正在运行，环路接口就始终处于打开状态。如果存在到环路地址的路由，IBGP 对等会话将保持运行。如果改用物理接口地址，并且该接口上升和关闭，则 IBGP 对等会话也会上升和关闭。因此，如果设备具有链路冗余，则环路接口可在物理接口或其中一个链路出现故障时提供容错能力。 当设备与远程设备的环路接口地址对等时，本地设备期望 BGP 更新消息来自远程设备的环路接口地址（由远程设备的环路接口地址提供）。使用该 local-address 语句，可以在 BGP 更新消息中指定源信息。如果省略 local-address 该语句，则 BGP 更新消息的预期源基于设备的源地址选择规则，这通常会导致出口接口地址成为更新消息的预期源。发生这种情况时，不会建立对等会话，因为预期的源地址（对等方的出口接口）和实际源地址（对等方的环路接口）之间存在不匹配。要确保预期的源地址与实际源地址匹配，请在语句中 local-address 指定环路接口地址。 由于 IBGP 支持多跃点连接，因此 IBGP 邻接方可以位于自治系统 （AS） 内的任何位置，并且通常不共享链路。递归路由查找将环路对等方地址解析为下一跃点转发的 IP 地址。在此示例中，此服务由 OSPF 提供。虽然内部网关协议 （IGP） 邻居不需要直接连接，但它们需要完全网状连接。在这种情况下，全网状意味着每个设备通过邻居对等关系在逻辑上连接到所有其他设备。该语句创建 neighbor 网格。 注： 如果配置联合体或路由反射，则无需全网状网络。 如果配置联合体或路由反射，则无需全网状网络。 建立 BGP 对等方后，BGP 对等方不会自动播发本地路由。在每个启用 BGP 的设备上，都需要进行策略配置，以将本地、静态或 IGP 获知的路由导出到 BGP 路由信息库 （RIB），然后将其作为 BGP 路由播发给其他对等方。默认情况下，BGP 的播发策略不会向对等方播发任何非 BGP 路由（例如本地路由）。 在示例网络中，AS 17 中的设备在组中 internal-peers 完全网状。这些设备的环路地址为 192.168.6.5、192.163.6.4 和 192.168.40.4。 图 5 显示了具有内部对等会话的典型网络。 图 5： 具有 IBGP 会话的典型网络"
+    },
+    {
+      "title": "配置",
+      "level": 3,
+      "content": "要快速配置此示例，请复制以下命令，将其粘贴到文本文件中，删除所有换行符，更改与您的网络配置匹配所需的任何详细信息，然后将命令复制并粘贴到层次结构级别的 CLI [edit] 中。 设备 A set interfaces ge-0/1/0 unit 1 description to-B set interfaces ge-0/1/0 unit 1 family inet address 10.10.10.1/30 set interfaces lo0 unit 1 family inet address 192.168.6.5/32 set protocols bgp group internal-peers type internal set protocols bgp group internal-peers description “connections to B and C” set protocols bgp group internal-peers local-address 192.168.6.5 set protocols bgp group internal-peers export send-direct set protocols bgp group internal-peers neighbor 192.163.6.4 set protocols bgp group internal-peers neighbor 192.168.40.4 set protocols ospf area 0.0.0.0 interface lo0.1 passive set protocols ospf area 0.0.0.0 interface ge-0/1/0.1 set policy-options policy-statement send-direct term 2 from protocol direct set policy-options policy-statement send-direct term 2 then accept set routing-options router-id 192.168.6.5 set routing-options autonomous-system 17 设备 B set interfaces ge-0/1/0 unit 2 description to-A set interfaces ge-0/1/0 unit 2 family inet address 10.10.10.2/30 set interfaces ge-0/1/1 unit 5 description to-C set interfaces ge-0/1/1 unit 5 family inet address 10.10.10.5/30 set interfaces lo0 unit 2 family inet address 192.163.6.4/32 set protocols bgp group internal-peers type internal set protocols bgp group internal-peers description “connections to A and C” set protocols bgp group internal-peers local-address 192.163.6.4 set protocols bgp group internal-peers export send-direct set protocols bgp group internal-peers neighbor 192.168.40.4 set protocols bgp group internal-peers neighbor 192.168.6.5 set protocols ospf area 0.0.0.0 interface lo0.2 passive set protocols ospf area 0.0.0.0 interface ge-0/1/0.2 set protocols ospf area 0.0.0.0 interface ge-0/1/1.5 set policy-options policy-statement send-direct term 2 from protocol direct set policy-options policy-statement send-direct term 2 then accept set routing-options router-id 192.163.6.4 set routing-options autonomous-system 17 设备 C set interfaces ge-0/1/0 unit 6 description to-B set interfaces ge-0/1/0 unit 6 family inet address 10.10.10.6/30 set interfaces lo0 unit 3 family inet address 192.168.40.4/32 set protocols bgp group internal-peers type internal set protocols bgp group internal-peers description “connections to A and B” set protocols bgp group internal-peers local-address 192.168.40.4 set protocols bgp group internal-peers export send-direct set protocols bgp group internal-peers neighbor 192.163.6.4 set protocols bgp group internal-peers neighbor 192.168.6.5 set protocols ospf area 0.0.0.0 interface lo0.3 passive set protocols ospf area 0.0.0.0 interface ge-0/1/0.6 set policy-options policy-statement send-direct term 2 from protocol direct set policy-options policy-statement send-direct term 2 then accept set routing-options router-id 192.168.40.4 set routing-options autonomous-system 17 下面的示例要求您在各个配置层级中进行导航。有关导航 CLI 的信息，请参阅《Junos OS CLI 用户指南》中的在配置模式下使用 CLI 编辑器。 要在设备 A 上配置内部 BGP 对等会话，请执行以下操作： 配置接口。 [edit interfaces ge-0/1/0 unit 1] user@A# set description to-B user@A# set family inet address 10.10.10.1/30 [edit interfaces] user@A# set lo0 unit 1 family inet address 192.168.6.5/32 配置 BGP。 设备 B 和设备 C 都包含这些 neighbor 语句，即使设备 A 未直接连接到设备 C。 [edit protocols bgp group internal-peers] user@A# set type internal user@A# set description “connections to B and C” user@A# set local-address 192.168.6.5 user@A# set export send-direct user@A# set neighbor 192.163.6.4 user@A# set neighbor 192.168.40.4 配置 OSPF。 [edit protocols ospf area 0.0.0.0] user@A# set interface lo0.1 passive user@A# set interface ge-0/1/0.1 配置接受直接路由的策略。 此方案的其他有用选项可能是接受通过 OSPF 或本地路由获知的路由。 [edit policy-options policy-statement send-direct term 2] user@A# set from protocol direct user@A# set then accept 配置路由器 ID 和 AS 编号。 [edit routing-options] user@A# set router-id 192.168.6.5 user@A# set autonomous-system 17 在配置模式下，输入 show interfaces 、 show policy-options 、 show protocols 和 show routing-options 命令，以确认您的配置。如果输出未显示预期的配置，请重复此示例中的说明，以便进行更正。 user@A# show interfaces ge-0/1/0 { unit 1 { description to-B; family inet { address 10.10.10.1/30; } } } lo0 { unit 1 { family inet { address 192.168.6.5/32; } } } user@A# show policy-options policy-statement send-direct { term 2 { from protocol direct; then accept; } } user@A# show protocols bgp { group internal-peers { type internal; description “connections to B and C”; local-address 192.168.6.5; export send-direct; neighbor 192.163.6.4; neighbor 192.168.40.4; } } ospf { area 0.0.0.0 { interface lo0.1 { passive; } interface ge-0/1/0.1; } } user@A# show routing-options router-id 192.168.6.5; autonomous-system 17; 如果完成设备配置，请从配置模式输入 commit 。 以下示例要求您在配置层次结构中导航各个级别。有关导航 CLI 的信息，请参阅 在配置模式下使用 CLI 编辑器。 要在设备 B 上配置内部 BGP 对等会话，请执行以下操作： [edit interfaces ge-0/1/0 unit 2] user@B# set description to-A user@B# set family inet address 10.10.10.2/30 [edit interfaces ge-0/1/1] user@B# set unit 5 description to-C user@B# set unit 5 family inet address 10.10.10.5/30 [edit interfaces] user@B# set lo0 unit 2 family inet address 192.163.6.4/32 [edit protocols bgp group internal-peers] user@B# set type internal user@B# set description “connections to A and C” user@B# set local-address 192.163.6.4 user@B# set export send-direct user@B# set neighbor 192.168.40.4 user@B# set neighbor 192.168.6.5 [edit protocols ospf area 0.0.0.0] user@B# set interface lo0.2 passive user@B# set interface ge-0/1/0.2 user@B# set interface ge-0/1/1.5 [edit policy-options policy-statement send-direct term 2] user@B# set from protocol direct user@B# set then accept [edit routing-options] user@B# set router-id 192.163.6.4 user@B# set autonomous-system 17 user@B# show interfaces ge-0/1/0 { unit 2 { description to-A; family inet { address 10.10.10.2/30; } } } ge-0/1/1 { unit 5 { description to-C; family inet { address 10.10.10.5/30; } } } lo0 { unit 2 { family inet { address 192.163.6.4/32; } } } user@B# show policy-options policy-statement send-direct { term 2 { from protocol direct; then accept; } } user@B# show protocols bgp { group internal-peers { type internal; description “connections to A and C”; local-address 192.163.6.4; export send-direct; neighbor 192.168.40.4; neighbor 192.168.6.5; } } ospf { area 0.0.0.0 { interface lo0.2 { passive; } interface ge-0/1/0.2; interface ge-0/1/1.5; } } user@B# show routing-options router-id 192.163.6.4; autonomous-system 17; 要在设备 C 上配置内部 BGP 对等会话，请执行以下操作： [edit interfaces ge-0/1/0 unit 6] user@C# set description to-B user@C# set family inet address 10.10.10.6/30 [edit interfaces] user@C# set lo0 unit 3 family inet address 192.168.40.4/32 [edit protocols bgp group internal-peers] user@C# set type internal user@C# set description “connections to A and B” user@C# set local-address 192.168.40.4 user@C# set export send-direct user@C# set neighbor 192.163.6.4 user@C# set neighbor 192.168.6.5 [edit protocols ospf area 0.0.0.0] user@C# set interface lo0.3 passive user@C# set interface ge-0/1/0.6 [edit policy-options policy-statement send-direct term 2] user@C# set from protocol direct user@C# set then accept [edit routing-options] user@C# set router-id 192.168.40.4 user@C# set autonomous-system 17 user@C# show interfaces ge-0/1/0 { unit 6 { description to-B; family inet { address 10.10.10.6/30; } } } lo0 { unit 3 { family inet { address 192.168.40.4/32; } } } user@C# show policy-options policy-statement send-direct { term 2 { from protocol direct; then accept; } } user@C# show protocols bgp { group internal-peers { type internal; description “connections to A and B”; local-address 192.168.40.4; export send-direct; neighbor 192.163.6.4; neighbor 192.168.6.5; } } ospf { area 0.0.0.0 { interface lo0.3 { passive; } interface ge-0/1/0.6; } } user@C# show routing-options router-id 192.168.40.4; autonomous-system 17;",
+      "sections": [
+        {
+          "title": "CLI 快速配置",
+          "level": 4,
+          "content": "要快速配置此示例，请复制以下命令，将其粘贴到文本文件中，删除所有换行符，更改与您的网络配置匹配所需的任何详细信息，然后将命令复制并粘贴到层次结构级别的 CLI [edit] 中。 设备 A set interfaces ge-0/1/0 unit 1 description to-B set interfaces ge-0/1/0 unit 1 family inet address 10.10.10.1/30 set interfaces lo0 unit 1 family inet address 192.168.6.5/32 set protocols bgp group internal-peers type internal set protocols bgp group internal-peers description “connections to B and C” set protocols bgp group internal-peers local-address 192.168.6.5 set protocols bgp group internal-peers export send-direct set protocols bgp group internal-peers neighbor 192.163.6.4 set protocols bgp group internal-peers neighbor 192.168.40.4 set protocols ospf area 0.0.0.0 interface lo0.1 passive set protocols ospf area 0.0.0.0 interface ge-0/1/0.1 set policy-options policy-statement send-direct term 2 from protocol direct set policy-options policy-statement send-direct term 2 then accept set routing-options router-id 192.168.6.5 set routing-options autonomous-system 17 设备 B set interfaces ge-0/1/0 unit 2 description to-A set interfaces ge-0/1/0 unit 2 family inet address 10.10.10.2/30 set interfaces ge-0/1/1 unit 5 description to-C set interfaces ge-0/1/1 unit 5 family inet address 10.10.10.5/30 set interfaces lo0 unit 2 family inet address 192.163.6.4/32 set protocols bgp group internal-peers type internal set protocols bgp group internal-peers description “connections to A and C” set protocols bgp group internal-peers local-address 192.163.6.4 set protocols bgp group internal-peers export send-direct set protocols bgp group internal-peers neighbor 192.168.40.4 set protocols bgp group internal-peers neighbor 192.168.6.5 set protocols ospf area 0.0.0.0 interface lo0.2 passive set protocols ospf area 0.0.0.0 interface ge-0/1/0.2 set protocols ospf area 0.0.0.0 interface ge-0/1/1.5 set policy-options policy-statement send-direct term 2 from protocol direct set policy-options policy-statement send-direct term 2 then accept set routing-options router-id 192.163.6.4 set routing-options autonomous-system 17 设备 C set interfaces ge-0/1/0 unit 6 description to-B set interfaces ge-0/1/0 unit 6 family inet address 10.10.10.6/30 set interfaces lo0 unit 3 family inet address 192.168.40.4/32 set protocols bgp group internal-peers type internal set protocols bgp group internal-peers description “connections to A and B” set protocols bgp group internal-peers local-address 192.168.40.4 set protocols bgp group internal-peers export send-direct set protocols bgp group internal-peers neighbor 192.163.6.4 set protocols bgp group internal-peers neighbor 192.168.6.5 set protocols ospf area 0.0.0.0 interface lo0.3 passive set protocols ospf area 0.0.0.0 interface ge-0/1/0.6 set policy-options policy-statement send-direct term 2 from protocol direct set policy-options policy-statement send-direct term 2 then accept set routing-options router-id 192.168.40.4 set routing-options autonomous-system 17",
+          "commands_by_device": {
+            "设备 A": "set interfaces ge-0/1/0 unit 1 description to-B\nset interfaces ge-0/1/0 unit 1 family inet address 10.10.10.1/30\nset interfaces lo0 unit 1 family inet address 192.168.6.5/32\nset protocols bgp group internal-peers type internal\nset protocols bgp group internal-peers description “connections to B and C”\nset protocols bgp group internal-peers local-address 192.168.6.5\nset protocols bgp group internal-peers export send-direct\nset protocols bgp group internal-peers neighbor 192.163.6.4\nset protocols bgp group internal-peers neighbor 192.168.40.4\nset protocols ospf area 0.0.0.0 interface lo0.1 passive\nset protocols ospf area 0.0.0.0 interface ge-0/1/0.1\nset policy-options policy-statement send-direct term 2 from protocol direct\nset policy-options policy-statement send-direct term 2 then accept\nset routing-options router-id 192.168.6.5\nset routing-options autonomous-system 17",
+            "设备 B": "set interfaces ge-0/1/0 unit 2 description to-A\nset interfaces ge-0/1/0 unit 2 family inet address 10.10.10.2/30\nset interfaces ge-0/1/1 unit 5 description to-C\nset interfaces ge-0/1/1 unit 5 family inet address 10.10.10.5/30\nset interfaces lo0 unit 2 family inet address 192.163.6.4/32\nset protocols bgp group internal-peers type internal\nset protocols bgp group internal-peers description “connections to A and C”\nset protocols bgp group internal-peers local-address 192.163.6.4\nset protocols bgp group internal-peers export send-direct\nset protocols bgp group internal-peers neighbor 192.168.40.4\nset protocols bgp group internal-peers neighbor 192.168.6.5\nset protocols ospf area 0.0.0.0 interface lo0.2 passive\nset protocols ospf area 0.0.0.0 interface ge-0/1/0.2\nset protocols ospf area 0.0.0.0 interface ge-0/1/1.5\nset policy-options policy-statement send-direct term 2 from protocol direct\nset policy-options policy-statement send-direct term 2 then accept\nset routing-options router-id 192.163.6.4\nset routing-options autonomous-system 17",
+            "设备 C": "set interfaces ge-0/1/0 unit 6 description to-B\nset interfaces ge-0/1/0 unit 6 family inet address 10.10.10.6/30\nset interfaces lo0 unit 3 family inet address 192.168.40.4/32\nset protocols bgp group internal-peers type internal\nset protocols bgp group internal-peers description “connections to A and B”\nset protocols bgp group internal-peers local-address 192.168.40.4\nset protocols bgp group internal-peers export send-direct\nset protocols bgp group internal-peers neighbor 192.163.6.4\nset protocols bgp group internal-peers neighbor 192.168.6.5\nset protocols ospf area 0.0.0.0 interface lo0.3 passive\nset protocols ospf area 0.0.0.0 interface ge-0/1/0.6\nset policy-options policy-statement send-direct term 2 from protocol direct\nset policy-options policy-statement send-direct term 2 then accept\nset routing-options router-id 192.168.40.4\nset routing-options autonomous-system 17"
+          }
+        },
+        {
+          "title": "配置设备 A",
+          "level": 4,
+          "content": "下面的示例要求您在各个配置层级中进行导航。有关导航 CLI 的信息，请参阅《Junos OS CLI 用户指南》中的在配置模式下使用 CLI 编辑器。 要在设备 A 上配置内部 BGP 对等会话，请执行以下操作： 配置接口。 [edit interfaces ge-0/1/0 unit 1] user@A# set description to-B user@A# set family inet address 10.10.10.1/30 [edit interfaces] user@A# set lo0 unit 1 family inet address 192.168.6.5/32 配置 BGP。 设备 B 和设备 C 都包含这些 neighbor 语句，即使设备 A 未直接连接到设备 C。 [edit protocols bgp group internal-peers] user@A# set type internal user@A# set description “connections to B and C” user@A# set local-address 192.168.6.5 user@A# set export send-direct user@A# set neighbor 192.163.6.4 user@A# set neighbor 192.168.40.4 配置 OSPF。 [edit protocols ospf area 0.0.0.0] user@A# set interface lo0.1 passive user@A# set interface ge-0/1/0.1 配置接受直接路由的策略。 此方案的其他有用选项可能是接受通过 OSPF 或本地路由获知的路由。 [edit policy-options policy-statement send-direct term 2] user@A# set from protocol direct user@A# set then accept 配置路由器 ID 和 AS 编号。 [edit routing-options] user@A# set router-id 192.168.6.5 user@A# set autonomous-system 17 在配置模式下，输入 show interfaces 、 show policy-options 、 show protocols 和 show routing-options 命令，以确认您的配置。如果输出未显示预期的配置，请重复此示例中的说明，以便进行更正。 user@A# show interfaces ge-0/1/0 { unit 1 { description to-B; family inet { address 10.10.10.1/30; } } } lo0 { unit 1 { family inet { address 192.168.6.5/32; } } } user@A# show policy-options policy-statement send-direct { term 2 { from protocol direct; then accept; } } user@A# show protocols bgp { group internal-peers { type internal; description “connections to B and C”; local-address 192.168.6.5; export send-direct; neighbor 192.163.6.4; neighbor 192.168.40.4; } } ospf { area 0.0.0.0 { interface lo0.1 { passive; } interface ge-0/1/0.1; } } user@A# show routing-options router-id 192.168.6.5; autonomous-system 17; 如果完成设备配置，请从配置模式输入 commit 。",
+          "sections": [
+            {
+              "title": "分步过程",
+              "level": 5,
+              "step_by_step": [
+                {
+                  "step": 1,
+                  "description": "配置接口。",
+                  "code": [
+                    "[edit interfaces ge-0/1/0 unit 1]",
+                    "user@A# set description to-B",
+                    "user@A# set family inet address 10.10.10.1/30",
+                    "[edit interfaces]",
+                    "user@A# set lo0 unit 1 family inet address 192.168.6.5/32"
+                  ]
+                },
+                {
+                  "step": 2,
+                  "description": "配置 BGP。",
+                  "code": [
+                    "[edit protocols bgp group internal-peers]",
+                    "user@A# set type internal",
+                    "user@A# set description “connections to B and C”",
+                    "user@A# set local-address 192.168.6.5",
+                    "user@A# set export send-direct",
+                    "user@A# set neighbor 192.163.6.4",
+                    "user@A# set neighbor 192.168.40.4"
+                  ]
+                },
+                {
+                  "step": 3,
+                  "description": "配置 OSPF。",
+                  "code": [
+                    "[edit protocols ospf area 0.0.0.0]",
+                    "user@A# set interface lo0.1 passive",
+                    "user@A# set interface ge-0/1/0.1"
+                  ]
+                },
+                {
+                  "step": 4,
+                  "description": "配置接受直接路由的策略。",
+                  "code": [
+                    "[edit policy-options policy-statement send-direct term 2]",
+                    "user@A# set from protocol direct",
+                    "user@A# set then accept"
+                  ]
+                },
+                {
+                  "step": 5,
+                  "description": "配置路由器 ID 和 AS 编号。",
+                  "code": [
+                    "[edit routing-options]",
+                    "user@A# set router-id 192.168.6.5",
+                    "user@A# set autonomous-system 17"
+                  ]
+                }
+              ]
+            },
+            {
+              "title": "结果",
+              "level": 5,
+              "content": "在配置模式下，输入 show interfaces 、 show policy-options 、 show protocols 和 show routing-options 命令，以确认您的配置。如果输出未显示预期的配置，请重复此示例中的说明，以便进行更正。 如果完成设备配置，请从配置模式输入 commit 。",
+              "code": [
+                "user@A#show interfacesge-0/1/0 {\n    unit 1 {\n        description to-B;\n        family inet {\n            address 10.10.10.1/30;\n        }\n    }\n}\nlo0 {\n    unit 1 {\n        family inet {\n            address 192.168.6.5/32;\n        }\n    }\n}",
+                "user@A#show policy-optionspolicy-statement send-direct {\n    term 2 {\n        from protocol direct;\n        then accept;\n    }\n}",
+                "user@A#show protocolsbgp {\n    group internal-peers {\n        type internal;\n        description “connections to B and C”;\n        local-address 192.168.6.5;\n        export send-direct;\n        neighbor 192.163.6.4;\n        neighbor 192.168.40.4;\n    }\n}\nospf {\n    area 0.0.0.0 {\n        interface lo0.1 {\n            passive;\n        }\n        interface ge-0/1/0.1;\n    }\n}",
+                "user@A#show routing-optionsrouter-id 192.168.6.5;\nautonomous-system 17;"
+              ]
+            }
+          ]
+        },
+        {
+          "title": "配置设备 B",
+          "level": 4,
+          "content": "以下示例要求您在配置层次结构中导航各个级别。有关导航 CLI 的信息，请参阅 在配置模式下使用 CLI 编辑器。 要在设备 B 上配置内部 BGP 对等会话，请执行以下操作： 配置接口。 [edit interfaces ge-0/1/0 unit 2] user@B# set description to-A user@B# set family inet address 10.10.10.2/30 [edit interfaces ge-0/1/1] user@B# set unit 5 description to-C user@B# set unit 5 family inet address 10.10.10.5/30 [edit interfaces] user@B# set lo0 unit 2 family inet address 192.163.6.4/32 配置 BGP。 设备 B 和设备 C 都包含这些 neighbor 语句，即使设备 A 未直接连接到设备 C。 [edit protocols bgp group internal-peers] user@B# set type internal user@B# set description “connections to A and C” user@B# set local-address 192.163.6.4 user@B# set export send-direct user@B# set neighbor 192.168.40.4 user@B# set neighbor 192.168.6.5 配置 OSPF。 [edit protocols ospf area 0.0.0.0] user@B# set interface lo0.2 passive user@B# set interface ge-0/1/0.2 user@B# set interface ge-0/1/1.5 配置接受直接路由的策略。 此方案的其他有用选项可能是接受通过 OSPF 或本地路由获知的路由。 [edit policy-options policy-statement send-direct term 2] user@B# set from protocol direct user@B# set then accept 配置路由器 ID 和 AS 编号。 [edit routing-options] user@B# set router-id 192.163.6.4 user@B# set autonomous-system 17 在配置模式下，输入 show interfaces 、 show policy-options 、 show protocols 和 show routing-options 命令，以确认您的配置。如果输出未显示预期的配置，请重复此示例中的说明，以便进行更正。 user@B# show interfaces ge-0/1/0 { unit 2 { description to-A; family inet { address 10.10.10.2/30; } } } ge-0/1/1 { unit 5 { description to-C; family inet { address 10.10.10.5/30; } } } lo0 { unit 2 { family inet { address 192.163.6.4/32; } } } user@B# show policy-options policy-statement send-direct { term 2 { from protocol direct; then accept; } } user@B# show protocols bgp { group internal-peers { type internal; description “connections to A and C”; local-address 192.163.6.4; export send-direct; neighbor 192.168.40.4; neighbor 192.168.6.5; } } ospf { area 0.0.0.0 { interface lo0.2 { passive; } interface ge-0/1/0.2; interface ge-0/1/1.5; } } user@B# show routing-options router-id 192.163.6.4; autonomous-system 17; 如果完成设备配置，请从配置模式输入 commit 。",
+          "sections": [
+            {
+              "title": "分步过程",
+              "level": 5,
+              "step_by_step": [
+                {
+                  "step": 1,
+                  "description": "配置接口。",
+                  "code": [
+                    "[edit interfaces ge-0/1/0 unit 2]",
+                    "user@B# set description to-A",
+                    "user@B# set family inet address 10.10.10.2/30",
+                    "[edit interfaces ge-0/1/1]",
+                    "user@B# set unit 5 description to-C",
+                    "user@B# set unit 5 family inet address 10.10.10.5/30",
+                    "[edit interfaces]",
+                    "user@B# set lo0 unit 2 family inet address 192.163.6.4/32"
+                  ]
+                },
+                {
+                  "step": 2,
+                  "description": "配置 BGP。",
+                  "code": [
+                    "[edit protocols bgp group internal-peers]",
+                    "user@B# set type internal",
+                    "user@B# set description “connections to A and C”",
+                    "user@B# set local-address 192.163.6.4",
+                    "user@B# set export send-direct",
+                    "user@B# set neighbor 192.168.40.4",
+                    "user@B# set neighbor 192.168.6.5"
+                  ]
+                },
+                {
+                  "step": 3,
+                  "description": "配置 OSPF。",
+                  "code": [
+                    "[edit protocols ospf area 0.0.0.0]",
+                    "user@B# set interface lo0.2 passive",
+                    "user@B# set interface ge-0/1/0.2",
+                    "user@B# set interface ge-0/1/1.5"
+                  ]
+                },
+                {
+                  "step": 4,
+                  "description": "配置接受直接路由的策略。",
+                  "code": [
+                    "[edit policy-options policy-statement send-direct term 2]",
+                    "user@B# set from protocol direct",
+                    "user@B# set then accept"
+                  ]
+                },
+                {
+                  "step": 5,
+                  "description": "配置路由器 ID 和 AS 编号。",
+                  "code": [
+                    "[edit routing-options]",
+                    "user@B# set router-id 192.163.6.4",
+                    "user@B# set autonomous-system 17"
+                  ]
+                }
+              ]
+            },
+            {
+              "title": "结果",
+              "level": 5,
+              "content": "在配置模式下，输入 show interfaces 、 show policy-options 、 show protocols 和 show routing-options 命令，以确认您的配置。如果输出未显示预期的配置，请重复此示例中的说明，以便进行更正。 如果完成设备配置，请从配置模式输入 commit 。",
+              "code": [
+                "user@B#show interfacesge-0/1/0 {\n    unit 2 {\n        description to-A;\n        family inet {\n            address 10.10.10.2/30;\n        }\n    }\n}\nge-0/1/1 {\n    unit 5 {\n        description to-C;\n        family inet {\n            address 10.10.10.5/30;\n        }\n    }\n}\nlo0 {\n    unit 2 {\n        family inet {\n            address 192.163.6.4/32;\n        }\n    }\n}",
+                "user@B#show policy-optionspolicy-statement send-direct {\n    term 2 {\n        from protocol direct;\n        then accept;\n    }\n}",
+                "user@B#show protocolsbgp {\n    group internal-peers {\n        type internal;\n        description “connections to A and C”;\n        local-address 192.163.6.4;\n        export send-direct;\n        neighbor 192.168.40.4;\n        neighbor 192.168.6.5;\n    }\n}\nospf {\n    area 0.0.0.0 {\n        interface lo0.2 {\n            passive;\n        }\n        interface ge-0/1/0.2;\n        interface ge-0/1/1.5;\n    }\n}",
+                "user@B#show routing-optionsrouter-id 192.163.6.4; \nautonomous-system 17;"
+              ]
+            }
+          ]
+        },
+        {
+          "title": "配置设备 C",
+          "level": 4,
+          "content": "下面的示例要求您在各个配置层级中进行导航。有关导航 CLI 的信息，请参阅《Junos OS CLI 用户指南》中的在配置模式下使用 CLI 编辑器。 要在设备 C 上配置内部 BGP 对等会话，请执行以下操作： 配置接口。 [edit interfaces ge-0/1/0 unit 6] user@C# set description to-B user@C# set family inet address 10.10.10.6/30 [edit interfaces] user@C# set lo0 unit 3 family inet address 192.168.40.4/32 配置 BGP。 设备 B 和设备 C 都包含这些 neighbor 语句，即使设备 A 未直接连接到设备 C。 [edit protocols bgp group internal-peers] user@C# set type internal user@C# set description “connections to A and B” user@C# set local-address 192.168.40.4 user@C# set export send-direct user@C# set neighbor 192.163.6.4 user@C# set neighbor 192.168.6.5 配置 OSPF。 [edit protocols ospf area 0.0.0.0] user@C# set interface lo0.3 passive user@C# set interface ge-0/1/0.6 配置接受直接路由的策略。 此方案的其他有用选项可能是接受通过 OSPF 或本地路由获知的路由。 [edit policy-options policy-statement send-direct term 2] user@C# set from protocol direct user@C# set then accept 配置路由器 ID 和 AS 编号。 [edit routing-options] user@C# set router-id 192.168.40.4 user@C# set autonomous-system 17 在配置模式下，输入 show interfaces 、 show policy-options 、 show protocols 和 show routing-options 命令，以确认您的配置。如果输出未显示预期的配置，请重复此示例中的说明，以便进行更正。 user@C# show interfaces ge-0/1/0 { unit 6 { description to-B; family inet { address 10.10.10.6/30; } } } lo0 { unit 3 { family inet { address 192.168.40.4/32; } } } user@C# show policy-options policy-statement send-direct { term 2 { from protocol direct; then accept; } } user@C# show protocols bgp { group internal-peers { type internal; description “connections to A and B”; local-address 192.168.40.4; export send-direct; neighbor 192.163.6.4; neighbor 192.168.6.5; } } ospf { area 0.0.0.0 { interface lo0.3 { passive; } interface ge-0/1/0.6; } } user@C# show routing-options router-id 192.168.40.4; autonomous-system 17; 如果完成设备配置，请从配置模式输入 commit 。",
+          "sections": [
+            {
+              "title": "分步过程",
+              "level": 5,
+              "step_by_step": [
+                {
+                  "step": 1,
+                  "description": "配置接口。",
+                  "code": [
+                    "[edit interfaces ge-0/1/0 unit 6]",
+                    "user@C# set description to-B",
+                    "user@C# set family inet address 10.10.10.6/30",
+                    "[edit interfaces]",
+                    "user@C# set lo0 unit 3 family inet address 192.168.40.4/32"
+                  ]
+                },
+                {
+                  "step": 2,
+                  "description": "配置 BGP。",
+                  "code": [
+                    "[edit protocols bgp group internal-peers]",
+                    "user@C# set type internal",
+                    "user@C# set description “connections to A and B”",
+                    "user@C# set local-address 192.168.40.4",
+                    "user@C# set export send-direct",
+                    "user@C# set neighbor 192.163.6.4",
+                    "user@C# set neighbor 192.168.6.5"
+                  ]
+                },
+                {
+                  "step": 3,
+                  "description": "配置 OSPF。",
+                  "code": [
+                    "[edit protocols ospf area 0.0.0.0]",
+                    "user@C# set interface lo0.3 passive",
+                    "user@C# set interface ge-0/1/0.6"
+                  ]
+                },
+                {
+                  "step": 4,
+                  "description": "配置接受直接路由的策略。",
+                  "code": [
+                    "[edit policy-options policy-statement send-direct term 2]",
+                    "user@C# set from protocol direct",
+                    "user@C# set then accept"
+                  ]
+                },
+                {
+                  "step": 5,
+                  "description": "配置路由器 ID 和 AS 编号。",
+                  "code": [
+                    "[edit routing-options]",
+                    "user@C# set router-id 192.168.40.4",
+                    "user@C# set autonomous-system 17"
+                  ]
+                }
+              ]
+            },
+            {
+              "title": "结果",
+              "level": 5,
+              "content": "在配置模式下，输入 show interfaces 、 show policy-options 、 show protocols 和 show routing-options 命令，以确认您的配置。如果输出未显示预期的配置，请重复此示例中的说明，以便进行更正。 如果完成设备配置，请从配置模式输入 commit 。",
+              "code": [
+                "user@C#show interfacesge-0/1/0 {\n    unit 6 {\n        description to-B;\n        \n        \n        family inet {\n            address 10.10.10.6/30;\n        }\n    }\n}\nlo0 {\n    unit 3 {\n        family inet {\n            address 192.168.40.4/32;\n        }\n    }\n}",
+                "user@C#show policy-optionspolicy-statement send-direct {\n    term 2 {\n        from protocol direct;\n        then accept;\n    }\n}",
+                "user@C#show protocolsbgp {\n    group internal-peers {\n        type internal;\n        description “connections to A and B”;\n        local-address 192.168.40.4;\n        export send-direct;\n        neighbor 192.163.6.4;\n        neighbor 192.168.6.5;\n    }\n}\nospf {\n    area 0.0.0.0 {\n        interface lo0.3 {\n            passive;\n        }\n        interface ge-0/1/0.6;\n    }\n}",
+                "user@C#show routing-optionsrouter-id 192.168.40.4;\nautonomous-system 17;"
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "content": "此示例说明如何配置内部 BGP 对等会话。 要求 在配置此示例之前，不需要除设备初始化之外的特殊配置。 概述 在此示例中，您将配置内部 BGP （IBGP） 对等会话。环路接口 （lo0） 用于在 IBGP 对等方之间建立连接。只要设备正在运行，环路接口就始终处于打开状态。如果存在到环路地址的路由，IBGP 对等会话将保持运行。如果改用物理接口地址，并且该接口上升和关闭，则 IBGP 对等会话也会上升和关闭。因此，如果设备具有链路冗余，则环路接口可在物理接口或其中一个链路出现故障时提供容错能力。 当设备与远程设备的环路接口地址对等时，本地设备期望 BGP 更新消息来自远程设备的环路接口地址（由远程设备的环路接口地址提供）。使用该 local-address 语句，可以在 BGP 更新消息中指定源信息。如果省略 local-address 该语句，则 BGP 更新消息的预期源基于设备的源地址选择规则，这通常会导致出口接口地址成为更新消息的预期源。发生这种情况时，不会建立对等会话，因为预期的源地址（对等方的出口接口）和实际源地址（对等方的环路接口）之间存在不匹配。要确保预期的源地址与实际源地址匹配，请在语句中 local-address 指定环路接口地址。 由于 IBGP 支持多跃点连接，因此 IBGP 邻接方可以位于自治系统 （AS） 内的任何位置，并且通常不共享链路。递归路由查找将环路对等方地址解析为下一跃点转发的 IP 地址。在此示例中，此服务由 OSPF 提供。虽然内部网关协议 （IGP） 邻居不需要直接连接，但它们需要完全网状连接。在这种情况下，全网状意味着每个设备通过邻居对等关系在逻辑上连接到所有其他设备。该语句创建 neighbor 网格。 注： 如果配置联合体或路由反射，则无需全网状网络。 建立 BGP 对等方后，BGP 对等方不会自动播发本地路由。在每个启用 BGP 的设备上，都需要进行策略配置，以将本地、静态或 IGP 获知的路由导出到 BGP 路由信息库 （RIB），然后将其作为 BGP 路由播发给其他对等方。默认情况下，BGP 的播发策略不会向对等方播发任何非 BGP 路由（例如本地路由）。 在示例网络中，AS 17 中的设备在组中 internal-peers 完全网状。这些设备的环路地址为 192.168.6.5、192.163.6.4 和 192.168.40.4。 图 5 显示了具有内部对等会话的典型网络"
+}

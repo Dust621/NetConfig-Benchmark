@@ -1,0 +1,191 @@
+{
+  "title": "示例：配置 BGP 输出优先级调度程序和全局地址族优先级",
+  "sections": [
+    {
+      "title": "要求",
+      "level": 3,
+      "content": "此示例使用以下硬件和软件组件： 运行 Junos OS 16.1 或更高版本的 MX 系列路由器 （R1） 在配置 BGP 路由优先级调度程序之前，请确保路由器上运行 BGP 协议。 此示例使用以下硬件和软件组件： 运行 Junos OS 16.1 或更高版本的 MX 系列路由器 （R1） 在配置 BGP 路由优先级调度程序之前，请确保路由器上运行 BGP 协议。"
+    },
+    {
+      "title": "概述",
+      "level": 3,
+      "content": "BGP 路由优先级调度程序用于控制路由优先级系统的 17 个输出队列内完成的工作量。系统使用一组 17 个优先级输出队列，每个路由实例分配了工作令牌。默认情况下，所有 17 个优先级输出队列（1-16 和加速）都分配了 1 个令牌。可以将 1 到 100 之间的任意数量的令牌分配给 17 个队列中的每一个。通过将令牌分配给队列，可以平衡在队列中的路由上执行的工作量。此外，可以通过将每个关键字分配给特定的编号输出队列来配置高、中和低优先级队列的默认设置。在此示例中，我们将使用 不同数量的工作令牌配置 17 个优先级队列中的每一个，我们还为 inet 单播路由配置全局输出优先级，并通过设置一些 BGP 组来覆盖全局优先级设置来演示继承。"
+    },
+    {
+      "title": "配置",
+      "level": 3,
+      "content": "分配给 update-tokens 17 个输出队列中的每一个。 指定将哪些编号队列用作默认 high 、 medium 和 low 优先级队列。 配置路由的 inet unicast 全局输出优先级。 配置名为 test1 的 BGP 组，该组将显示组覆盖功能。 配置名为 test2 的 BGP 组，该组将显示全局继承。 要快速配置此示例，请复制以下命令，将其粘贴到文本文件中，删除所有换行符，更改与您的网络配置匹配所需的任何详细信息，然后将命令复制并粘贴到层次结构级别的 CLI [edit] 中。 set protocols bgp output-queue-priority expedited update-tokens 100 set protocols bgp output-queue-priority priority 1 update-tokens 1 set protocols bgp output-queue-priority priority 2 update-tokens 10 set protocols bgp output-queue-priority priority 3 update-tokens 15 set protocols bgp output-queue-priority priority 4 update-tokens 20 set protocols bgp output-queue-priority priority 5 update-tokens 25 set protocols bgp output-queue-priority priority 6 update-tokens 30 set protocols bgp output-queue-priority priority 7 update-tokens 35 set protocols bgp output-queue-priority priority 8 update-tokens 40 set protocols bgp output-queue-priority priority 9 update-tokens 45 set protocols bgp output-queue-priority priority 10 update-tokens 50 set protocols bgp output-queue-priority priority 11 update-tokens 55 set protocols bgp output-queue-priority priority 12 update-tokens 60 set protocols bgp output-queue-priority priority 13 update-tokens 65 set protocols bgp output-queue-priority priority 14 update-tokens 70 set protocols bgp output-queue-priority priority 15 update-tokens 75 set protocols bgp output-queue-priority priority 16 update-tokens 80 set protocols bgp output-queue-priority defaults low priority 1 set protocols bgp output-queue-priority defaults medium priority 10 set protocols bgp output-queue-priority defaults high expedited set protocols bgp group reflector local-address 198.51.100.140 set protocols bgp family inet unicast output-queue-priority priority 1 set protocols bgp family inet unicast route-refresh-priority priority 2 set protocols bgp family inet unicast withdraw-priority priority 3 set protocols bgp group test1 family inet unicast output-queue-priority priority 4 set protocols bgp group test1 family inet unicast route-refresh-priority priority 6 set protocols bgp group test1 peer-as 64511 set protocols bgp group test1 local-as 64511 set protocols bgp group test1 neighbor 224.223.1.1 set protocols bgp group test1 neighbor 224.223.2.2 family inet unicast output-queue-priority priority 7 set protocols bgp group test1 neighbor 224.223.2.2 family inet unicast route-refresh-priority priority 8 set protocols bgp group test1 neighbor 224.223.2.2 family inet unicast withdraw-priority expedited set protocols bgp group test2 peer-as 64513 set protocols bgp group test2 local-as 64511 set protocols bgp group test2 neighbor 224.223.3.3 下面的示例要求您在各个配置层级中进行导航。有关导航 CLI 的信息，请参阅《Junos OS CLI 用户指南》中的在配置模式下使用 CLI 编辑器。 将更新令牌分配给 17 个优先级输出队列中的每一个 [edit protocols bgp output-queue-priority] user@R1# set expedited update-tokens 100 user@R1# set priority 1 update-tokens 1 user@R1# set priority 2 update-tokens 10 user@R1# set priority 3 update-tokens 15 user@R1# set priority 4 update-tokens 20 user@R1# set priority 5 update-tokens 25 user@R1# set priority 6 update-tokens 30 user@R1# set priority 7 update-tokens 35 user@R1# set priority 8 update-tokens 40 user@R1# set priority 9 update-tokens 45 user@R1# set priority 10 update-tokens 50 user@R1# set priority 11 update-tokens 55 user@R1# set priority 12 update-tokens 60 user@R1# set priority 13 update-tokens 65 user@R1# set priority 14 update-tokens 70 user@R1# set priority 15 update-tokens 75 user@R1# set priority 16 update-tokens 80 [edit protocols bgp output-queue-priority] user@R1# set defaults low priority 1 user@R1# set defaults medium priority 10 user@R1# set defaults high expedited 结果 要确认配置，请从操作模式发出 show bgp output-scheduler 命令： 要确认配置，请从操作模式发出 show bgp output-scheduler 命令：",
+      "sections": [
+        {
+          "title": "CLI 快速配置",
+          "level": 4,
+          "content": "要快速配置此示例，请复制以下命令，将其粘贴到文本文件中，删除所有换行符，更改与您的网络配置匹配所需的任何详细信息，然后将命令复制并粘贴到层次结构级别的 CLI [edit] 中。 set protocols bgp output-queue-priority expedited update-tokens 100 set protocols bgp output-queue-priority priority 1 update-tokens 1 set protocols bgp output-queue-priority priority 2 update-tokens 10 set protocols bgp output-queue-priority priority 3 update-tokens 15 set protocols bgp output-queue-priority priority 4 update-tokens 20 set protocols bgp output-queue-priority priority 5 update-tokens 25 set protocols bgp output-queue-priority priority 6 update-tokens 30 set protocols bgp output-queue-priority priority 7 update-tokens 35 set protocols bgp output-queue-priority priority 8 update-tokens 40 set protocols bgp output-queue-priority priority 9 update-tokens 45 set protocols bgp output-queue-priority priority 10 update-tokens 50 set protocols bgp output-queue-priority priority 11 update-tokens 55 set protocols bgp output-queue-priority priority 12 update-tokens 60 set protocols bgp output-queue-priority priority 13 update-tokens 65 set protocols bgp output-queue-priority priority 14 update-tokens 70 set protocols bgp output-queue-priority priority 15 update-tokens 75 set protocols bgp output-queue-priority priority 16 update-tokens 80 set protocols bgp output-queue-priority defaults low priority 1 set protocols bgp output-queue-priority defaults medium priority 10 set protocols bgp output-queue-priority defaults high expedited set protocols bgp group reflector local-address 198.51.100.140 set protocols bgp family inet unicast output-queue-priority priority 1 set protocols bgp family inet unicast route-refresh-priority priority 2 set protocols bgp family inet unicast withdraw-priority priority 3 set protocols bgp group test1 family inet unicast output-queue-priority priority 4 set protocols bgp group test1 family inet unicast route-refresh-priority priority 6 set protocols bgp group test1 peer-as 64511 set protocols bgp group test1 local-as 64511 set protocols bgp group test1 neighbor 224.223.1.1 set protocols bgp group test1 neighbor 224.223.2.2 family inet unicast output-queue-priority priority 7 set protocols bgp group test1 neighbor 224.223.2.2 family inet unicast route-refresh-priority priority 8 set protocols bgp group test1 neighbor 224.223.2.2 family inet unicast withdraw-priority expedited set protocols bgp group test2 peer-as 64513 set protocols bgp group test2 local-as 64511 set protocols bgp group test2 neighbor 224.223.3.3"
+        },
+        {
+          "title": "配置单个输出优先级队列",
+          "level": 4,
+          "content": "下面的示例要求您在各个配置层级中进行导航。有关导航 CLI 的信息，请参阅《Junos OS CLI 用户指南》中的在配置模式下使用 CLI 编辑器。 将更新令牌分配给 17 个优先级输出队列中的每一个 [edit protocols bgp output-queue-priority] user@R1# set expedited update-tokens 100 user@R1# set priority 1 update-tokens 1 user@R1# set priority 2 update-tokens 10 user@R1# set priority 3 update-tokens 15 user@R1# set priority 4 update-tokens 20 user@R1# set priority 5 update-tokens 25 user@R1# set priority 6 update-tokens 30 user@R1# set priority 7 update-tokens 35 user@R1# set priority 8 update-tokens 40 user@R1# set priority 9 update-tokens 45 user@R1# set priority 10 update-tokens 50 user@R1# set priority 11 update-tokens 55 user@R1# set priority 12 update-tokens 60 user@R1# set priority 13 update-tokens 65 user@R1# set priority 14 update-tokens 70 user@R1# set priority 15 update-tokens 75 user@R1# set priority 16 update-tokens 80",
+          "sections": [
+            {
+              "title": "分步过程",
+              "level": 5,
+              "step_by_step": [
+                {
+                  "step": 1,
+                  "description": "将更新令牌分配给 17 个优先级输出队列中的每一个",
+                  "code": [
+                    "[edit protocols bgp output-queue-priority]",
+                    "user@R1# set expedited update-tokens 100",
+                    "user@R1# set priority 1 update-tokens 1",
+                    "user@R1# set priority 2 update-tokens 10",
+                    "user@R1# set priority 3 update-tokens 15",
+                    "user@R1# set priority 4 update-tokens 20",
+                    "user@R1# set priority 5 update-tokens 25",
+                    "user@R1# set priority 6 update-tokens 30",
+                    "user@R1# set priority 7 update-tokens 35",
+                    "user@R1# set priority 8 update-tokens 40",
+                    "user@R1# set priority 9 update-tokens 45",
+                    "user@R1# set priority 10 update-tokens 50",
+                    "user@R1# set priority 11 update-tokens 55",
+                    "user@R1# set priority 12 update-tokens 60",
+                    "user@R1# set priority 13 update-tokens 65",
+                    "user@R1# set priority 14 update-tokens 70",
+                    "user@R1# set priority 15 update-tokens 75",
+                    "user@R1# set priority 16 update-tokens 80"
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "配置默认队列以用于高、中和低优先级路由更新",
+          "level": 4,
+          "content": "[edit protocols bgp output-queue-priority] user@R1# set defaults low priority 1 user@R1# set defaults medium priority 10 user@R1# set defaults high expedited",
+          "sections": [
+            {
+              "title": "分步过程",
+              "level": 5,
+              "step_by_step": [
+                {
+                  "step": 1,
+                  "description": "",
+                  "code": [
+                    "[edit protocols bgp output-queue-priority]",
+                    "user@R1# set defaults low priority 1",
+                    "user@R1# set defaults medium priority 10",
+                    "user@R1# set defaults high expedited"
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "结果",
+          "level": 4,
+          "content": "要确认配置，请从操作模式发出 show bgp output-scheduler 命令："
+        }
+      ]
+    },
+    {
+      "title": "配置路由族的全局输出优先级",
+      "level": 3,
+      "content": "配置路由的 inet unicast 全局 output-queue-priority ： [edit bgp family inet unicast] user@R1# set output-queue-priority priority 1 user@R1# set route-refresh-priority priority 2 user@R1# set withdraw-priority priority 3",
+      "sections": [
+        {
+          "title": "程序",
+          "level": 4,
+          "content": "配置路由的 inet unicast 全局 output-queue-priority ： [edit bgp family inet unicast] user@R1# set output-queue-priority priority 1 user@R1# set route-refresh-priority priority 2 user@R1# set withdraw-priority priority 3",
+          "sections": [
+            {
+              "title": "分步过程",
+              "level": 5,
+              "step_by_step": [
+                {
+                  "step": 1,
+                  "description": "配置路由的 inet unicast 全局 output-queue-priority ：",
+                  "code": [
+                    "[edit bgp family inet unicast]",
+                    "user@R1# set output-queue-priority priority 1",
+                    "user@R1# set route-refresh-priority priority 2 ",
+                    "user@R1# set withdraw-priority priority 3"
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "配置名为 test1 的 BGP 组",
+      "level": 3,
+      "content": "将组 test1 配置为覆盖全局输出优先级，并包括一个覆盖组的邻接方和一个不覆盖组的邻接方。 [edit protocols bgp group test1] user@R1# set family inet unicast output-queue-priority priority 4 user@R1# set family inet unicast route-refresh-priority priority 6 user@R1# set peer-as 64511 user@R1# set local-as 64511 user@R1# set neighbor 224.223.1.1 user@R1# set neighbor 224.223.2.2 family inet unicast output-queue-priority priority 7 user@R1# set neighbor 224.223.2.2 family inet unicast route-refresh-priority priority 8 user@R1# set neighbor 224.223.2.2 family inet unicast withdraw-priority expedited 将 BGP 组 test2 配置为接受全局默认值。 [edit protocols bgp group test2] user@R1# set peer-as 64513 user@R1# set local-as 64511 user@R1# set neighbor 224.223.3.3",
+      "sections": [
+        {
+          "title": "程序",
+          "level": 4,
+          "content": "将组 test1 配置为覆盖全局输出优先级，并包括一个覆盖组的邻接方和一个不覆盖组的邻接方。 [edit protocols bgp group test1] user@R1# set family inet unicast output-queue-priority priority 4 user@R1# set family inet unicast route-refresh-priority priority 6 user@R1# set peer-as 64511 user@R1# set local-as 64511 user@R1# set neighbor 224.223.1.1 user@R1# set neighbor 224.223.2.2 family inet unicast output-queue-priority priority 7 user@R1# set neighbor 224.223.2.2 family inet unicast route-refresh-priority priority 8 user@R1# set neighbor 224.223.2.2 family inet unicast withdraw-priority expedited",
+          "sections": [
+            {
+              "title": "分步过程",
+              "level": 5,
+              "step_by_step": [
+                {
+                  "step": 1,
+                  "description": "将组 test1 配置为覆盖全局输出优先级，并包括一个覆盖组的邻接方和一个不覆盖组的邻接方。",
+                  "code": [
+                    "[edit protocols bgp group test1]",
+                    "user@R1# set family inet unicast output-queue-priority priority 4",
+                    "user@R1# set family inet unicast route-refresh-priority priority 6",
+                    "user@R1# set peer-as 64511",
+                    "user@R1# set local-as 64511",
+                    "user@R1# set neighbor 224.223.1.1 ",
+                    "user@R1# set neighbor 224.223.2.2 family inet unicast output-queue-priority priority 7 ",
+                    "user@R1# set neighbor 224.223.2.2 family inet unicast route-refresh-priority priority 8 ",
+                    "user@R1# set neighbor 224.223.2.2 family inet unicast withdraw-priority expedited"
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "配置名为 test2 的 BGP 组",
+          "level": 4,
+          "content": "将 BGP 组 test2 配置为接受全局默认值。 [edit protocols bgp group test2] user@R1# set peer-as 64513 user@R1# set local-as 64511 user@R1# set neighbor 224.223.3.3",
+          "sections": [
+            {
+              "title": "分步过程",
+              "level": 5,
+              "step_by_step": [
+                {
+                  "step": 1,
+                  "description": "将 BGP 组 test2 配置为接受全局默认值。",
+                  "code": [
+                    "[edit protocols bgp group test2]",
+                    "user@R1# set peer-as 64513",
+                    "user@R1# set local-as 64511",
+                    "user@R1# set neighbor 224.223.3.3"
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "验证 BGP 输出调度程序配置",
+          "level": 4,
+          "content": "目的 要验证 BGP 输出调度程序的配置，请从操作模式发出 show bgp output-scheduler 命令。 要验证 BGP 输出调度程序的配置，请从操作模式发出 show bgp output-scheduler 命令。 user@R1> show bgp output-scheduler user@R1> show bgp output-scheduler Instance: master Class Tokens ------------ ------ Priority 1 1 Priority 2 10 Priority 3 15 Priority 4 20 Priority 5 25 Priority 6 30 Priority 7 35 Priority 8 40 Priority 9 45 Priority 10 50 Priority 11 55 Priority 12 60 Priority 13 65 Priority 14 70 Priority 15 75 Priority 16 80 Expedited 100 Priority Class -------- ------------ low Priority 1 medium Priority 10 high Expedited 意义 输出显示输出调度程序配置成功地将适当数量的标记应用于每个输出队列，并且高、中和低优先级关键字已分配给正确的输出队列。 输出显示输出调度程序配置成功地将适当数量的标记应用于每个输出队列，并且高、中和低优先级关键字已分配给正确的输出队列。"
+        },
+        {
+          "title": "验证组配置、组覆盖和邻居覆盖",
+          "level": 4,
+          "content": "目的 要验证配置的组是否演示组覆盖、邻居覆盖和继承，请从操作模式发出 show bgp group group-name 命令。 要验证配置的组是否演示组覆盖、邻居覆盖和继承，请从操作模式发出 show bgp group group-name 命令。 user@R1> show bgp group test1 Group Type: Internal AS: 64511 Local AS: 64511 Name: test1 Index: 2 Flags: <> Options: <LocalAS> Holdtime: 0 NLRI inet-unicast: OutQ: priority 7 RRQ: priority 8 WDQ: expedited Local AS: 64511 Local System AS: 64511 Total peers: 1 Established: 0 224.223.2.2 Group Type: Internal AS: 64511 Local AS: 64511 Name: test1 Index: 1 Flags: <Export Eval> Options: <LocalAS> Holdtime: 0 NLRI inet-unicast: OutQ: priority 4 RRQ: priority 6 WDQ: priority 3 Local AS: 64511 Local System AS: 64511 Total peers: 1 Established: 0 224.223.1.1 意义 输出显示对等方 224.223.2.2 的输出队列优先级为 7，路由刷新优先级为 8，撤回优先级加快。邻居 224.223.1.1 的输出队列优先级为 4，路由刷新优先级为 6，撤回优先级是族 inet unicast 的默认设置，即 3。 输出显示对等方 224.223.2.2 的输出队列优先级为 7，路由刷新优先级为 8，撤回优先级加快。邻居 224.223.1.1 的输出队列优先级为 4，路由刷新优先级为 6，撤回优先级是族 inet unicast 的默认设置，即 3。"
+        }
+      ]
+    }
+  ],
+  "content": "此示例说明如何配置和测试系统范围的 BGP 路由优先级计划程序。 要求 此示例使用以下硬件和软件组件： 运行 Junos OS 16.1 或更高版本的 MX 系列路由器 （R1） 在配置 BGP 路由优先级调度程序之前，请确保路由器上运行 BGP 协议。 概述 BGP 路由优先级调度程序用于控制路由优先级系统的 17 个输出队列内完成的工作量。系统使用一组 17 个优先级输出队列，每个路由实例分配了工作令牌。默认情况下，所有 17 个优先级输出队列（1-16 和加速）都分配了 1 个令牌。可以将 1 到 100 之间的任意数量的令牌分配给 17 个队列中的每一个。通过将令牌分配给队列，可以平衡在队列中的路由上执行的工作量。此外，可以通过将每个关键字分配给特定的编号输出队列来配置高、中和低优先级队列的默认设置。在此示例中，我们将使用 不同数量的工作令牌配置 17 个优先级队列中的每一个，我们还为 inet 单播路由配置全局输出优先级，并通过设置一些 BGP 组来覆盖全局优先级设置来演示继承"
+}

@@ -1,0 +1,126 @@
+{
+  "title": "示例：使用路由策略设置 BGP 路由的首选项值",
+  "sections": [
+    {
+      "title": "要求",
+      "level": 3,
+      "content": "在配置此示例之前，不需要除设备初始化之外的特殊配置。"
+    },
+    {
+      "title": "概述",
+      "level": 3,
+      "content": "路由信息可以从多个源获知，例如通过静态配置、BGP 或内部网关协议 （IGP）。当 Junos OS 确定路由的首选项成为活动路由时，它会选择优先级最低的路由作为活动路由，并将此路由安装到转发表中。默认情况下，路由软件会为源自 BGP 的路由分配优先级 170。在所有路由协议中，BGP 具有最高的默认首选项值，这意味着 BGP 获知的路由最不可能成为活动路由。 某些供应商对外部 BGP （EBGP） 的优先级（距离）为 20，对内部 BGP （IGBP） 的优先级（距离）为 200。Junos OS 对 EBGP 和 IBGP 使用相同的值 （170）。但是，供应商之间的这种差异对运营没有影响，因为 Junos OS 始终更喜欢 EBGP 路由而不是 IBGP 路由。 供应商存在分歧的另一个方面是 IGP 距离与 BGP 距离的比较。例如，某些供应商为 OSPF 路由分配 110 的距离。这高于 EBGP 距离 20，因此选择 EBGP 路由而不是等效的 OSPF 路由。在同一场景中，Junos OS 选择 OSPF 路由，因为内部 OSPF 路由的默认优先级为 10，外部 OSPF 路由的默认优先级为 150，这两个优先级都低于分配给所有 BGP 路由的 170 优先级。 此示例显示了一个路由策略，该策略匹配来自特定下一跃点的路由并设置首选项。如果路由与第一个术语不匹配，则由第二个术语对其进行评估。 拓扑学 在示例网络中，设备 R1 和设备 R3 与设备 R2 具有 EBGP 会话。 在设备 R2 上，导入策略执行以下操作： 对于通过 BGP 从下一跃点 10.0.0.1（设备 R1）接收的路由，请将路由首选项设置为 10。 对于通过 BGP 从下一跃点 10.1.0.2（设备 R3）接收的路由，请将路由首选项设置为 15。 图 2 显示了示例网络。 图 2： BGP 首选项值拓扑 CLI 快速配置 显示了 中 图 2所有设备的配置。 #d11e85__d11e234本节介绍设备 R2 上的步骤。 路由信息可以从多个源获知，例如通过静态配置、BGP 或内部网关协议 （IGP）。当 Junos OS 确定路由的首选项成为活动路由时，它会选择优先级最低的路由作为活动路由，并将此路由安装到转发表中。默认情况下，路由软件会为源自 BGP 的路由分配优先级 170。在所有路由协议中，BGP 具有最高的默认首选项值，这意味着 BGP 获知的路由最不可能成为活动路由。 某些供应商对外部 BGP （EBGP） 的优先级（距离）为 20，对内部 BGP （IGBP） 的优先级（距离）为 200。Junos OS 对 EBGP 和 IBGP 使用相同的值 （170）。但是，供应商之间的这种差异对运营没有影响，因为 Junos OS 始终更喜欢 EBGP 路由而不是 IBGP 路由。 供应商存在分歧的另一个方面是 IGP 距离与 BGP 距离的比较。例如，某些供应商为 OSPF 路由分配 110 的距离。这高于 EBGP 距离 20，因此选择 EBGP 路由而不是等效的 OSPF 路由。在同一场景中，Junos OS 选择 OSPF 路由，因为内部 OSPF 路由的默认优先级为 10，外部 OSPF 路由的默认优先级为 150，这两个优先级都低于分配给所有 BGP 路由的 170 优先级。 此示例显示了一个路由策略，该策略匹配来自特定下一跃点的路由并设置首选项。如果路由与第一个术语不匹配，则由第二个术语对其进行评估。 拓扑学 在示例网络中，设备 R1 和设备 R3 与设备 R2 具有 EBGP 会话。 在设备 R2 上，导入策略执行以下操作： 对于通过 BGP 从下一跃点 10.0.0.1（设备 R1）接收的路由，请将路由首选项设置为 10。 对于通过 BGP 从下一跃点 10.1.0.2（设备 R3）接收的路由，请将路由首选项设置为 15。 图 2 显示了示例网络。 图 2： BGP 首选项值拓扑 CLI 快速配置 显示了 中 图 2所有设备的配置。 #d11e85__d11e234本节介绍设备 R2 上的步骤。 在示例网络中，设备 R1 和设备 R3 与设备 R2 具有 EBGP 会话。 在设备 R2 上，导入策略执行以下操作： 对于通过 BGP 从下一跃点 10.0.0.1（设备 R1）接收的路由，请将路由首选项设置为 10。 对于通过 BGP 从下一跃点 10.1.0.2（设备 R3）接收的路由，请将路由首选项设置为 15。 图 2 显示了示例网络。 图 2： BGP 首选项值拓扑 CLI 快速配置 显示了 中 图 2所有设备的配置。 #d11e85__d11e234本节介绍设备 R2 上的步骤。",
+      "sections": [
+        {
+          "title": "拓扑学",
+          "level": 4,
+          "content": "在示例网络中，设备 R1 和设备 R3 与设备 R2 具有 EBGP 会话。 在设备 R2 上，导入策略执行以下操作： 对于通过 BGP 从下一跃点 10.0.0.1（设备 R1）接收的路由，请将路由首选项设置为 10。 对于通过 BGP 从下一跃点 10.1.0.2（设备 R3）接收的路由，请将路由首选项设置为 15。 图 2 显示了示例网络。 图 2： BGP 首选项值拓扑 CLI 快速配置 显示了 中 图 2所有设备的配置。 #d11e85__d11e234本节介绍设备 R2 上的步骤。",
+          "images": [
+            "BGP 路由的本地首选项\\images\\4_示例：使用路由策略设置_BGP_路由的首_1.gif"
+          ]
+        }
+      ]
+    },
+    {
+      "title": "配置",
+      "level": 3,
+      "content": "要快速配置此示例，请复制以下命令，将其粘贴到文本文件中，删除所有换行符，更改与您的网络配置匹配所需的任何详细信息，然后将命令复制并粘贴到层次结构级别的 CLI [edit] 中。 设备 R1 set interfaces fe-1/2/0 unit 0 family inet address 10.0.0.1/30 set interfaces lo0 unit 0 family inet address 192.168.0.1/32 set protocols bgp group ext type external set protocols bgp group ext export send-direct set protocols bgp group ext peer-as 200 set protocols bgp group ext neighbor 10.0.0.2 set policy-options policy-statement send-direct term 1 from protocol direct set policy-options policy-statement send-direct term 1 then accept set routing-options autonomous-system 100 设备 R2 set interfaces fe-1/2/0 unit 0 family inet address 10.0.0.2/30 set interfaces fe-1/2/1 unit 0 family inet address 10.1.0.1/30 set interfaces lo0 unit 0 family inet address 192.168.0.2/32 set protocols bgp group ext type external set protocols bgp group ext import set-preference set protocols bgp group ext export send-direct set protocols bgp group ext neighbor 10.0.0.1 peer-as 100 set protocols bgp group ext neighbor 10.1.0.2 peer-as 300 set policy-options policy-statement send-direct term 1 from protocol direct set policy-options policy-statement send-direct term 1 then accept set policy-options policy-statement set-preference term term1 from protocol bgp set policy-options policy-statement set-preference term term1 from next-hop 10.0.0.1 set policy-options policy-statement set-preference term term1 then preference 10 set policy-options policy-statement set-preference term term2 from protocol bgp set policy-options policy-statement set-preference term term2 from next-hop 10.1.0.2 set policy-options policy-statement set-preference term term2 then preference 15 set routing-options autonomous-system 200 设备 R3 set interfaces fe-1/2/1 unit 0 family inet address 10.1.0.2/30 set interfaces lo0 unit 0 family inet address 192.168.0.3/32 set protocols bgp group ext type external set protocols bgp group ext export send-direct set protocols bgp group ext peer-as 200 set protocols bgp group ext neighbor 10.1.0.1 set policy-options policy-statement send-direct term 1 from protocol direct set policy-options policy-statement send-direct term 1 then accept set routing-options autonomous-system 300 以下示例要求您在配置层次结构中导航各个级别。有关导航 CLI 的信息，请参阅《Junos OS CLI 用户指南》中的在配置模式下使用 CLI 编辑器。 要配置设备 R2： 配置设备接口。 [edit interfaces] user@R2# set fe-1/2/0 unit 0 family inet address 10.0.0.2/30 user@R2# set fe-1/2/1 unit 0 family inet address 10.1.0.1/30 user@R2# set lo0 unit 0 family inet address 192.168.0.2/32 配置本地自治系统。 [edit routing-options] user@R2# set autonomous-system 200 配置发送直接路由的路由策略。 [edit policy-options policy-statement send-direct term 1] user@R2# set from protocol direct user@R2# set then accept 配置更改已接收路由首选项的路由策略。 [edit policy-options policy-statement set-preference] user@R2# set term term1 from protocol bgp user@R2# set term term1 from next-hop 10.0.0.1 user@R2# set term term1 then preference 10 user@R2# set term term2 from protocol bgp user@R2# set term term2 from next-hop 10.1.0.2 user@R2# set term term2 then preference 15 使用设备 R2 配置外部对等互连。 [edit protocols bgp group ext] user@R2# set type external user@R2# set export send-direct user@R2# set neighbor 10.0.0.1 peer-as 100 user@R2# set neighbor 10.1.0.2 peer-as 300 将该 set-preference 策略作为导入策略应用。 这会影响设备 R2 的路由表，对设备 R1 和设备 R3 没有影响。 [edit protocols bgp group ext] user@R2# set import set-preference 在配置模式下，输入 show interfaces 、 show protocols 、 show policy-options 和 show routing-options 命令，以确认您的配置。如果输出未显示预期的配置，请重复此示例中的说明，以便进行更正。 user@R2# show interfaces fe-1/2/0 { unit 0 { family inet { address 10.0.0.2/30; } } } fe-1/2/1 { unit 0 { family inet { address 10.1.0.1/30; } } } lo0 { unit 0{ family inet { address 192.168.0.2/32; } } } user@R2# show protocols bgp { group ext { type external; import set-preference; export send-direct; neighbor 10.0.0.1 { peer-as 100; } neighbor 10.1.0.2 { peer-as 300; } } } user@R2# show policy-options policy-statement send-direct { term 1 { from protocol direct; then accept; } } policy-statement set-preference { term term1 { from { protocol bgp; next-hop 10.0.0.1; } then { preference 10; } } term term2 { from { protocol bgp; next-hop 10.1.0.2; } then { preference 15; } } } user@R2# show routing-options autonomous-system 200; 如果完成设备配置，请从配置模式输入 commit 。",
+      "sections": [
+        {
+          "title": "CLI 快速配置",
+          "level": 4,
+          "content": "要快速配置此示例，请复制以下命令，将其粘贴到文本文件中，删除所有换行符，更改与您的网络配置匹配所需的任何详细信息，然后将命令复制并粘贴到层次结构级别的 CLI [edit] 中。 设备 R1 set interfaces fe-1/2/0 unit 0 family inet address 10.0.0.1/30 set interfaces lo0 unit 0 family inet address 192.168.0.1/32 set protocols bgp group ext type external set protocols bgp group ext export send-direct set protocols bgp group ext peer-as 200 set protocols bgp group ext neighbor 10.0.0.2 set policy-options policy-statement send-direct term 1 from protocol direct set policy-options policy-statement send-direct term 1 then accept set routing-options autonomous-system 100 设备 R2 set interfaces fe-1/2/0 unit 0 family inet address 10.0.0.2/30 set interfaces fe-1/2/1 unit 0 family inet address 10.1.0.1/30 set interfaces lo0 unit 0 family inet address 192.168.0.2/32 set protocols bgp group ext type external set protocols bgp group ext import set-preference set protocols bgp group ext export send-direct set protocols bgp group ext neighbor 10.0.0.1 peer-as 100 set protocols bgp group ext neighbor 10.1.0.2 peer-as 300 set policy-options policy-statement send-direct term 1 from protocol direct set policy-options policy-statement send-direct term 1 then accept set policy-options policy-statement set-preference term term1 from protocol bgp set policy-options policy-statement set-preference term term1 from next-hop 10.0.0.1 set policy-options policy-statement set-preference term term1 then preference 10 set policy-options policy-statement set-preference term term2 from protocol bgp set policy-options policy-statement set-preference term term2 from next-hop 10.1.0.2 set policy-options policy-statement set-preference term term2 then preference 15 set routing-options autonomous-system 200 设备 R3 set interfaces fe-1/2/1 unit 0 family inet address 10.1.0.2/30 set interfaces lo0 unit 0 family inet address 192.168.0.3/32 set protocols bgp group ext type external set protocols bgp group ext export send-direct set protocols bgp group ext peer-as 200 set protocols bgp group ext neighbor 10.1.0.1 set policy-options policy-statement send-direct term 1 from protocol direct set policy-options policy-statement send-direct term 1 then accept set routing-options autonomous-system 300",
+          "commands_by_device": {
+            "设备 R1": "set interfaces fe-1/2/0 unit 0 family inet address 10.0.0.1/30\nset interfaces lo0 unit 0 family inet address 192.168.0.1/32\nset protocols bgp group ext type external\nset protocols bgp group ext export send-direct\nset protocols bgp group ext peer-as 200\nset protocols bgp group ext neighbor 10.0.0.2\nset policy-options policy-statement send-direct term 1 from protocol direct\nset policy-options policy-statement send-direct term 1 then accept\nset routing-options autonomous-system 100",
+            "设备 R2": "set interfaces fe-1/2/0 unit 0 family inet address 10.0.0.2/30\nset interfaces fe-1/2/1 unit 0 family inet address 10.1.0.1/30\nset interfaces lo0 unit 0 family inet address 192.168.0.2/32\nset protocols bgp group ext type external\nset protocols bgp group ext import set-preference\nset protocols bgp group ext export send-direct\nset protocols bgp group ext neighbor 10.0.0.1 peer-as 100\nset protocols bgp group ext neighbor 10.1.0.2 peer-as 300\nset policy-options policy-statement send-direct term 1 from protocol direct\nset policy-options policy-statement send-direct term 1 then accept\nset policy-options policy-statement set-preference term term1 from protocol bgp\nset policy-options policy-statement set-preference term term1 from next-hop 10.0.0.1\nset policy-options policy-statement set-preference term term1 then preference 10\nset policy-options policy-statement set-preference term term2 from protocol bgp\nset policy-options policy-statement set-preference term term2 from next-hop 10.1.0.2\nset policy-options policy-statement set-preference term term2 then preference 15\nset routing-options autonomous-system 200",
+            "设备 R3": "set interfaces fe-1/2/1 unit 0 family inet address 10.1.0.2/30\nset interfaces lo0 unit 0 family inet address 192.168.0.3/32\nset protocols bgp group ext type external\nset protocols bgp group ext export send-direct\nset protocols bgp group ext peer-as 200\nset protocols bgp group ext neighbor 10.1.0.1\nset policy-options policy-statement send-direct term 1 from protocol direct\nset policy-options policy-statement send-direct term 1 then accept\nset routing-options autonomous-system 300"
+          }
+        },
+        {
+          "title": "程序",
+          "level": 4,
+          "content": "以下示例要求您在配置层次结构中导航各个级别。有关导航 CLI 的信息，请参阅《Junos OS CLI 用户指南》中的在配置模式下使用 CLI 编辑器。 要配置设备 R2： 配置设备接口。 [edit interfaces] user@R2# set fe-1/2/0 unit 0 family inet address 10.0.0.2/30 user@R2# set fe-1/2/1 unit 0 family inet address 10.1.0.1/30 user@R2# set lo0 unit 0 family inet address 192.168.0.2/32 配置本地自治系统。 [edit routing-options] user@R2# set autonomous-system 200 配置发送直接路由的路由策略。 [edit policy-options policy-statement send-direct term 1] user@R2# set from protocol direct user@R2# set then accept 配置更改已接收路由首选项的路由策略。 [edit policy-options policy-statement set-preference] user@R2# set term term1 from protocol bgp user@R2# set term term1 from next-hop 10.0.0.1 user@R2# set term term1 then preference 10 user@R2# set term term2 from protocol bgp user@R2# set term term2 from next-hop 10.1.0.2 user@R2# set term term2 then preference 15 使用设备 R2 配置外部对等互连。 [edit protocols bgp group ext] user@R2# set type external user@R2# set export send-direct user@R2# set neighbor 10.0.0.1 peer-as 100 user@R2# set neighbor 10.1.0.2 peer-as 300 将该 set-preference 策略作为导入策略应用。 这会影响设备 R2 的路由表，对设备 R1 和设备 R3 没有影响。 [edit protocols bgp group ext] user@R2# set import set-preference 在配置模式下，输入 show interfaces 、 show protocols 、 show policy-options 和 show routing-options 命令，以确认您的配置。如果输出未显示预期的配置，请重复此示例中的说明，以便进行更正。 user@R2# show interfaces fe-1/2/0 { unit 0 { family inet { address 10.0.0.2/30; } } } fe-1/2/1 { unit 0 { family inet { address 10.1.0.1/30; } } } lo0 { unit 0{ family inet { address 192.168.0.2/32; } } } user@R2# show protocols bgp { group ext { type external; import set-preference; export send-direct; neighbor 10.0.0.1 { peer-as 100; } neighbor 10.1.0.2 { peer-as 300; } } } user@R2# show policy-options policy-statement send-direct { term 1 { from protocol direct; then accept; } } policy-statement set-preference { term term1 { from { protocol bgp; next-hop 10.0.0.1; } then { preference 10; } } term term2 { from { protocol bgp; next-hop 10.1.0.2; } then { preference 15; } } } user@R2# show routing-options autonomous-system 200; 如果完成设备配置，请从配置模式输入 commit 。",
+          "sections": [
+            {
+              "title": "分步过程",
+              "level": 5,
+              "step_by_step": [
+                {
+                  "step": 1,
+                  "description": "配置设备接口。",
+                  "code": [
+                    "[edit interfaces]",
+                    "user@R2# set fe-1/2/0 unit 0 family inet address 10.0.0.2/30",
+                    "user@R2# set fe-1/2/1 unit 0 family inet address 10.1.0.1/30",
+                    "user@R2# set lo0 unit 0 family inet address 192.168.0.2/32"
+                  ]
+                },
+                {
+                  "step": 2,
+                  "description": "配置本地自治系统。",
+                  "code": [
+                    "[edit routing-options]",
+                    "user@R2# set autonomous-system 200"
+                  ]
+                },
+                {
+                  "step": 3,
+                  "description": "配置发送直接路由的路由策略。",
+                  "code": [
+                    "[edit policy-options policy-statement send-direct term 1]",
+                    "user@R2# set from protocol direct",
+                    "user@R2# set then accept"
+                  ]
+                },
+                {
+                  "step": 4,
+                  "description": "配置更改已接收路由首选项的路由策略。",
+                  "code": [
+                    "[edit policy-options policy-statement set-preference]",
+                    "user@R2# set term term1 from protocol bgp",
+                    "user@R2# set term term1 from next-hop 10.0.0.1",
+                    "user@R2# set term term1 then preference 10",
+                    "user@R2# set term term2 from protocol bgp",
+                    "user@R2# set term term2 from next-hop 10.1.0.2",
+                    "user@R2# set term term2 then preference 15"
+                  ]
+                },
+                {
+                  "step": 5,
+                  "description": "使用设备 R2 配置外部对等互连。",
+                  "code": [
+                    "[edit protocols bgp group ext]",
+                    "user@R2# set type external",
+                    "user@R2# set export send-direct",
+                    "user@R2# set neighbor 10.0.0.1 peer-as 100",
+                    "user@R2# set neighbor 10.1.0.2 peer-as 300"
+                  ]
+                },
+                {
+                  "step": 6,
+                  "description": "将该 set-preference 策略作为导入策略应用。",
+                  "code": [
+                    "[edit protocols bgp group ext]",
+                    "user@R2# set import set-preference"
+                  ]
+                }
+              ]
+            },
+            {
+              "title": "结果",
+              "level": 5,
+              "content": "在配置模式下，输入 show interfaces 、 show protocols 、 show policy-options 和 show routing-options 命令，以确认您的配置。如果输出未显示预期的配置，请重复此示例中的说明，以便进行更正。 如果完成设备配置，请从配置模式输入 commit 。",
+              "code": [
+                "user@R2#show interfacesfe-1/2/0 {\n    unit 0 {\n        family inet {\n            address 10.0.0.2/30;\n        }\n    }\n}\nfe-1/2/1 {\n    unit 0 {\n        family inet {\n            address 10.1.0.1/30;\n        }\n    }\n}\nlo0 {\n    unit 0{\n        family inet {\n            address 192.168.0.2/32;\n        }\n    }\n}",
+                "user@R2#show protocolsbgp {\n    group ext {\n        type external;\n        import set-preference;\n        export send-direct;\n        neighbor 10.0.0.1 {\n            peer-as 100;\n        }\n        neighbor 10.1.0.2 {\n            peer-as 300;\n        }\n    }\n}",
+                "user@R2#show policy-optionspolicy-statement send-direct {\n    term 1 {\n        from protocol direct;\n        then accept;\n    }\n}\npolicy-statement set-preference {\n    term term1 {\n        from {\n            protocol bgp;\n            next-hop 10.0.0.1;\n        }\n        then {\n            preference 10;\n        }\n    }\n    term term2 {\n        from {\n            protocol bgp;\n            next-hop 10.1.0.2;\n        }\n        then {\n            preference 15;\n        }\n    }\n}",
+                "user@R2#show routing-optionsautonomous-system 200;"
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "content": "此示例说明如何使用路由策略设置从 BGP 获知的路由的首选项。可以从多个源获知路由信息。为了断开从多个源获知的相同特定路由之间的联系，每个源都有一个首选项值。通过显式管理操作（如静态路由）获知的路由优先于从路由协议（如 BGP 或 OSPF）获知的路由。此概念被某些供应商称为 管理距离 。 要求 在配置此示例之前，不需要除设备初始化之外的特殊配置。 概述 路由信息可以从多个源获知，例如通过静态配置、BGP 或内部网关协议 （IGP）。当 Junos OS 确定路由的首选项成为活动路由时，它会选择优先级最低的路由作为活动路由，并将此路由安装到转发表中。默认情况下，路由软件会为源自 BGP 的路由分配优先级 170。在所有路由协议中，BGP 具有最高的默认首选项值，这意味着 BGP 获知的路由最不可能成为活动路由。 某些供应商对外部 BGP （EBGP） 的优先级（距离）为 20，对内部 BGP （IGBP） 的优先级（距离）为 200。Junos OS 对 EBGP 和 IBGP 使用相同的值 （170）。但是，供应商之间的这种差异对运营没有影响，因为 Junos OS 始终更喜欢 EBGP 路由而不是 IBGP 路由。 供应商存在分歧的另一个方面是 IGP 距离与 BGP 距离的比较。例如，某些供应商为 OSPF 路由分配 110 的距离。这高于 EBGP 距离 20，因此选择 EBGP 路由而不是等效的 OSPF 路由。在同一场景中，Junos OS 选择 OSPF 路由，因为内部 OSPF 路由的默认优先级为 10，外部 OSPF 路由的默认优先级为 150，这两个优先级都低于分配给所有 BGP 路由的 170 优先级。 此示例显示了一个路由策略，该策略匹配来自特定下一跃点的路由并设置首选项。如果路由与第一个术语不匹配，则由第二个术语对其进行评估。 拓扑学 在示例网络中，设备 R1 和设备 R3 与设备 R2 具有 EBGP 会话。 在设备 R2 上，导入策略执行以下操作： 对于通过 BGP 从下一跃点 10.0.0.1（设备 R1）接收的路由，请将路由首选项设置为 10。 对于通过 BGP 从下一跃点 10.1.0.2（设备 R3）接收的路由，请将路由首选项设置为 15。 图 2 显示了示例网络。 图 2： BGP 首选项值拓扑 CLI 快速配置 显示了 中 图 2所有设备的配置。 #d11e85__d11e234本节介绍设备 R2 上的步骤"
+}

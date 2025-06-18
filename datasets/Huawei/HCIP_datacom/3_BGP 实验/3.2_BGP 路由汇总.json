@@ -1,0 +1,15 @@
+{
+  "topology": "BGP AS 号、互联地址如图所示，所有设备均创建Loopback0 接口，IP 地址为10.0.x.x/32，其中x 为设备编号。 R1、R2、R3 使用Loopback0 地址作为BGP Router ID，基于直连接口建立EBGP 对等体关系。 R1、R3 上存在Loopback1、Loopback2 接口，用于模拟用户网段。",
+  "requirement": "你是公司的网络管理员。公司的网络采用了BGP 协议作为路由协议。公司的网络由多个自治系统组成，不同的分支机构使用了不同的AS 号。随着公司规模的扩大，路由器中已经有越来越多的路由，进行BGP 的路由汇总迫在眉睫。你测试了几种进行路由汇总的方法，最终选择了合适的方式实现了路由汇总。",
+  "steps": [
+    "设备IP 地址配置。",
+    "按照规划配置R1、R2、R3 之间的EBGP 对等体关系。",
+    "在R1 上将Loopback1、Loopback2 接口路由发布到BGP 中并进行自动汇总，在R2 上观察BGP 汇总路由的明细信息。",
+    "在R3 上将Loopback1、Loopback2 接口路由发布到BGP 中，在R2 上执行手动汇总，观察R2、R3 上的BGP 汇总路由的明细信息。之后在R2 上执行手动汇总并增加关键字as-set，再次观察R2 上的BGP 汇总路由的明细信息。"
+  ],
+  "configs": {
+    "R1": "# \nsysname R1 \n# \ninterface GigabitEthernet0/0/2 \n ip address 10.0.12.1 255.255.255.0 \n# \ninterface NULL0 \n# \ninterface LoopBack0 \n ip address 10.0.1.1 255.255.255.255 \n# \ninterface LoopBack1 \n ip address 172.16.1.1 255.255.255.0 \n# \ninterface LoopBack2 \n ip address 172.16.2.1 255.255.255.0 \n# \nbgp 64511 \n router-id 10.0.1.1 \n peer 10.0.12.2 as-number 64512 \n # \n ipv4-family unicast \n  undo synchronization \n  summary automatic \n  import-route direct route-policy hcip \n  peer 10.0.12.2 enable \n# \nroute-policy hcip permit node 10 \n if-match ip-prefix 1 \n# \nip ip-prefix 1 index 10 permit 172.16.0.0 16 greater-equal 24 less-equal 24 \n# \nreturn",
+    "R2": "# \nsysname R2 \n# \ninterface GigabitEthernet0/0/2 \n ip address 10.0.23.2 255.255.255.0 \n# \ninterface GigabitEthernet0/0/3 \n ip address 10.0.12.2 255.255.255.0 \n# \ninterface LoopBack0 \n ip address 10.0.2.2 255.255.255.255 \n# \nbgp 64512 \n router-id 10.0.2.2 \n peer 10.0.12.1 as-number 64511 \n peer 10.0.23.3 as-number 64513 \n # \n ipv4-family unicast \n  undo synchronization \n  aggregate 172.17.0.0 255.255.252.0 as-set detail-suppressed \n  peer 10.0.12.1 enable \n  peer 10.0.23.3 enable \n# \nreturn",
+    "R3": "# \nsysname R3 \n# \ninterface LoopBack0 \n ip address 10.0.3.3 255.255.255.255 \n# \ninterface LoopBack1 \n ip address 172.17.1.1 255.255.255.0 \n# \ninterface LoopBack2 \n ip address 172.17.2.1 255.255.255.0 \n# \nbgp 64513 \n router-id 10.0.3.3 \n peer 10.0.23.2 as-number 64512 \n # \n ipv4-family unicast \n  undo synchronization \n  import-route direct route-policy hcip \n  peer 10.0.23.2 enable \n# \nroute-policy hcip permit node 10 \n if-match ip-prefix 1 \n# \nip ip-prefix 1 index 10 permit 172.17.0.0 16 greater-equal 24 less-equal 24 \n# \nreturn"
+  }
+}

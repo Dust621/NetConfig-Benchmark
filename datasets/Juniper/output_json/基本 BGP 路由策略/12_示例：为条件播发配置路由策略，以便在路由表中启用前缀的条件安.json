@@ -1,0 +1,201 @@
+{
+  "title": "示例：为条件播发配置路由策略，以便在路由表中启用前缀的条件安装",
+  "sections": [
+    {
+      "title": "要求",
+      "level": 3,
+      "content": "此示例使用以下硬件和软件组件： M 系列多服务边缘路由器、MX 系列 5G 通用路由平台或 T 系列核心路由器 Junos OS 9.0 或更高版本 此示例使用以下硬件和软件组件： M 系列多服务边缘路由器、MX 系列 5G 通用路由平台或 T 系列核心路由器 Junos OS 9.0 或更高版本"
+    },
+    {
+      "title": "概述",
+      "level": 3,
+      "content": "在此示例中，三个不同自治系统 (AS) 中的三台路由器通过 BGP 协议连接和配置。标记为 Internet 的路由器是上游路由器，在其 lo0.0 环路接口上配置了五个地址（172.16.11.1/32、172.16.12.1/32、172.16.13.1/32、172.16.14.1/32 和 172.16.15.1/32），并将一个额外的环路地址 （192.168.9.1/32） 配置为路由器 ID。这六个地址被导出到 BGP 中，以模拟连接到互联网的路由器的 BGP 路由表的内容，并向北方播发。 北方路由器和南方路由器分别使用 10.0.89.12/30 和 10.0.78.12/30 网络，并使用 192.168.7.1 和 192.168.8.1 作为各自的环路地址。 图 5 显示了此示例中使用的拓扑。 北方路由器将其从路由器互联网获知的 172.16.0.0/16 BGP 路由导出到南方路由器。这些路由可能表示互联网路由器域拥有的路由。此外，当存在特定的 172.16.11.1/32 路由时， 北方路由器也会播发默认路由。172.16.11.1 路由可能表示互联网路由器到提供完整互联网连接的第 1 层传输对等互连提供商的链接。 Router South 接收所有六个路由，但应仅在其路由表中安装默认路由和另一个特定路由 （172.16.11.1/32）。 总而言之，该示例满足以下要求： 在“北”上， 发送所有 172.16/16 前缀。此外，仅当 inet.0 路由表中存在特定路由（在本例中为 172.16.11.1/32）时，才将 0/0 发送到南方。 在 South 上，接受并安装路由和转发表中的默认路由和 172.16.11.1/32 路由。放弃所有其他路由。考虑到 South 可能 是一个无法接受 完整 互联网 路由 表的低端设备。因此 ，运营商只希望 South 具有默认 路由 和另一个特定前缀。 第一个要求是北方的出口政策满足的： user@North# show policy-options policy-statement conditional-export-bgp { term prefix_11 { from { protocol bgp; route-filter 172.16.0.0/16 orlonger; } then accept; } term conditional-default { from { route-filter 0.0.0.0/0 exact; condition prefix_11; } then accept; } term others { then reject; } } condition prefix_11 { if-route-exists { 172.16.11.1/32; table inet.0; } } 条件导出策略的逻辑可以概括如下：如果存在 0/0，并且存在 172.16.11.1/32，则发送 0/0 前缀。这意味着如果 172.16.11.1/32 不存在，则不要发送 0/0。 第二个要求是南方的进口政策： user@South# show policy-options policy-statement import-selected-routes { term 1 { from { rib inet.0; neighbor 10.0.78.14; route-filter 0.0.0.0/0 exact; route-filter 172.16.11.1/32 exact; } then accept; } term 2 { then reject; } } 在此示例中，由于 South 上的导入策略，四个路由被丢弃。这是因为北方的出口政策泄露了从互联网接收的所有路由，而南方的进口政策排除了其中一些路线。 请务必了解，在 Junos OS 中，尽管导入策略（入站路由过滤器）可能会拒绝路由，不将其用于流量转发，也不会将其包含在发往其他对等方的播发中，但路由器会将这些路由保留为隐藏路由。这些隐藏路由不可用于策略或路由目的。但是，它们确实会占用路由器上的内存空间。筛选路由以控制保存在内存中并由路由器处理的信息量的服务提供商可能希望路由器完全丢弃被导入策略拒绝的路由。 可以使用命令 show route receive-protocol bgp neighbor-address hidden 查看隐藏的路由。然后，通过在 或 [edit protocols bgp group group-name ] 层次结构级别配置 keep all | none [edit protocols bgp] 语句，可以从路由表中保留或删除隐藏的路由。 BGP 路由保留规则如下： 默认情况下，从 BGP 获知的所有路由都将保留，但 AS 路径被循环的路由除外。（AS 路径包含本地 AS。） 通过配置该 keep all 语句，从 BGP 获知的所有路由都将保留，即使在 AS 路径中有本地 AS 的路由也是如此。 通过配置 keep none 该语句，BGP 将丢弃从对等方接收并被导入策略或其他健全性检查拒绝的路由。配置此语句且入站策略发生更改后，Junos OS 将重新播发对等方播发的所有路由。 配置 keep all 或 keep none 且对等方支持路由刷新时，本地说话人将发送刷新消息并执行导入评估。对于这些对等方，会话不会重新启动。若要确定对等方是否支持刷新，请在命令的 show bgp neighbor 输出中检查 。 Peer supports Refresh capability 警告： 如果配置 keep all OR keep none 且对等方不支持会话重启，则会重新启动（抖动）关联的 BGP 会话。 警告： 如果配置 keep all OR keep none 且对等方不支持会话重启，则会重新启动（抖动）关联的 BGP 会话。 拓扑学",
+      "sections": [
+        {
+          "title": "拓扑学",
+          "level": 4
+        }
+      ]
+    },
+    {
+      "title": "配置",
+      "level": 3,
+      "content": "要快速配置此示例，请复制以下命令，将其粘贴到文本文件中，删除所有换行符，更改与您的网络配置匹配所需的任何详细信息，然后将命令复制并粘贴到层次结构级别的 CLI [edit] 中。 路由器互联网 set interfaces lo0 unit 0 family inet address 172.16.11.1/32 set interfaces lo0 unit 0 family inet address 172.16.12.1/32 set interfaces lo0 unit 0 family inet address 172.16.13.1/32 set interfaces lo0 unit 0 family inet address 172.16.14.1/32 set interfaces lo0 unit 0 family inet address 172.16.15.1/32 set interfaces lo0 unit 0 family inet address 192.168.9.1/32 set interfaces fe-0/1/3 unit 0 family inet address 10.0.89.14/30 set protocols bgp group toNorth local-address 10.0.89.14 set protocols bgp group toNorth peer-as 65200 set protocols bgp group toNorth neighbor 10.0.89.13 set protocols bgp group toNorth export into-bgp set policy-options policy-statement into-bgp term 1 from interface lo0.0 set policy-options policy-statement into-bgp term 1 then accept set routing-options router-id 192.168.9.1 set routing-options autonomous-system 65300 路由器北 set interfaces fe-1/3/1 unit 0 family inet address 10.0.78.14/30 set interfaces fe-1/3/0 unit 0 family inet address 10.0.89.13/30 set interfaces lo0 unit 0 family inet address 192.168.8.1/32 set protocols bgp group toInternet local-address 10.0.89.13 set protocols bgp group toInternet peer-as 65300 set protocols bgp group toInternet neighbor 10.0.89.14 set protocols bgp group toSouth local-address 10.0.78.14 set protocols bgp group toSouth export conditional-export-bgp set protocols bgp group toSouth peer-as 65100 set protocols bgp group toSouth neighbor 10.0.78.13 set policy-options policy-statement conditional-export-bgp term prefix_11 from protocol bgp set policy-options policy-statement conditional-export-bgp term prefix_11 from route-filter 172.16.0.0/16 orlonger set policy-options policy-statement conditional-export-bgp term prefix_11 then accept set policy-options policy-statement conditional-export-bgp term conditional-default from route-filter 0.0.0.0/0 exact set policy-options policy-statement conditional-export-bgp term conditional-default from condition prefix_11 set policy-options policy-statement conditional-export-bgp term conditional-default then accept set policy-options policy-statement conditional-export-bgp term others then reject set policy-options condition prefix_11 if-route-exists 172.16.11.1/32 set policy-options condition prefix_11 if-route-exists table inet.0 set routing-options static route 0/0 reject set routing-options router-id 192.168.8.1 set routing-options autonomous-system 65200 路由器南 set interfaces fe-0/1/2 unit 0 family inet address 10.0.78.13/30 set interfaces lo0 unit 0 family inet address 192.168.7.1/32 set protocols bgp group toNorth local-address 10.0.78.13 set protocols bgp group toNorth import import-selected-routes set protocols bgp group toNorth peer-as 65200 set protocols bgp group toNorth neighbor 10.0.78.14 set policy-options policy-statement import-selected-routes term 1 from neighbor 10.0.78.14 set policy-options policy-statement import-selected-routes term 1 from route-filter 172.16.11.1/32 exact set policy-options policy-statement import-selected-routes term 1 from route-filter 0.0.0.0/0 exact set policy-options policy-statement import-selected-routes term 1 then accept set policy-options policy-statement import-selected-routes term 2 then reject set routing-options router-id 192.168.7.1 set routing-options autonomous-system 65100 以下示例要求您在配置层次结构中导航各个级别。有关导航 CLI 的信息，请参阅《Junos OS CLI 用户指南》中的在 配置模式下使用 CLI 编辑器 。 要配置前缀的条件安装，请执行以下操作： 配置构成三个路由器之间链路的路由器接口。 Router Internet [edit interfaces] user@Internet# set fe-0/1/3 unit 0 family inet address 10.0.89.14/30 Router North [edit interfaces] user@North# set fe-1/3/1 unit 0 family inet address 10.0.78.14/30 user@North# set fe-1/3/0 unit 0 family inet address 10.0.89.13/30 Router South [edit interfaces] user@South# set fe-0/1/2 unit 0 family inet address 10.0.78.13/30 在路由器互联网上配置五个环路接口地址，以模拟从互联网获知的要导入到路由器南方路由表中的 BGP 路由，并配置一个将配置为路由器 ID 的附加地址 （192.168.9.1/32）。 Router Internet [edit interfaces lo0 unit 0 family inet] user@Internet# set address 172.16.11.1/32 user@Internet# set address 172.16.12.1/32 user@Internet# set address 172.16.13.1/32 user@Internet# set address 172.16.14.1/32 user@Internet# set address 172.16.15.1/32 user@Internet# set address 192.168.9.1/32 此外，在北方和南方路由器上配置环路接口地址。 Router North [edit interfaces lo0 unit 0 family inet] user@North# set address 192.168.8.1/32 Router South [edit interfaces lo0 unit 0 family inet] user@South# set address 192.168.7.1/32 在路由器北上配置静态默认路由以播发到路由器南。 [edit routing-options] user@North# set static route 0/0 reject 定义从路由器北上的路由表导出前缀的条件。 [edit policy-options condition prefix_11] user@North# set if-route-exists 172.16.11.1/32 user@North# set if-route-exists table inet.0 分别在路由器互联网和北方路由器上定义导出策略（ into-bgp conditional-export-bgp 和），以将路由播发至 BGP。 注： 确保在导出策略中引用条件（ prefix_11 在步骤 4中配置）。 确保在导出策略中引用条件（ prefix_11 在步骤 4中配置）。 Router Internet [edit policy-options policy-statement into-bgp ] user@Internet# set term 1 from interface lo0.0 user@Internet# set term 1 then accept Router North [edit policy-options policy-statement conditional-export-bgp] user@North# set term prefix_11 from protocol bgp user@North# set term prefix_11 from route-filter 172,16.0.0/16 orlonger user@North# set term prefix_11 then accept user@North# set term conditional-default from route-filter 0.0.0.0/0 exact user@North# set term conditional-default from condition prefix_11 user@North# set term conditional-default then accept user@North# set term others then reject 在南方路由器上定义导入策略 （ import-selected-routes ），以将北方路由器通告的某些路由导入其路由表中。 [edit policy-options policy-statement import-selected-routes ] user@South# set term 1 from neighbor 10.0.78.14 user@South# set term 1 from route-filter 172.16.11.1/32 exact user@South# set term 1 from route-filter 0.0.0.0/0 exact user@South# set term 1 then accept user@South# set term 2 then reject 在所有三个路由器上配置 BGP，以启用自治系统之间的前缀流。 注： 确保将定义的导入和导出策略应用于相应的 BGP 组，以便进行前缀播发。 确保将定义的导入和导出策略应用于相应的 BGP 组，以便进行前缀播发。 Router Internet [edit protocols bgp group toNorth] user@Internet# set local-address 10.0.89.14 user@Internet# set peer-as 65200 user@Internet# set neighbor 10.0.89.13 user@Internet# set export into-bgp Router North [edit protocols bgp group toInternet] user@North# set local-address 10.0.89.13 user@North# set peer-as 65300 user@North# set neighbor 10.0.89.14 [edit protocols bgp group toSouth] user@North# set local-address 10.0.78.14 user@North# set peer-as 65100 user@North# set neighbor 10.0.78.13 user@North# set export conditional-export-bgp Router South [edit protocols bgp group toNorth] user@South# set local-address 10.0.78.13 user@South# set peer-as 65200 user@South# set neighbor 10.0.78.14 user@South# set import import-selected-routes 为所有三个路由器配置路由器 ID 和自治系统编号。 注： 在此示例中，路由器 ID 是根据在路由器的 lo0.0 接口上配置的 IP 地址配置的。 在此示例中，路由器 ID 是根据在路由器的 lo0.0 接口上配置的 IP 地址配置的。 Router Internet [edit routing options] user@Internet# set router-id 192.168.9.1 user@Internet# set autonomous-system 65300 Router North [edit routing options] user@North# set router-id 192.168.8.1 user@North# set autonomous-system 65200 Router South [edit routing options] user@South# set router-id 192.168.7.1 user@South# set autonomous-system 65100 在配置模式下，通过发出 show interfaces 、 show protocols bgp 、 show policy-options 和 show routing-options 命令来确认您的配置。如果输出未显示预期的配置，请重复此示例中的说明，以便进行更正。 设备互联网 user@Internet# show interfaces fe-0/1/3 { unit 0 { family inet { address 10.0.89.14/30; } } } lo0 { unit 0 { family inet { address 172.16.11.1/32; address 172.16.12.1/32; address 172.16.13.1/32; address 172.16.14.1/32; address 172.16.15.1/32; address 192.168.9.1/32; } } } user@Internet# show protocols bgp group toNorth { local-address 10.0.89.14; export into-bgp; peer-as 65200; neighbor 10.0.89.13; } user@Internet# show policy-options policy-statement into-bgp { term 1 { from interface lo0.0; then accept; } } user@Internet# show routing-options router-id 192.168.9.1; autonomous-system 65300; 设备北 user@North# show interfaces fe-1/3/1 { unit 0 { family inet { address 10.0.78.14/30; } } } fe-1/3/0 { unit 0 { family inet { address 10.0.89.13/30; } } } lo0 { unit 0 { family inet { address 192.168.8.1/32; } } } user@North# show protocols bgp group toInternet { local-address 10.0.89.13; peer-as 65300; neighbor 10.0.89.14; } group toSouth { local-address 10.0.78.14; export conditional-export-bgp; peer-as 65100; neighbor 10.0.78.13; } user@North# show policy-options policy-statement conditional-export-bgp { term prefix_11 { from { protocol bgp; route-filter 172.16.0.0/16 orlonger; } then accept; } term conditional-default { from { route-filter 0.0.0.0/0 exact; condition prefix_11; } then accept; } term others { then reject; } } condition prefix_11 { if-route-exists { 172.16.11.1/32; table inet.0; } } user@North# show routing-options static { route 0.0.0.0/0 reject; } router-id 192.168.8.1; autonomous-system 65200; 设备南 user@South# show interfaces fe-0/1/2 { unit 0 { family inet { address 10.0.78.13/30; } } } lo0 { unit 0 { family inet { address 192.168.7.1/32; } } } user@South# show protocols bgp bgp { group toNorth { local-address 10.0.78.13; import import-selected-routes; peer-as 65200; neighbor 10.0.78.14; } } user@South# show policy-options policy-statement import-selected-routes { term 1 { from { neighbor 10.0.78.14; route-filter 172.16.11.1 exact; route-filter 0.0.0.0/0 exact; } then accept; } term 2 { then reject; } } user@South# show routing-options router-id 192.168.7.1; autonomous-system 65100; 如果完成路由器配置，请从配置模式输入 commit 。",
+      "sections": [
+        {
+          "title": "CLI 快速配置",
+          "level": 4,
+          "content": "要快速配置此示例，请复制以下命令，将其粘贴到文本文件中，删除所有换行符，更改与您的网络配置匹配所需的任何详细信息，然后将命令复制并粘贴到层次结构级别的 CLI [edit] 中。 路由器互联网 set interfaces lo0 unit 0 family inet address 172.16.11.1/32 set interfaces lo0 unit 0 family inet address 172.16.12.1/32 set interfaces lo0 unit 0 family inet address 172.16.13.1/32 set interfaces lo0 unit 0 family inet address 172.16.14.1/32 set interfaces lo0 unit 0 family inet address 172.16.15.1/32 set interfaces lo0 unit 0 family inet address 192.168.9.1/32 set interfaces fe-0/1/3 unit 0 family inet address 10.0.89.14/30 set protocols bgp group toNorth local-address 10.0.89.14 set protocols bgp group toNorth peer-as 65200 set protocols bgp group toNorth neighbor 10.0.89.13 set protocols bgp group toNorth export into-bgp set policy-options policy-statement into-bgp term 1 from interface lo0.0 set policy-options policy-statement into-bgp term 1 then accept set routing-options router-id 192.168.9.1 set routing-options autonomous-system 65300 路由器北 set interfaces fe-1/3/1 unit 0 family inet address 10.0.78.14/30 set interfaces fe-1/3/0 unit 0 family inet address 10.0.89.13/30 set interfaces lo0 unit 0 family inet address 192.168.8.1/32 set protocols bgp group toInternet local-address 10.0.89.13 set protocols bgp group toInternet peer-as 65300 set protocols bgp group toInternet neighbor 10.0.89.14 set protocols bgp group toSouth local-address 10.0.78.14 set protocols bgp group toSouth export conditional-export-bgp set protocols bgp group toSouth peer-as 65100 set protocols bgp group toSouth neighbor 10.0.78.13 set policy-options policy-statement conditional-export-bgp term prefix_11 from protocol bgp set policy-options policy-statement conditional-export-bgp term prefix_11 from route-filter 172.16.0.0/16 orlonger set policy-options policy-statement conditional-export-bgp term prefix_11 then accept set policy-options policy-statement conditional-export-bgp term conditional-default from route-filter 0.0.0.0/0 exact set policy-options policy-statement conditional-export-bgp term conditional-default from condition prefix_11 set policy-options policy-statement conditional-export-bgp term conditional-default then accept set policy-options policy-statement conditional-export-bgp term others then reject set policy-options condition prefix_11 if-route-exists 172.16.11.1/32 set policy-options condition prefix_11 if-route-exists table inet.0 set routing-options static route 0/0 reject set routing-options router-id 192.168.8.1 set routing-options autonomous-system 65200 路由器南 set interfaces fe-0/1/2 unit 0 family inet address 10.0.78.13/30 set interfaces lo0 unit 0 family inet address 192.168.7.1/32 set protocols bgp group toNorth local-address 10.0.78.13 set protocols bgp group toNorth import import-selected-routes set protocols bgp group toNorth peer-as 65200 set protocols bgp group toNorth neighbor 10.0.78.14 set policy-options policy-statement import-selected-routes term 1 from neighbor 10.0.78.14 set policy-options policy-statement import-selected-routes term 1 from route-filter 172.16.11.1/32 exact set policy-options policy-statement import-selected-routes term 1 from route-filter 0.0.0.0/0 exact set policy-options policy-statement import-selected-routes term 1 then accept set policy-options policy-statement import-selected-routes term 2 then reject set routing-options router-id 192.168.7.1 set routing-options autonomous-system 65100",
+          "commands_by_device": {
+            "路由器互联网": "set interfaces lo0 unit 0 family inet address 172.16.11.1/32\nset interfaces lo0 unit 0 family inet address 172.16.12.1/32\nset interfaces lo0 unit 0 family inet address 172.16.13.1/32\nset interfaces lo0 unit 0 family inet address 172.16.14.1/32\nset interfaces lo0 unit 0 family inet address 172.16.15.1/32\nset interfaces lo0 unit 0 family inet address 192.168.9.1/32\nset interfaces fe-0/1/3 unit 0 family inet address 10.0.89.14/30\nset protocols bgp group toNorth local-address 10.0.89.14\nset protocols bgp group toNorth peer-as 65200\nset protocols bgp group toNorth neighbor 10.0.89.13\nset protocols bgp group toNorth export into-bgp\nset policy-options policy-statement into-bgp term 1 from interface lo0.0\nset policy-options policy-statement into-bgp term 1 then accept\nset routing-options router-id 192.168.9.1\nset routing-options autonomous-system 65300",
+            "路由器北": "set interfaces fe-1/3/1 unit 0 family inet address 10.0.78.14/30\nset interfaces fe-1/3/0 unit 0 family inet address 10.0.89.13/30\nset interfaces lo0 unit 0 family inet address 192.168.8.1/32\nset protocols bgp group toInternet local-address 10.0.89.13\nset protocols bgp group toInternet peer-as 65300\nset protocols bgp group toInternet neighbor 10.0.89.14\nset protocols bgp group toSouth local-address 10.0.78.14\nset protocols bgp group toSouth export conditional-export-bgp\nset protocols bgp group toSouth peer-as 65100\nset protocols bgp group toSouth neighbor 10.0.78.13\nset policy-options policy-statement conditional-export-bgp term prefix_11 from protocol bgp\nset policy-options policy-statement conditional-export-bgp term prefix_11 from route-filter 172.16.0.0/16 orlonger\nset policy-options policy-statement conditional-export-bgp term prefix_11 then accept\nset policy-options policy-statement conditional-export-bgp term conditional-default from route-filter 0.0.0.0/0 exact\nset policy-options policy-statement conditional-export-bgp term conditional-default from condition prefix_11\nset policy-options policy-statement conditional-export-bgp term conditional-default then accept\nset policy-options policy-statement conditional-export-bgp term others then reject\nset policy-options condition prefix_11 if-route-exists 172.16.11.1/32\nset policy-options condition prefix_11 if-route-exists table inet.0\nset routing-options static route 0/0 reject\nset routing-options router-id 192.168.8.1\nset routing-options autonomous-system 65200",
+            "路由器南": "set interfaces fe-0/1/2 unit 0 family inet address 10.0.78.13/30\nset interfaces lo0 unit 0 family inet address 192.168.7.1/32\nset protocols bgp group toNorth local-address 10.0.78.13\nset protocols bgp group toNorth import import-selected-routes\nset protocols bgp group toNorth peer-as 65200\nset protocols bgp group toNorth neighbor 10.0.78.14\nset policy-options policy-statement import-selected-routes term 1 from neighbor 10.0.78.14\nset policy-options policy-statement import-selected-routes term 1 from route-filter 172.16.11.1/32 exact\nset policy-options policy-statement import-selected-routes term 1 from route-filter 0.0.0.0/0 exact\nset policy-options policy-statement import-selected-routes term 1 then accept\nset policy-options policy-statement import-selected-routes term 2 then reject\nset routing-options router-id 192.168.7.1\nset routing-options autonomous-system 65100"
+          }
+        },
+        {
+          "title": "配置前缀的条件安装",
+          "level": 4,
+          "content": "以下示例要求您在配置层次结构中导航各个级别。有关导航 CLI 的信息，请参阅《Junos OS CLI 用户指南》中的在 配置模式下使用 CLI 编辑器 。 要配置前缀的条件安装，请执行以下操作： 配置构成三个路由器之间链路的路由器接口。 Router Internet [edit interfaces] user@Internet# set fe-0/1/3 unit 0 family inet address 10.0.89.14/30 Router North [edit interfaces] user@North# set fe-1/3/1 unit 0 family inet address 10.0.78.14/30 user@North# set fe-1/3/0 unit 0 family inet address 10.0.89.13/30 Router South [edit interfaces] user@South# set fe-0/1/2 unit 0 family inet address 10.0.78.13/30 在路由器互联网上配置五个环路接口地址，以模拟从互联网获知的要导入到路由器南方路由表中的 BGP 路由，并配置一个将配置为路由器 ID 的附加地址 （192.168.9.1/32）。 Router Internet [edit interfaces lo0 unit 0 family inet] user@Internet# set address 172.16.11.1/32 user@Internet# set address 172.16.12.1/32 user@Internet# set address 172.16.13.1/32 user@Internet# set address 172.16.14.1/32 user@Internet# set address 172.16.15.1/32 user@Internet# set address 192.168.9.1/32 此外，在北方和南方路由器上配置环路接口地址。 Router North [edit interfaces lo0 unit 0 family inet] user@North# set address 192.168.8.1/32 Router South [edit interfaces lo0 unit 0 family inet] user@South# set address 192.168.7.1/32 在路由器北上配置静态默认路由以播发到路由器南。 [edit routing-options] user@North# set static route 0/0 reject 定义从路由器北上的路由表导出前缀的条件。 [edit policy-options condition prefix_11] user@North# set if-route-exists 172.16.11.1/32 user@North# set if-route-exists table inet.0 分别在路由器互联网和北方路由器上定义导出策略（ into-bgp conditional-export-bgp 和），以将路由播发至 BGP。 注： 确保在导出策略中引用条件（ prefix_11 在步骤 4中配置）。 确保在导出策略中引用条件（ prefix_11 在步骤 4中配置）。 Router Internet [edit policy-options policy-statement into-bgp ] user@Internet# set term 1 from interface lo0.0 user@Internet# set term 1 then accept Router North [edit policy-options policy-statement conditional-export-bgp] user@North# set term prefix_11 from protocol bgp user@North# set term prefix_11 from route-filter 172,16.0.0/16 orlonger user@North# set term prefix_11 then accept user@North# set term conditional-default from route-filter 0.0.0.0/0 exact user@North# set term conditional-default from condition prefix_11 user@North# set term conditional-default then accept user@North# set term others then reject 在南方路由器上定义导入策略 （ import-selected-routes ），以将北方路由器通告的某些路由导入其路由表中。 [edit policy-options policy-statement import-selected-routes ] user@South# set term 1 from neighbor 10.0.78.14 user@South# set term 1 from route-filter 172.16.11.1/32 exact user@South# set term 1 from route-filter 0.0.0.0/0 exact user@South# set term 1 then accept user@South# set term 2 then reject 在所有三个路由器上配置 BGP，以启用自治系统之间的前缀流。 注： 确保将定义的导入和导出策略应用于相应的 BGP 组，以便进行前缀播发。 确保将定义的导入和导出策略应用于相应的 BGP 组，以便进行前缀播发。 Router Internet [edit protocols bgp group toNorth] user@Internet# set local-address 10.0.89.14 user@Internet# set peer-as 65200 user@Internet# set neighbor 10.0.89.13 user@Internet# set export into-bgp Router North [edit protocols bgp group toInternet] user@North# set local-address 10.0.89.13 user@North# set peer-as 65300 user@North# set neighbor 10.0.89.14 [edit protocols bgp group toSouth] user@North# set local-address 10.0.78.14 user@North# set peer-as 65100 user@North# set neighbor 10.0.78.13 user@North# set export conditional-export-bgp Router South [edit protocols bgp group toNorth] user@South# set local-address 10.0.78.13 user@South# set peer-as 65200 user@South# set neighbor 10.0.78.14 user@South# set import import-selected-routes 为所有三个路由器配置路由器 ID 和自治系统编号。 注： 在此示例中，路由器 ID 是根据在路由器的 lo0.0 接口上配置的 IP 地址配置的。 在此示例中，路由器 ID 是根据在路由器的 lo0.0 接口上配置的 IP 地址配置的。 Router Internet [edit routing options] user@Internet# set router-id 192.168.9.1 user@Internet# set autonomous-system 65300 Router North [edit routing options] user@North# set router-id 192.168.8.1 user@North# set autonomous-system 65200 Router South [edit routing options] user@South# set router-id 192.168.7.1 user@South# set autonomous-system 65100",
+          "sections": [
+            {
+              "title": "分步过程",
+              "level": 5,
+              "step_by_step": [
+                {
+                  "step": 1,
+                  "description": "配置构成三个路由器之间链路的路由器接口。",
+                  "code": [
+                    "Router Internet",
+                    "[edit interfaces]",
+                    "user@Internet# set fe-0/1/3 unit 0 family inet address 10.0.89.14/30 ",
+                    "Router North",
+                    "[edit interfaces]",
+                    "user@North# set fe-1/3/1 unit 0 family inet address 10.0.78.14/30",
+                    "user@North# set fe-1/3/0 unit 0 family inet address 10.0.89.13/30  ",
+                    "Router South",
+                    "[edit interfaces]",
+                    "user@South# set fe-0/1/2 unit 0 family inet address 10.0.78.13/30 "
+                  ]
+                },
+                {
+                  "step": 2,
+                  "description": "在路由器互联网上配置五个环路接口地址，以模拟从互联网获知的要导入到路由器南方路由表中的 BGP 路由，并配置一个将配置为路由器 ID 的附加地址 （192.168.9.1/32）。",
+                  "code": [
+                    "Router Internet",
+                    "[edit interfaces lo0 unit 0 family inet]",
+                    "user@Internet# set address 172.16.11.1/32",
+                    "user@Internet# set address 172.16.12.1/32",
+                    "user@Internet# set address 172.16.13.1/32",
+                    "user@Internet# set address 172.16.14.1/32",
+                    "user@Internet# set address 172.16.15.1/32",
+                    "user@Internet# set address 192.168.9.1/32",
+                    "Router North",
+                    "[edit interfaces lo0 unit 0 family inet]",
+                    "user@North# set address 192.168.8.1/32",
+                    "Router South",
+                    "[edit interfaces lo0 unit 0 family inet]",
+                    "user@South# set address 192.168.7.1/32"
+                  ]
+                },
+                {
+                  "step": 3,
+                  "description": "在路由器北上配置静态默认路由以播发到路由器南。",
+                  "code": [
+                    "[edit routing-options]",
+                    "user@North# set static route 0/0 reject"
+                  ]
+                },
+                {
+                  "step": 4,
+                  "description": "定义从路由器北上的路由表导出前缀的条件。",
+                  "code": [
+                    "[edit policy-options condition prefix_11]",
+                    "user@North# set if-route-exists 172.16.11.1/32",
+                    "user@North# set if-route-exists table inet.0"
+                  ]
+                },
+                {
+                  "step": 5,
+                  "description": "分别在路由器互联网和北方路由器上定义导出策略（ into-bgp conditional-export-bgp 和），以将路由播发至 BGP。",
+                  "code": [
+                    "Router Internet",
+                    "[edit policy-options policy-statement into-bgp ]",
+                    "user@Internet# set term 1 from interface lo0.0",
+                    "user@Internet# set term 1 then accept ",
+                    "Router North",
+                    "[edit policy-options policy-statement conditional-export-bgp]",
+                    "user@North# set  term prefix_11 from protocol bgp",
+                    "user@North# set  term prefix_11 from route-filter 172,16.0.0/16 orlonger",
+                    "user@North# set  term prefix_11 then accept",
+                    "user@North# set  term conditional-default from route-filter 0.0.0.0/0 exact",
+                    "user@North# set  term conditional-default from condition prefix_11",
+                    "user@North# set  term conditional-default then accept",
+                    "user@North# set term others then reject"
+                  ]
+                },
+                {
+                  "step": 6,
+                  "description": "在南方路由器上定义导入策略 （ import-selected-routes ），以将北方路由器通告的某些路由导入其路由表中。",
+                  "code": [
+                    "[edit policy-options policy-statement import-selected-routes ]",
+                    "user@South# set term 1 from neighbor 10.0.78.14",
+                    "user@South# set term 1 from route-filter 172.16.11.1/32 exact",
+                    "user@South# set term 1 from route-filter 0.0.0.0/0 exact",
+                    "user@South# set term 1 then accept",
+                    "user@South# set term 2 then reject"
+                  ]
+                },
+                {
+                  "step": 7,
+                  "description": "在所有三个路由器上配置 BGP，以启用自治系统之间的前缀流。",
+                  "code": [
+                    "Router Internet",
+                    "[edit protocols bgp group toNorth]",
+                    "user@Internet# set local-address 10.0.89.14",
+                    "user@Internet# set peer-as 65200",
+                    "user@Internet# set neighbor 10.0.89.13",
+                    "user@Internet# set export into-bgp ",
+                    "Router North",
+                    "[edit protocols bgp group toInternet]",
+                    "user@North# set local-address 10.0.89.13",
+                    "user@North# set peer-as 65300",
+                    "user@North# set neighbor 10.0.89.14  ",
+                    "[edit protocols bgp group toSouth]",
+                    "user@North# set local-address 10.0.78.14",
+                    "user@North# set peer-as 65100",
+                    "user@North# set neighbor 10.0.78.13",
+                    "user@North# set export conditional-export-bgp",
+                    "Router South",
+                    "[edit protocols bgp group toNorth]",
+                    "user@South# set local-address 10.0.78.13",
+                    "user@South# set peer-as 65200",
+                    "user@South# set neighbor 10.0.78.14",
+                    "user@South# set import import-selected-routes"
+                  ]
+                },
+                {
+                  "step": 8,
+                  "description": "为所有三个路由器配置路由器 ID 和自治系统编号。",
+                  "code": [
+                    "Router Internet",
+                    "[edit routing options]",
+                    "user@Internet# set router-id 192.168.9.1",
+                    "user@Internet# set autonomous-system 65300",
+                    "Router North",
+                    "[edit routing options]",
+                    "user@North# set router-id 192.168.8.1",
+                    "user@North# set autonomous-system 65200",
+                    "Router South",
+                    "[edit routing options]",
+                    "user@South# set router-id 192.168.7.1",
+                    "user@South# set autonomous-system 65100"
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "结果",
+          "level": 4,
+          "content": "在配置模式下，通过发出 show interfaces 、 show protocols bgp 、 show policy-options 和 show routing-options 命令来确认您的配置。如果输出未显示预期的配置，请重复此示例中的说明，以便进行更正。 设备互联网 设备北 设备南 如果完成路由器配置，请从配置模式输入 commit 。",
+          "code": [
+            "user@Internet#show interfacesfe-0/1/3 {\n    unit 0 {\n        family inet {\n            address 10.0.89.14/30;\n        }\n    }\n}\nlo0 {\n    unit 0 {\n        family inet {\n            address 172.16.11.1/32;\n            address 172.16.12.1/32;\n            address 172.16.13.1/32;\n            address 172.16.14.1/32;\n            address 172.16.15.1/32;\n            address 192.168.9.1/32;\n        }\n    }\n}",
+            "user@Internet#show protocols bgpgroup toNorth {\n    local-address 10.0.89.14;\n    export into-bgp;\n    peer-as 65200;\n    neighbor 10.0.89.13;\n}",
+            "user@Internet#show policy-optionspolicy-statement into-bgp {\n    term 1 {\n        from interface lo0.0;\n        then accept;\n    }\n}",
+            "user@Internet#show routing-optionsrouter-id 192.168.9.1;\nautonomous-system 65300;",
+            "user@North#show interfacesfe-1/3/1 {\n    unit 0 {\n        family inet {\n            address 10.0.78.14/30;\n        }\n    }\n}\nfe-1/3/0 {\n    unit 0 {\n        family inet {\n            address 10.0.89.13/30;\n        }\n    }\n}\nlo0 {\n    unit 0 {\n        family inet {\n            address 192.168.8.1/32;\n        }\n    }\n}",
+            "user@North#show protocols bgpgroup toInternet {\n    local-address 10.0.89.13;\n    peer-as 65300;\n    neighbor 10.0.89.14;\n}\ngroup toSouth {\n    local-address 10.0.78.14;\n    export conditional-export-bgp;\n    peer-as 65100;\n    neighbor 10.0.78.13;\n}",
+            "user@North#show policy-optionspolicy-statement conditional-export-bgp {\n    term prefix_11 {\n        from {\n            protocol bgp;\n            route-filter 172.16.0.0/16 orlonger;\n        }\n        then accept;\n    }\n    term conditional-default {\n        from {\n            route-filter 0.0.0.0/0 exact;\n            condition prefix_11;\n        }\n        then accept;\n    }\n    term others {\n        then reject;\n    }\n}\ncondition prefix_11 {\n    if-route-exists {\n        172.16.11.1/32;\n        table inet.0;\n    }\n}",
+            "user@North#show routing-optionsstatic {\n    route 0.0.0.0/0 reject;\n}\nrouter-id 192.168.8.1;\nautonomous-system 65200;",
+            "user@South#show interfacesfe-0/1/2 {\n    unit 0 {\n        family inet {\n            address 10.0.78.13/30;\n        }\n    }\n}\nlo0 {\n    unit 0 {\n        family inet {\n            address 192.168.7.1/32;\n        }\n    }\n}",
+            "user@South#show protocols bgpbgp {\n    group toNorth {\n        local-address 10.0.78.13;\n        import import-selected-routes;\n        peer-as 65200;\n        neighbor 10.0.78.14;\n    }\n}",
+            "user@South#show policy-optionspolicy-statement import-selected-routes {\n    term 1 {\n        from {\n            neighbor 10.0.78.14;\n            route-filter 172.16.11.1 exact;\n            route-filter 0.0.0.0/0 exact;\n        }\n        then accept;\n    }\n    term 2 {\n        then reject;\n    }\n}",
+            "user@South#show routing-optionsrouter-id 192.168.7.1;\nautonomous-system 65100;"
+          ]
+        }
+      ]
+    }
+  ],
+  "content": "此示例说明如何使用 BGP 导出策略在路由表中配置前缀的条件安装"
+}

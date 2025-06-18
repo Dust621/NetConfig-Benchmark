@@ -1,0 +1,447 @@
+{
+  "title": "示例：为标记为单播 LSP 的 BGP 配置熵标签",
+  "sections": [
+    {
+      "title": "要求",
+      "level": 3,
+      "content": "此示例使用以下硬件和软件组件： 7 个带 MPC 的 MX 系列路由器 在所有设备上运行的 Junos OS 15.1 或更高版本 使用 Junos OS Relese 22.4 重新验证 在为 BGP 标记的单播配置熵标签之前，请确保： 配置设备接口。 配置 OSPF 或任何其他 IGP 协议。 配置 BGP。 配置 RSVP。 配置 MPLS。 此示例使用以下硬件和软件组件： 7 个带 MPC 的 MX 系列路由器 在所有设备上运行的 Junos OS 15.1 或更高版本 使用 Junos OS Relese 22.4 重新验证 在为 BGP 标记的单播配置熵标签之前，请确保： 配置设备接口。 配置 OSPF 或任何其他 IGP 协议。 配置 BGP。 配置 RSVP。 配置 MPLS。"
+    },
+    {
+      "title": "概述",
+      "level": 3,
+      "content": "当 BGP 标记的单播跨多个 IGP 区域或多个自治系统连接 RSVP 或 LDP LSP 时，RSVP 或 LDP 熵标签将与 RSVP 或 LDP 标签一起在倒数第二个跃点节点弹出。但是，在拼接点（即两个区域之间的路由器）处没有熵标签。因此，拼接点处的路由器使用 BGP 标签转发数据包。 从 Junos OS 15.1 版开始，您可以为 BGP 标记的单播配置熵标签，以实现端到端熵标签负载平衡。此功能允许在拼接点使用熵标签，以实现 BGP 流量的端到端熵标签负载平衡。Junos OS 允许在 BGP 标记的单播 LSP 入口处插入熵标签。 默认情况下，支持熵标签的路由器在层次结构级别配置 load-balance-label-capability [edit forwarding-options] 语句，以基于每个 LSP 发出标签信号。如果对等路由器未配备处理负载平衡标签的设备，则可以通过在层次结构级别配置 来 no-load-balance-label-capability [edit forwarding-options] 阻止熵标签功能的信令发送。 [edit forwarding-options] user@PE# no-load-balance-label-capability 您可以使用层次结构级别的选项 [edit policy-options policy-statement policy name then] ，在 no-entropy-label-capability 出口处为策略中指定的路由显式禁用播发熵标签功能。 [edit policy-options policy-statement policy-name then] user@PE# no-entropy-label-capability 在 中 图 12 ，路由器 PE1 是入口路由器，路由器 PE2 是出口路由器。路由器 P1 和 P2 是传输路由器。路由器 ABR 是区域 0 和区域 1 之间的区域网桥路由器。在ABR 到 PE2 中配置了两个 LSP ，用于对流量进行负载平衡。入口路由器 PE1 上启用了 BGP 标记单播的熵标签功能。 主机 1 连接到 P1 以进行数据包捕获，以便我们可以显示熵标签。",
+      "sections": [
+        {
+          "title": "拓扑学",
+          "level": 4,
+          "content": "在 中 图 12 ，路由器 PE1 是入口路由器，路由器 PE2 是出口路由器。路由器 P1 和 P2 是传输路由器。路由器 ABR 是区域 0 和区域 1 之间的区域网桥路由器。在ABR 到 PE2 中配置了两个 LSP ，用于对流量进行负载平衡。入口路由器 PE1 上启用了 BGP 标记单播的熵标签功能。 主机 1 连接到 P1 以进行数据包捕获，以便我们可以显示熵标签。",
+          "images": [
+            "BGP 会话的负载平衡\\images\\20_示例：为标记为单播_LSP_的_BGP__1.png"
+          ]
+        }
+      ]
+    },
+    {
+      "title": "配置",
+      "level": 3,
+      "content": "要快速配置此示例，请复制以下命令，将其粘贴到文本文件中，删除所有换行符，更改详细信息，以便与网络配置匹配，将命令复制并粘贴到 [edit] 层级的 CLI 中，然后从配置模式进入 commit 。 路由器 CE1 set interfaces ge-0/0/0 unit 0 family inet address 172.16.12.1/30 set interfaces lo0 unit 0 family inet address 172.16.255.1/32 primary set interfaces lo0 unit 0 family inet address 192.168.255.1/32 set routing-options router-id 172.16.255.1 set protocols ospf area 0.0.0.0 interface ge-0/0/0.0 set protocols ospf area 0.0.0.0 interface lo0.0 passive 路由器 PE1 set interfaces ge-0/0/0 unit 0 family inet address 172.16.12.2/30 set interfaces ge-0/0/2 unit 0 family inet address 10.1.23.1/30 set interfaces ge-0/0/2 unit 0 family mpls set interfaces lo0 unit 0 family inet address 10.1.255.2/32 primary set interfaces lo0 unit 1 family inet address 10.1.255.22/32 set policy-options policy-statement bgp-to-ospf from protocol bgp set policy-options policy-statement bgp-to-ospf then accept set policy-options policy-statement pplb then load-balance per-packet set routing-instances VPN-l3vpn instance-type vrf set routing-instances VPN-l3vpn protocols ospf area 0.0.0.0 interface ge-0/0/0.0 set routing-instances VPN-l3vpn protocols ospf area 0.0.0.0 interface lo0.1 passive set routing-instances VPN-l3vpn protocols ospf export bgp-to-ospf set routing-instances VPN-l3vpn interface ge-0/0/0.0 set routing-instances VPN-l3vpn interface lo0.1 set routing-instances VPN-l3vpn route-distinguisher 10.1.255.2:1 set routing-instances VPN-l3vpn vrf-target target:65000:1 set routing-options router-id 10.1.255.2 set routing-options autonomous-system 65000 set routing-options forwarding-table export pplb set protocols bgp group ibgp type internal set protocols bgp group ibgp local-address 10.1.255.2 set protocols bgp group ibgp family inet labeled-unicast entropy-label set protocols bgp group ibgp neighbor 10.1.255.4 family inet labeled-unicast rib inet.3 set protocols bgp group ibgp neighbor 10.1.255.6 family inet-vpn unicast set protocols mpls icmp-tunneling set protocols mpls label-switched-path pe1-abr to 10.1.255.4 set protocols mpls label-switched-path pe1-abr entropy-label set protocols mpls interface ge-0/0/2.0 set protocols mpls interface lo0.0 set protocols ospf traffic-engineering set protocols ospf area 0.0.0.0 interface ge-0/0/2.0 set protocols ospf area 0.0.0.0 interface lo0.0 passive set protocols rsvp interface ge-0/0/2.0 set protocols rsvp interface lo0.0 路由器 P1 set interfaces ge-0/0/0 unit 0 family inet address 10.1.23.2/30 set interfaces ge-0/0/0 unit 0 family mpls set interfaces ge-0/0/2 unit 0 family inet address 10.1.34.1/30 set interfaces ge-0/0/2 unit 0 family mpls set interfaces lo0 unit 0 family inet address 10.1.255.3/32 primary set routing-options router-id 10.1.255.3 set protocols mpls icmp-tunneling set protocols mpls interface ge-0/0/0.0 set protocols mpls interface lo0.0 set protocols mpls interface ge-0/0/2.0 set protocols ospf traffic-engineering set protocols ospf area 0.0.0.0 interface lo0.0 passive set protocols ospf area 0.0.0.0 interface ge-0/0/0.0 set protocols ospf area 0.0.0.0 interface ge-0/0/2.0 set protocols rsvp interface ge-0/0/0.0 set protocols rsvp interface lo0.0 set protocols rsvp interface ge-0/0/2.0 路由器 ABR set interfaces ge-0/0/0 unit 0 family inet address 10.1.34.2/30 set interfaces ge-0/0/0 unit 0 family mpls set interfaces ge-0/0/2 unit 0 family inet address 10.1.45.1/30 set interfaces ge-0/0/2 unit 0 family mpls set interfaces ge-0/0/3 unit 0 family inet address 10.1.45.5/30 set interfaces ge-0/0/3 unit 0 family mpls set interfaces lo0 unit 0 family inet address 10.1.255.4/32 primary set forwarding-options hash-key family mpls label-1 set forwarding-options hash-key family mpls label-2 set forwarding-options hash-key family mpls label-3 set forwarding-options enhanced-hash-key family mpls no-payload set policy-options policy-statement pplb then load-balance per-packet set policy-options policy-statement send-inet3-pe1 from route-filter 10.1.255.2/32 exact set policy-options policy-statement send-inet3-pe1 then accept set policy-options policy-statement send-inet3-pe2 from route-filter 10.1.255.6/32 exact set policy-options policy-statement send-inet3-pe2 then accept set routing-options router-id 10.1.255.4 set routing-options autonomous-system 65000 set routing-options forwarding-table export pplb set protocols bgp group ibgp type internal set protocols bgp group ibgp local-address 10.1.255.4 set protocols bgp group ibgp family inet labeled-unicast rib inet.3 set protocols bgp group ibgp neighbor 10.1.255.2 export send-inet3-pe2 set protocols bgp group ibgp neighbor 10.1.255.6 export send-inet3-pe1 set protocols mpls icmp-tunneling set protocols mpls label-switched-path abr-pe1 to 10.1.255.2 set protocols mpls label-switched-path abr-pe1 entropy-label set protocols mpls label-switched-path abr-pe2 to 10.1.255.6 set protocols mpls label-switched-path abr-pe2 entropy-label set protocols mpls label-switched-path abr-pe2 primary to-r6-1 set protocols mpls label-switched-path abr-pe2-2 to 10.1.255.6 set protocols mpls label-switched-path abr-pe2-2 entropy-label set protocols mpls label-switched-path abr-pe2-2 primary to-r6-2 set protocols mpls path to-r6-1 10.1.45.2 strict set protocols mpls path to-r6-1 10.1.56.2 strict set protocols mpls path to-r6-2 10.1.45.6 strict set protocols mpls path to-r6-2 10.1.56.6 strict set protocols mpls interface lo0.0 set protocols mpls interface ge-0/0/0.0 set protocols mpls interface ge-0/0/2.0 set protocols mpls interface ge-0/0/3.0 set protocols ospf traffic-engineering set protocols ospf area 0.0.0.0 interface lo0.0 passive set protocols ospf area 0.0.0.0 interface ge-0/0/0.0 set protocols ospf area 0.0.0.1 interface ge-0/0/2.0 set protocols ospf area 0.0.0.1 interface ge-0/0/3.0 set protocols rsvp interface lo0.0 set protocols rsvp interface ge-0/0/0.0 set protocols rsvp interface ge-0/0/2.0 set protocols rsvp interface ge-0/0/3.0 路由器 P2 set interfaces ge-0/0/0 unit 0 family inet address 10.1.45.2/30 set interfaces ge-0/0/0 unit 0 family mpls set interfaces ge-0/0/1 unit 0 family inet address 10.1.45.6/30 set interfaces ge-0/0/1 unit 0 family mpls set interfaces ge-0/0/2 unit 0 family inet address 10.1.56.1/30 set interfaces ge-0/0/2 unit 0 family mpls set interfaces ge-0/0/3 unit 0 family inet address 10.1.56.5/30 set interfaces ge-0/0/3 unit 0 family mpls set interfaces lo0 unit 0 family inet address 10.1.255.5/32 primary set forwarding-options hash-key family mpls label-1 set forwarding-options hash-key family mpls label-2 set forwarding-options hash-key family mpls label-3 set forwarding-options enhanced-hash-key family mpls no-payload set policy-options policy-statement pplb then load-balance per-packet set routing-options router-id 10.1.255.5 set routing-options forwarding-table export pplb set protocols mpls icmp-tunneling set protocols mpls interface ge-0/0/2.0 set protocols mpls interface lo0.0 set protocols mpls interface ge-0/0/0.0 set protocols mpls interface ge-0/0/1.0 set protocols mpls interface ge-0/0/3.0 set protocols ospf traffic-engineering set protocols ospf area 0.0.0.1 interface lo0.0 passive set protocols ospf area 0.0.0.1 interface ge-0/0/2.0 set protocols ospf area 0.0.0.1 interface ge-0/0/0.0 set protocols ospf area 0.0.0.1 interface ge-0/0/1.0 set protocols ospf area 0.0.0.1 interface ge-0/0/3.0 set protocols rsvp interface ge-0/0/2.0 set protocols rsvp interface lo0.0 set protocols rsvp interface ge-0/0/0.0 set protocols rsvp interface ge-0/0/1.0 set protocols rsvp interface ge-0/0/3.0 路由器 PE2 set interfaces ge-0/0/0 unit 0 family inet address 10.1.56.2/30 set interfaces ge-0/0/0 unit 0 family mpls set interfaces ge-0/0/1 unit 0 family inet address 10.1.56.6/30 set interfaces ge-0/0/1 unit 0 family mpls set interfaces ge-0/0/2 unit 0 family inet address 172.16.67.2/30 set interfaces lo0 unit 0 family inet address 10.1.255.6/32 primary set interfaces lo0 unit 1 family inet address 10.1.255.66/32 set forwarding-options hash-key family mpls label-1 set forwarding-options hash-key family mpls label-2 set forwarding-options hash-key family mpls label-3 set forwarding-options enhanced-hash-key family mpls no-payload set policy-options policy-statement bgp-to-ospf from protocol bgp set policy-options policy-statement bgp-to-ospf then accept set policy-options policy-statement pplb then load-balance per-packet set routing-instances VPN-l3vpn instance-type vrf set routing-instances VPN-l3vpn protocols ospf area 0.0.0.0 interface ge-0/0/2.0 set routing-instances VPN-l3vpn protocols ospf area 0.0.0.0 interface lo0.1 passive set routing-instances VPN-l3vpn protocols ospf export bgp-to-ospf set routing-instances VPN-l3vpn interface ge-0/0/2.0 set routing-instances VPN-l3vpn interface lo0.1 set routing-instances VPN-l3vpn route-distinguisher 10.1.255.6:1 set routing-instances VPN-l3vpn vrf-target target:65000:1 set routing-options router-id 10.1.255.6 set routing-options autonomous-system 65000 set routing-options forwarding-table export pplb set protocols bgp group ibgp type internal set protocols bgp group ibgp local-address 10.1.255.6 set protocols bgp group ibgp family inet labeled-unicast entropy-label set protocols bgp group ibgp neighbor 10.1.255.4 family inet labeled-unicast rib inet.3 set protocols bgp group ibgp neighbor 10.1.255.2 family inet-vpn unicast set protocols mpls icmp-tunneling set protocols mpls label-switched-path pe2-abr to 10.1.255.4 set protocols mpls label-switched-path pe2-abr entropy-label set protocols mpls interface ge-0/0/0.0 set protocols mpls interface lo0.0 set protocols mpls interface ge-0/0/1.0 set protocols ospf traffic-engineering set protocols ospf area 0.0.0.1 interface ge-0/0/0.0 set protocols ospf area 0.0.0.1 interface lo0.0 passive set protocols ospf area 0.0.0.1 interface ge-0/0/1.0 set protocols rsvp interface ge-0/0/0.0 set protocols rsvp interface lo0.0 set protocols rsvp interface ge-0/0/1.0 路由器 CE2 set interfaces ge-0/0/0 unit 0 family inet address 172.16.67.1/30 set interfaces lo0 unit 0 family inet address 172.16.255.7/32 primary set interfaces lo0 unit 0 family inet address 192.168.255.7/32 set routing-options router-id 172.16.255.7 set protocols ospf area 0.0.0.0 interface ge-0/0/0.0 set protocols ospf area 0.0.0.0 interface lo0.0 passive 以下示例要求您在配置层次结构中导航各个级别。有关导航 CLI 的信息，请参阅 CLI 用户指南中的在配置模式下使用 CLI 编辑器。 要配置路由器 PE1： 注： 修改相应的接口名称、地址和其他参数后，对路由器 PE2 重复此过程。 修改相应的接口名称、地址和其他参数后，对路由器 PE2 重复此过程。 配置物理接口。 确保在面向核心的接口上进行配置 family mpls 。 [edit] user@PE1# set interfaces ge-0/0/0 unit 0 family inet address 172.16.12.2/30 user@PE1# set interfaces ge-0/0/2 unit 0 family inet address 10.1.23.1/30 user@PE1# set interfaces ge-0/0/2 unit 0 family mpls 配置环路接口。 辅助环回是可选的，将在后面的步骤中在路由实例下应用。 [edit] user@PE1# set interfaces lo0 unit 0 family inet address 10.1.255.2/32 primary user@PE1# set interfaces lo0 unit 1 family inet address 10.1.255.22/32 配置 路由器 ID 和自治系统编号。 [edit] user@PE1# set routing-options router-id 10.1.255.2 user@PE1# set routing-options autonomous-system 65000 配置 OSPF 协议。 [edit] user@PE1# set protocols ospf traffic-engineering user@PE1# set protocols ospf area 0.0.0.0 interface ge-0/0/2.0 user@PE1# set protocols ospf area 0.0.0.0 interface lo0.0 passive 配置 RSVP 协议。 [edit] user@PE1# set protocols rsvp interface ge-0/0/2.0 user@PE1# set protocols rsvp interface lo0.0 配置 MPLS 协议和面向 ABR 的 LSP。 entropy-label 包括将熵标签添加到 MPLS 标签堆栈的选项。 [edit protocols] user@PE1# set protocols mpls icmp-tunneling user@PE1# set protocols mpls label-switched-path pe1-abr to 10.1.255.4 user@PE1# set protocols mpls label-switched-path pe1-abr entropy-label user@PE1# set protocols mpls interface ge-0/0/2.0 user@PE1# set protocols mpls interface lo0.0 使用 family inet labeled-unicast ABR 对等 family inet-vpn 和 PE2 对等配置 IBGP。为 BGP 标记的单播启用熵标签功能。 [edit] user@PE1# set protocols bgp group ibgp type internal user@PE1# set protocols bgp group ibgp local-address 10.1.255.2 user@PE1# set protocols bgp group ibgp family inet labeled-unicast entropy-label user@PE1# set protocols bgp group ibgp neighbor 10.1.255.4 family inet labeled-unicast rib inet.3 user@PE1# set protocols bgp group ibgp neighbor 10.1.255.6 family inet-vpn unicast 定义用于将 BGP VPN 路由导出到 OSPF 的策略。 该策略在路由实例中的 OSPF 下应用。 [edit] user@PE1# set policy-options policy-statement bgp-to-ospf from protocol bgp user@PE1# set policy-options policy-statement bgp-to-ospf then accept 定义 负载平衡 策略 并将其应用到 routing-options forwarding-table . PE1 在示例中只有一条路径，因此不需要此步骤，但对于此示例，我们将在所有设备上应用相同的负载平衡策略。 [edit] user@PE1# set policy-options policy-statement pplb then load-balance per-packet user@PE1# set routing-options forwarding-table export pplb 配置第 3 层 VPN 路由实例。 [edit] user@PE1# set routing-instances VPN-l3vpn instance-type vrf 将接口分配给路由实例。 [edit] user@PE1# set routing-instances VPN-l3vpn interface ge-0/0/0.0 user@PE1# set routing-instances VPN-l3vpn interface lo0.1 为 路由实例配置路由识别符。 [edit] user@PE1# set routing-instances VPN-l3vpn route-distinguisher 10.1.255.2:1 为 路由实例配置 VPN 路由和转发 （VRF） 目标。 [edit] user@PE1# set routing-instances VPN-l3vpn vrf-target target:65000:1 在路由实例下配置协议 OSPF，并应用之前配置 bgp-to-ospf 的策略。 [edit] user@PE1# set routing-instances VPN-l3vpn protocols ospf area 0.0.0.0 interface ge-0/0/0.0 user@PE1# set routing-instances VPN-l3vpn protocols ospf area 0.0.0.0 interface lo0.1 passive user@PE1# set routing-instances VPN-l3vpn protocols ospf export bgp-to-ospf 要配置路由器 P1： 注： 修改相应的接口名称、地址和其他参数后，对路由器 P2 重复此过程。 修改相应的接口名称、地址和其他参数后，对路由器 P2 重复此过程。 配置物理接口。 [edit] user@P1# set interfaces ge-0/0/0 unit 0 family inet address 10.1.23.2/30 user@P1# set interfaces ge-0/0/0 unit 0 family mpls user@P1# set interfaces ge-0/0/2 unit 0 family inet address 10.1.34.1/30 user@P1# set interfaces ge-0/0/2 unit 0 family mpls 配置环路接口。 [edit] user@P1# set interfaces lo0 unit 0 family inet address 10.1.255.3/32 primary 配置 路由器 ID。 [edit] user@P1# set routing-options router-id 10.1.255.3 [edit] user@P1# set protocols ospf traffic-engineering user@P1# set protocols ospf area 0.0.0.0 interface lo0.0 passive user@P1# set protocols ospf area 0.0.0.0 interface ge-0/0/0.0 user@P1# set protocols ospf area 0.0.0.0 interface ge-0/0/2.0 [edit] user@P1# set protocols rsvp interface ge-0/0/0.0 user@P1# set protocols rsvp interface lo0.0 user@P1# set protocols rsvp interface ge-0/0/2.0 配置 MPLS 协议。 [edit] user@P1# set protocols mpls icmp-tunneling user@P1# set protocols mpls interface ge-0/0/0.0 user@P1# set protocols mpls interface lo0.0 user@P1# set protocols mpls interface ge-0/0/2.0 要配置路由器 ABR： [edit] user@ABR# set interfaces ge-0/0/0 unit 0 family inet address 10.1.34.2/30 user@ABR# set interfaces ge-0/0/0 unit 0 family mpls user@ABR# set interfaces ge-0/0/2 unit 0 family inet address 10.1.45.1/30 user@ABR# set interfaces ge-0/0/2 unit 0 family mpls user@ABR# set interfaces ge-0/0/3 unit 0 family inet address 10.1.45.5/30 user@ABR# set interfaces ge-0/0/3 unit 0 family mpls [edit] user@ABR# set interfaces lo0 unit 0 family inet address 10.1.255.4/32 primary 配置路由器用于将数据包散列到其目标以进行负载平衡的 MPLS 标签。 [edit] user@ABR# set forwarding-options hash-key family mpls label-1 user@ABR# set forwarding-options hash-key family mpls label-2 user@ABR# set forwarding-options hash-key family mpls label-3 user@ABR# set forwarding-options enhanced-hash-key family mpls no-payload [edit] user@ABR# set routing-options router-id 10.1.255.4 user@ABR# set routing-options autonomous-system 65000 [edit] user@ABR# set protocols ospf traffic-engineering user@ABR# set protocols ospf area 0.0.0.0 interface lo0.0 passive user@ABR# set protocols ospf area 0.0.0.0 interface ge-0/0/0.0 user@ABR# set protocols ospf area 0.0.0.1 interface ge-0/0/2.0 user@ABR# set protocols ospf area 0.0.0.1 interface ge-0/0/3.0 [edit] user@ABR# set protocols rsvp interface lo0.0 user@ABR# set protocols rsvp interface ge-0/0/0.0 user@ABR# set protocols rsvp interface ge-0/0/2.0 user@ABR# set protocols rsvp interface ge-0/0/3.0 配置 MPLS 协议并指定面向 PE1 和 PE2 的 LSP。 针对 PE2 创建了两个 LSP，以便对流量进行负载均衡，以显示使用了不同的 LSP 和接口。 [edit] user@ABR# set protocols mpls icmp-tunneling user@ABR# set protocols mpls label-switched-path abr-pe1 to 10.1.255.2 user@ABR# set protocols mpls label-switched-path abr-pe1 entropy-label user@ABR# set protocols mpls label-switched-path abr-pe2 to 10.1.255.6 user@ABR# set protocols mpls label-switched-path abr-pe2 entropy-label user@ABR# set protocols mpls label-switched-path abr-pe2 primary to-r6-1 user@ABR# set protocols mpls label-switched-path abr-pe2-2 to 10.1.255.6 user@ABR# set protocols mpls label-switched-path abr-pe2-2 entropy-label user@ABR# set protocols mpls label-switched-path abr-pe2-2 primary to-r6-2 user@ABR# set protocols mpls path to-r6-1 10.1.45.2 strict user@ABR# set protocols mpls path to-r6-1 10.1.56.2 strict user@ABR# set protocols mpls path to-r6-2 10.1.45.6 strict user@ABR# set protocols mpls path to-r6-2 10.1.56.6 strict user@ABR# set protocols mpls interface lo0.0 user@ABR# set protocols mpls interface ge-0/0/0.0 user@ABR# set protocols mpls interface ge-0/0/2.0 user@ABR# set protocols mpls interface ge-0/0/3.0 使用 将 family inet labeled-unicast IBGP 同时配置为 PE1 和 PE2。 应用策略以通告来自 PE1 和 PE2 的 inet.3 环路路由。我们将在下一步中显示策略。 [edit] user@ABR# set protocols bgp group ibgp type internal user@ABR# set protocols bgp group ibgp local-address 10.1.255.4 user@ABR# set protocols bgp group ibgp family inet labeled-unicast rib inet.3 user@ABR# set protocols bgp group ibgp neighbor 10.1.255.2 export send-inet3-pe2 user@ABR# set protocols bgp group ibgp neighbor 10.1.255.6 export send-inet3-pe1 在 PE1 和 PE2 的环路地址上定义要匹配的策略。 [edit] user@ABR# set policy-options policy-statement send-inet3-pe1 from route-filter 10.1.255.2/32 exact user@ABR# set policy-options policy-statement send-inet3-pe1 then accept user@ABR# set policy-options policy-statement send-inet3-pe2 from route-filter 10.1.255.6/32 exact user@ABR# set policy-options policy-statement send-inet3-pe2 then accept 定义负载平衡策略，并在 . routing-options forwarding-table [edit] user@ABR# set policy-options policy-statement pplb then load-balance per-packet user@ABR# set routing-options forwarding-table export pplb 要查看应用的熵标签，您可以捕获流量。在此示例中，在 P1 上面向 PE1 的接口上应用过滤器，以捕获 CE1 到 CE2 流量。流量将发送到主机 1 进行查看。捕获流量的方法与我们在此示例中使用的方法不同。有关详细信息，请参见 了解端口镜像和分析器。 配置接口。在此示例中，我们将连接到 Host1 的接口放在桥接域中，并创建一个 IRB 接口来验证与 Host1 的连接。 [edit] user@P1# set interfaces ge-0/0/4 unit 0 family bridge interface-mode access user@P1# set interfaces ge-0/0/4 unit 0 family bridge vlan-id 100 user@P1# set interfaces irb unit 0 family inet address 10.1.31.1/30 配置桥接域。 [edit] user@P1# set bridge-domains v100 vlan-id 100 user@P1# set bridge-domains v100 routing-interface irb.0 配置过滤器以捕获流量。在本例中，我们将捕获所有流量。 [edit] user@P1# set firewall family any filter test term 1 then count test user@P1# set firewall family any filter test term 1 then port-mirror user@P1# set firewall family any filter test term 1 then accept 将过滤器应用于面向 PE1 的接口。 [edit] user@P1# set interfaces ge-0/0/0 unit 0 filter input test 配置端口镜像选项。在本例中，我们将镜像所有流量并将其发送到连接到接口 ge-0/0/4 的 Host1。 [edit] user@P1# set forwarding-options port-mirroring input rate 1 user@P1# set forwarding-options port-mirroring family any output interface ge-0/0/4.0",
+      "sections": [
+        {
+          "title": "CLI 快速配置",
+          "level": 4,
+          "content": "要快速配置此示例，请复制以下命令，将其粘贴到文本文件中，删除所有换行符，更改详细信息，以便与网络配置匹配，将命令复制并粘贴到 [edit] 层级的 CLI 中，然后从配置模式进入 commit 。 路由器 CE1 set interfaces ge-0/0/0 unit 0 family inet address 172.16.12.1/30 set interfaces lo0 unit 0 family inet address 172.16.255.1/32 primary set interfaces lo0 unit 0 family inet address 192.168.255.1/32 set routing-options router-id 172.16.255.1 set protocols ospf area 0.0.0.0 interface ge-0/0/0.0 set protocols ospf area 0.0.0.0 interface lo0.0 passive 路由器 PE1 set interfaces ge-0/0/0 unit 0 family inet address 172.16.12.2/30 set interfaces ge-0/0/2 unit 0 family inet address 10.1.23.1/30 set interfaces ge-0/0/2 unit 0 family mpls set interfaces lo0 unit 0 family inet address 10.1.255.2/32 primary set interfaces lo0 unit 1 family inet address 10.1.255.22/32 set policy-options policy-statement bgp-to-ospf from protocol bgp set policy-options policy-statement bgp-to-ospf then accept set policy-options policy-statement pplb then load-balance per-packet set routing-instances VPN-l3vpn instance-type vrf set routing-instances VPN-l3vpn protocols ospf area 0.0.0.0 interface ge-0/0/0.0 set routing-instances VPN-l3vpn protocols ospf area 0.0.0.0 interface lo0.1 passive set routing-instances VPN-l3vpn protocols ospf export bgp-to-ospf set routing-instances VPN-l3vpn interface ge-0/0/0.0 set routing-instances VPN-l3vpn interface lo0.1 set routing-instances VPN-l3vpn route-distinguisher 10.1.255.2:1 set routing-instances VPN-l3vpn vrf-target target:65000:1 set routing-options router-id 10.1.255.2 set routing-options autonomous-system 65000 set routing-options forwarding-table export pplb set protocols bgp group ibgp type internal set protocols bgp group ibgp local-address 10.1.255.2 set protocols bgp group ibgp family inet labeled-unicast entropy-label set protocols bgp group ibgp neighbor 10.1.255.4 family inet labeled-unicast rib inet.3 set protocols bgp group ibgp neighbor 10.1.255.6 family inet-vpn unicast set protocols mpls icmp-tunneling set protocols mpls label-switched-path pe1-abr to 10.1.255.4 set protocols mpls label-switched-path pe1-abr entropy-label set protocols mpls interface ge-0/0/2.0 set protocols mpls interface lo0.0 set protocols ospf traffic-engineering set protocols ospf area 0.0.0.0 interface ge-0/0/2.0 set protocols ospf area 0.0.0.0 interface lo0.0 passive set protocols rsvp interface ge-0/0/2.0 set protocols rsvp interface lo0.0 路由器 P1 set interfaces ge-0/0/0 unit 0 family inet address 10.1.23.2/30 set interfaces ge-0/0/0 unit 0 family mpls set interfaces ge-0/0/2 unit 0 family inet address 10.1.34.1/30 set interfaces ge-0/0/2 unit 0 family mpls set interfaces lo0 unit 0 family inet address 10.1.255.3/32 primary set routing-options router-id 10.1.255.3 set protocols mpls icmp-tunneling set protocols mpls interface ge-0/0/0.0 set protocols mpls interface lo0.0 set protocols mpls interface ge-0/0/2.0 set protocols ospf traffic-engineering set protocols ospf area 0.0.0.0 interface lo0.0 passive set protocols ospf area 0.0.0.0 interface ge-0/0/0.0 set protocols ospf area 0.0.0.0 interface ge-0/0/2.0 set protocols rsvp interface ge-0/0/0.0 set protocols rsvp interface lo0.0 set protocols rsvp interface ge-0/0/2.0 路由器 ABR set interfaces ge-0/0/0 unit 0 family inet address 10.1.34.2/30 set interfaces ge-0/0/0 unit 0 family mpls set interfaces ge-0/0/2 unit 0 family inet address 10.1.45.1/30 set interfaces ge-0/0/2 unit 0 family mpls set interfaces ge-0/0/3 unit 0 family inet address 10.1.45.5/30 set interfaces ge-0/0/3 unit 0 family mpls set interfaces lo0 unit 0 family inet address 10.1.255.4/32 primary set forwarding-options hash-key family mpls label-1 set forwarding-options hash-key family mpls label-2 set forwarding-options hash-key family mpls label-3 set forwarding-options enhanced-hash-key family mpls no-payload set policy-options policy-statement pplb then load-balance per-packet set policy-options policy-statement send-inet3-pe1 from route-filter 10.1.255.2/32 exact set policy-options policy-statement send-inet3-pe1 then accept set policy-options policy-statement send-inet3-pe2 from route-filter 10.1.255.6/32 exact set policy-options policy-statement send-inet3-pe2 then accept set routing-options router-id 10.1.255.4 set routing-options autonomous-system 65000 set routing-options forwarding-table export pplb set protocols bgp group ibgp type internal set protocols bgp group ibgp local-address 10.1.255.4 set protocols bgp group ibgp family inet labeled-unicast rib inet.3 set protocols bgp group ibgp neighbor 10.1.255.2 export send-inet3-pe2 set protocols bgp group ibgp neighbor 10.1.255.6 export send-inet3-pe1 set protocols mpls icmp-tunneling set protocols mpls label-switched-path abr-pe1 to 10.1.255.2 set protocols mpls label-switched-path abr-pe1 entropy-label set protocols mpls label-switched-path abr-pe2 to 10.1.255.6 set protocols mpls label-switched-path abr-pe2 entropy-label set protocols mpls label-switched-path abr-pe2 primary to-r6-1 set protocols mpls label-switched-path abr-pe2-2 to 10.1.255.6 set protocols mpls label-switched-path abr-pe2-2 entropy-label set protocols mpls label-switched-path abr-pe2-2 primary to-r6-2 set protocols mpls path to-r6-1 10.1.45.2 strict set protocols mpls path to-r6-1 10.1.56.2 strict set protocols mpls path to-r6-2 10.1.45.6 strict set protocols mpls path to-r6-2 10.1.56.6 strict set protocols mpls interface lo0.0 set protocols mpls interface ge-0/0/0.0 set protocols mpls interface ge-0/0/2.0 set protocols mpls interface ge-0/0/3.0 set protocols ospf traffic-engineering set protocols ospf area 0.0.0.0 interface lo0.0 passive set protocols ospf area 0.0.0.0 interface ge-0/0/0.0 set protocols ospf area 0.0.0.1 interface ge-0/0/2.0 set protocols ospf area 0.0.0.1 interface ge-0/0/3.0 set protocols rsvp interface lo0.0 set protocols rsvp interface ge-0/0/0.0 set protocols rsvp interface ge-0/0/2.0 set protocols rsvp interface ge-0/0/3.0 路由器 P2 set interfaces ge-0/0/0 unit 0 family inet address 10.1.45.2/30 set interfaces ge-0/0/0 unit 0 family mpls set interfaces ge-0/0/1 unit 0 family inet address 10.1.45.6/30 set interfaces ge-0/0/1 unit 0 family mpls set interfaces ge-0/0/2 unit 0 family inet address 10.1.56.1/30 set interfaces ge-0/0/2 unit 0 family mpls set interfaces ge-0/0/3 unit 0 family inet address 10.1.56.5/30 set interfaces ge-0/0/3 unit 0 family mpls set interfaces lo0 unit 0 family inet address 10.1.255.5/32 primary set forwarding-options hash-key family mpls label-1 set forwarding-options hash-key family mpls label-2 set forwarding-options hash-key family mpls label-3 set forwarding-options enhanced-hash-key family mpls no-payload set policy-options policy-statement pplb then load-balance per-packet set routing-options router-id 10.1.255.5 set routing-options forwarding-table export pplb set protocols mpls icmp-tunneling set protocols mpls interface ge-0/0/2.0 set protocols mpls interface lo0.0 set protocols mpls interface ge-0/0/0.0 set protocols mpls interface ge-0/0/1.0 set protocols mpls interface ge-0/0/3.0 set protocols ospf traffic-engineering set protocols ospf area 0.0.0.1 interface lo0.0 passive set protocols ospf area 0.0.0.1 interface ge-0/0/2.0 set protocols ospf area 0.0.0.1 interface ge-0/0/0.0 set protocols ospf area 0.0.0.1 interface ge-0/0/1.0 set protocols ospf area 0.0.0.1 interface ge-0/0/3.0 set protocols rsvp interface ge-0/0/2.0 set protocols rsvp interface lo0.0 set protocols rsvp interface ge-0/0/0.0 set protocols rsvp interface ge-0/0/1.0 set protocols rsvp interface ge-0/0/3.0 路由器 PE2 set interfaces ge-0/0/0 unit 0 family inet address 10.1.56.2/30 set interfaces ge-0/0/0 unit 0 family mpls set interfaces ge-0/0/1 unit 0 family inet address 10.1.56.6/30 set interfaces ge-0/0/1 unit 0 family mpls set interfaces ge-0/0/2 unit 0 family inet address 172.16.67.2/30 set interfaces lo0 unit 0 family inet address 10.1.255.6/32 primary set interfaces lo0 unit 1 family inet address 10.1.255.66/32 set forwarding-options hash-key family mpls label-1 set forwarding-options hash-key family mpls label-2 set forwarding-options hash-key family mpls label-3 set forwarding-options enhanced-hash-key family mpls no-payload set policy-options policy-statement bgp-to-ospf from protocol bgp set policy-options policy-statement bgp-to-ospf then accept set policy-options policy-statement pplb then load-balance per-packet set routing-instances VPN-l3vpn instance-type vrf set routing-instances VPN-l3vpn protocols ospf area 0.0.0.0 interface ge-0/0/2.0 set routing-instances VPN-l3vpn protocols ospf area 0.0.0.0 interface lo0.1 passive set routing-instances VPN-l3vpn protocols ospf export bgp-to-ospf set routing-instances VPN-l3vpn interface ge-0/0/2.0 set routing-instances VPN-l3vpn interface lo0.1 set routing-instances VPN-l3vpn route-distinguisher 10.1.255.6:1 set routing-instances VPN-l3vpn vrf-target target:65000:1 set routing-options router-id 10.1.255.6 set routing-options autonomous-system 65000 set routing-options forwarding-table export pplb set protocols bgp group ibgp type internal set protocols bgp group ibgp local-address 10.1.255.6 set protocols bgp group ibgp family inet labeled-unicast entropy-label set protocols bgp group ibgp neighbor 10.1.255.4 family inet labeled-unicast rib inet.3 set protocols bgp group ibgp neighbor 10.1.255.2 family inet-vpn unicast set protocols mpls icmp-tunneling set protocols mpls label-switched-path pe2-abr to 10.1.255.4 set protocols mpls label-switched-path pe2-abr entropy-label set protocols mpls interface ge-0/0/0.0 set protocols mpls interface lo0.0 set protocols mpls interface ge-0/0/1.0 set protocols ospf traffic-engineering set protocols ospf area 0.0.0.1 interface ge-0/0/0.0 set protocols ospf area 0.0.0.1 interface lo0.0 passive set protocols ospf area 0.0.0.1 interface ge-0/0/1.0 set protocols rsvp interface ge-0/0/0.0 set protocols rsvp interface lo0.0 set protocols rsvp interface ge-0/0/1.0 路由器 CE2 set interfaces ge-0/0/0 unit 0 family inet address 172.16.67.1/30 set interfaces lo0 unit 0 family inet address 172.16.255.7/32 primary set interfaces lo0 unit 0 family inet address 192.168.255.7/32 set routing-options router-id 172.16.255.7 set protocols ospf area 0.0.0.0 interface ge-0/0/0.0 set protocols ospf area 0.0.0.0 interface lo0.0 passive"
+        },
+        {
+          "title": "配置路由器 PE1",
+          "level": 4,
+          "content": "以下示例要求您在配置层次结构中导航各个级别。有关导航 CLI 的信息，请参阅 CLI 用户指南中的在配置模式下使用 CLI 编辑器。 要配置路由器 PE1： 注： 修改相应的接口名称、地址和其他参数后，对路由器 PE2 重复此过程。 修改相应的接口名称、地址和其他参数后，对路由器 PE2 重复此过程。 配置物理接口。 确保在面向核心的接口上进行配置 family mpls 。 [edit] user@PE1# set interfaces ge-0/0/0 unit 0 family inet address 172.16.12.2/30 user@PE1# set interfaces ge-0/0/2 unit 0 family inet address 10.1.23.1/30 user@PE1# set interfaces ge-0/0/2 unit 0 family mpls 配置环路接口。 辅助环回是可选的，将在后面的步骤中在路由实例下应用。 [edit] user@PE1# set interfaces lo0 unit 0 family inet address 10.1.255.2/32 primary user@PE1# set interfaces lo0 unit 1 family inet address 10.1.255.22/32 配置 路由器 ID 和自治系统编号。 [edit] user@PE1# set routing-options router-id 10.1.255.2 user@PE1# set routing-options autonomous-system 65000 配置 OSPF 协议。 [edit] user@PE1# set protocols ospf traffic-engineering user@PE1# set protocols ospf area 0.0.0.0 interface ge-0/0/2.0 user@PE1# set protocols ospf area 0.0.0.0 interface lo0.0 passive 配置 RSVP 协议。 [edit] user@PE1# set protocols rsvp interface ge-0/0/2.0 user@PE1# set protocols rsvp interface lo0.0 配置 MPLS 协议和面向 ABR 的 LSP。 entropy-label 包括将熵标签添加到 MPLS 标签堆栈的选项。 [edit protocols] user@PE1# set protocols mpls icmp-tunneling user@PE1# set protocols mpls label-switched-path pe1-abr to 10.1.255.4 user@PE1# set protocols mpls label-switched-path pe1-abr entropy-label user@PE1# set protocols mpls interface ge-0/0/2.0 user@PE1# set protocols mpls interface lo0.0 使用 family inet labeled-unicast ABR 对等 family inet-vpn 和 PE2 对等配置 IBGP。为 BGP 标记的单播启用熵标签功能。 [edit] user@PE1# set protocols bgp group ibgp type internal user@PE1# set protocols bgp group ibgp local-address 10.1.255.2 user@PE1# set protocols bgp group ibgp family inet labeled-unicast entropy-label user@PE1# set protocols bgp group ibgp neighbor 10.1.255.4 family inet labeled-unicast rib inet.3 user@PE1# set protocols bgp group ibgp neighbor 10.1.255.6 family inet-vpn unicast 定义用于将 BGP VPN 路由导出到 OSPF 的策略。 该策略在路由实例中的 OSPF 下应用。 [edit] user@PE1# set policy-options policy-statement bgp-to-ospf from protocol bgp user@PE1# set policy-options policy-statement bgp-to-ospf then accept 定义 负载平衡 策略 并将其应用到 routing-options forwarding-table . PE1 在示例中只有一条路径，因此不需要此步骤，但对于此示例，我们将在所有设备上应用相同的负载平衡策略。 [edit] user@PE1# set policy-options policy-statement pplb then load-balance per-packet user@PE1# set routing-options forwarding-table export pplb 配置第 3 层 VPN 路由实例。 [edit] user@PE1# set routing-instances VPN-l3vpn instance-type vrf 将接口分配给路由实例。 [edit] user@PE1# set routing-instances VPN-l3vpn interface ge-0/0/0.0 user@PE1# set routing-instances VPN-l3vpn interface lo0.1 为 路由实例配置路由识别符。 [edit] user@PE1# set routing-instances VPN-l3vpn route-distinguisher 10.1.255.2:1 为 路由实例配置 VPN 路由和转发 （VRF） 目标。 [edit] user@PE1# set routing-instances VPN-l3vpn vrf-target target:65000:1 在路由实例下配置协议 OSPF，并应用之前配置 bgp-to-ospf 的策略。 [edit] user@PE1# set routing-instances VPN-l3vpn protocols ospf area 0.0.0.0 interface ge-0/0/0.0 user@PE1# set routing-instances VPN-l3vpn protocols ospf area 0.0.0.0 interface lo0.1 passive user@PE1# set routing-instances VPN-l3vpn protocols ospf export bgp-to-ospf",
+          "sections": [
+            {
+              "title": "分步过程",
+              "level": 5,
+              "step_by_step": [
+                {
+                  "step": 1,
+                  "description": "配置物理接口。 确保在面向核心的接口上进行配置 family mpls 。",
+                  "code": [
+                    "[edit]",
+                    "user@PE1# set interfaces ge-0/0/0 unit 0 family inet address 172.16.12.2/30",
+                    "user@PE1# set interfaces ge-0/0/2 unit 0 family inet address 10.1.23.1/30",
+                    "user@PE1# set interfaces ge-0/0/2 unit 0 family mpls"
+                  ]
+                },
+                {
+                  "step": 2,
+                  "description": "配置环路接口。 辅助环回是可选的，将在后面的步骤中在路由实例下应用。",
+                  "code": [
+                    "[edit]",
+                    "user@PE1# set interfaces lo0 unit 0 family inet address 10.1.255.2/32 primary",
+                    "user@PE1# set interfaces lo0 unit 1 family inet address 10.1.255.22/32"
+                  ]
+                },
+                {
+                  "step": 3,
+                  "description": "配置 路由器 ID 和自治系统编号。",
+                  "code": [
+                    "[edit]",
+                    "user@PE1# set routing-options router-id 10.1.255.2",
+                    "user@PE1# set routing-options autonomous-system 65000"
+                  ]
+                },
+                {
+                  "step": 4,
+                  "description": "配置 OSPF 协议。",
+                  "code": [
+                    "[edit]",
+                    "user@PE1# set protocols ospf traffic-engineering",
+                    "user@PE1# set protocols ospf area 0.0.0.0 interface ge-0/0/2.0",
+                    "user@PE1# set protocols ospf area 0.0.0.0 interface lo0.0 passive"
+                  ]
+                },
+                {
+                  "step": 5,
+                  "description": "配置 RSVP 协议。",
+                  "code": [
+                    "[edit]",
+                    "user@PE1# set protocols rsvp interface ge-0/0/2.0",
+                    "user@PE1# set protocols rsvp interface lo0.0"
+                  ]
+                },
+                {
+                  "step": 6,
+                  "description": "配置 MPLS 协议和面向 ABR 的 LSP。 entropy-label 包括将熵标签添加到 MPLS 标签堆栈的选项。",
+                  "code": [
+                    "[edit protocols]",
+                    "user@PE1# set protocols mpls icmp-tunneling",
+                    "user@PE1# set protocols mpls label-switched-path pe1-abr to 10.1.255.4",
+                    "user@PE1# set protocols mpls label-switched-path pe1-abr entropy-label",
+                    "user@PE1# set protocols mpls interface ge-0/0/2.0",
+                    "user@PE1# set protocols mpls interface lo0.0"
+                  ]
+                },
+                {
+                  "step": 7,
+                  "description": "使用 family inet labeled-unicast ABR 对等 family inet-vpn 和 PE2 对等配置 IBGP。为 BGP 标记的单播启用熵标签功能。",
+                  "code": [
+                    "[edit]",
+                    "user@PE1# set protocols bgp group ibgp type internal",
+                    "user@PE1# set protocols bgp group ibgp local-address 10.1.255.2",
+                    "user@PE1# set protocols bgp group ibgp family inet labeled-unicast entropy-label",
+                    "user@PE1# set protocols bgp group ibgp neighbor 10.1.255.4 family inet labeled-unicast rib inet.3",
+                    "user@PE1# set protocols bgp group ibgp neighbor 10.1.255.6 family inet-vpn unicast"
+                  ]
+                },
+                {
+                  "step": 8,
+                  "description": "定义用于将 BGP VPN 路由导出到 OSPF 的策略。 该策略在路由实例中的 OSPF 下应用。",
+                  "code": [
+                    "[edit]",
+                    "user@PE1# set policy-options policy-statement bgp-to-ospf from protocol bgp",
+                    "user@PE1# set policy-options policy-statement bgp-to-ospf then accept"
+                  ]
+                },
+                {
+                  "step": 9,
+                  "description": "定义 负载平衡 策略 并将其应用到 routing-options forwarding-table . PE1 在示例中只有一条路径，因此不需要此步骤，但对于此示例，我们将在所有设备上应用相同的负载平衡策略。",
+                  "code": [
+                    "[edit]",
+                    "user@PE1# set policy-options policy-statement pplb then load-balance per-packet",
+                    "user@PE1# set routing-options forwarding-table export pplb"
+                  ]
+                },
+                {
+                  "step": 10,
+                  "description": "配置第 3 层 VPN 路由实例。",
+                  "code": [
+                    "[edit]",
+                    "user@PE1# set routing-instances VPN-l3vpn instance-type vrf"
+                  ]
+                },
+                {
+                  "step": 11,
+                  "description": "将接口分配给路由实例。",
+                  "code": [
+                    "[edit]",
+                    "user@PE1# set routing-instances VPN-l3vpn interface ge-0/0/0.0",
+                    "user@PE1# set routing-instances VPN-l3vpn interface lo0.1"
+                  ]
+                },
+                {
+                  "step": 12,
+                  "description": "为 路由实例配置路由识别符。",
+                  "code": [
+                    "[edit]",
+                    "user@PE1# set routing-instances VPN-l3vpn route-distinguisher 10.1.255.2:1"
+                  ]
+                },
+                {
+                  "step": 13,
+                  "description": "为 路由实例配置 VPN 路由和转发 （VRF） 目标。",
+                  "code": [
+                    "[edit]",
+                    "user@PE1# set routing-instances VPN-l3vpn vrf-target target:65000:1"
+                  ]
+                },
+                {
+                  "step": 14,
+                  "description": "在路由实例下配置协议 OSPF，并应用之前配置 bgp-to-ospf 的策略。",
+                  "code": [
+                    "[edit]",
+                    "user@PE1# set routing-instances VPN-l3vpn protocols ospf area 0.0.0.0 interface ge-0/0/0.0",
+                    "user@PE1# set routing-instances VPN-l3vpn protocols ospf area 0.0.0.0 interface lo0.1 passive",
+                    "user@PE1# set routing-instances VPN-l3vpn protocols ospf export bgp-to-ospf"
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "配置路由器 P1",
+          "level": 4,
+          "content": "以下示例要求您在配置层次结构中导航各个级别。有关导航 CLI 的信息，请参阅 CLI 用户指南中的在配置模式下使用 CLI 编辑器。 要配置路由器 P1： 注： 修改相应的接口名称、地址和其他参数后，对路由器 P2 重复此过程。 修改相应的接口名称、地址和其他参数后，对路由器 P2 重复此过程。 配置物理接口。 [edit] user@P1# set interfaces ge-0/0/0 unit 0 family inet address 10.1.23.2/30 user@P1# set interfaces ge-0/0/0 unit 0 family mpls user@P1# set interfaces ge-0/0/2 unit 0 family inet address 10.1.34.1/30 user@P1# set interfaces ge-0/0/2 unit 0 family mpls 配置环路接口。 [edit] user@P1# set interfaces lo0 unit 0 family inet address 10.1.255.3/32 primary 配置 路由器 ID。 [edit] user@P1# set routing-options router-id 10.1.255.3 配置 OSPF 协议。 [edit] user@P1# set protocols ospf traffic-engineering user@P1# set protocols ospf area 0.0.0.0 interface lo0.0 passive user@P1# set protocols ospf area 0.0.0.0 interface ge-0/0/0.0 user@P1# set protocols ospf area 0.0.0.0 interface ge-0/0/2.0 配置 RSVP 协议。 [edit] user@P1# set protocols rsvp interface ge-0/0/0.0 user@P1# set protocols rsvp interface lo0.0 user@P1# set protocols rsvp interface ge-0/0/2.0 配置 MPLS 协议。 [edit] user@P1# set protocols mpls icmp-tunneling user@P1# set protocols mpls interface ge-0/0/0.0 user@P1# set protocols mpls interface lo0.0 user@P1# set protocols mpls interface ge-0/0/2.0",
+          "sections": [
+            {
+              "title": "分步过程",
+              "level": 5,
+              "step_by_step": [
+                {
+                  "step": 1,
+                  "description": "配置物理接口。",
+                  "code": [
+                    "[edit]",
+                    "user@P1# set interfaces ge-0/0/0 unit 0 family inet address 10.1.23.2/30",
+                    "user@P1# set interfaces ge-0/0/0 unit 0 family mpls",
+                    "user@P1# set interfaces ge-0/0/2 unit 0 family inet address 10.1.34.1/30",
+                    "user@P1# set interfaces ge-0/0/2 unit 0 family mpls"
+                  ]
+                },
+                {
+                  "step": 2,
+                  "description": "配置环路接口。",
+                  "code": [
+                    "[edit]",
+                    "user@P1# set interfaces lo0 unit 0 family inet address 10.1.255.3/32 primary"
+                  ]
+                },
+                {
+                  "step": 3,
+                  "description": "配置 路由器 ID。",
+                  "code": [
+                    "[edit]",
+                    "user@P1# set routing-options router-id 10.1.255.3"
+                  ]
+                },
+                {
+                  "step": 4,
+                  "description": "配置 OSPF 协议。",
+                  "code": [
+                    "[edit]",
+                    "user@P1# set protocols ospf traffic-engineering",
+                    "user@P1# set protocols ospf area 0.0.0.0 interface lo0.0 passive",
+                    "user@P1# set protocols ospf area 0.0.0.0 interface ge-0/0/0.0",
+                    "user@P1# set protocols ospf area 0.0.0.0 interface ge-0/0/2.0"
+                  ]
+                },
+                {
+                  "step": 5,
+                  "description": "配置 RSVP 协议。",
+                  "code": [
+                    "[edit]",
+                    "user@P1# set protocols rsvp interface ge-0/0/0.0",
+                    "user@P1# set protocols rsvp interface lo0.0",
+                    "user@P1# set protocols rsvp interface ge-0/0/2.0"
+                  ]
+                },
+                {
+                  "step": 6,
+                  "description": "配置 MPLS 协议。",
+                  "code": [
+                    "[edit]",
+                    "user@P1# set protocols mpls icmp-tunneling",
+                    "user@P1# set protocols mpls interface ge-0/0/0.0",
+                    "user@P1# set protocols mpls interface lo0.0",
+                    "user@P1# set protocols mpls interface ge-0/0/2.0"
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "配置路由器 ABR",
+          "level": 4,
+          "content": "以下示例要求您在配置层次结构中导航各个级别。有关导航 CLI 的信息，请参阅 CLI 用户指南中的在配置模式下使用 CLI 编辑器。 要配置路由器 ABR： 配置物理接口。 [edit] user@ABR# set interfaces ge-0/0/0 unit 0 family inet address 10.1.34.2/30 user@ABR# set interfaces ge-0/0/0 unit 0 family mpls user@ABR# set interfaces ge-0/0/2 unit 0 family inet address 10.1.45.1/30 user@ABR# set interfaces ge-0/0/2 unit 0 family mpls user@ABR# set interfaces ge-0/0/3 unit 0 family inet address 10.1.45.5/30 user@ABR# set interfaces ge-0/0/3 unit 0 family mpls 配置环路接口。 [edit] user@ABR# set interfaces lo0 unit 0 family inet address 10.1.255.4/32 primary 配置路由器用于将数据包散列到其目标以进行负载平衡的 MPLS 标签。 [edit] user@ABR# set forwarding-options hash-key family mpls label-1 user@ABR# set forwarding-options hash-key family mpls label-2 user@ABR# set forwarding-options hash-key family mpls label-3 user@ABR# set forwarding-options enhanced-hash-key family mpls no-payload 配置 路由器 ID 和自治系统编号。 [edit] user@ABR# set routing-options router-id 10.1.255.4 user@ABR# set routing-options autonomous-system 65000 配置 OSPF 协议。 [edit] user@ABR# set protocols ospf traffic-engineering user@ABR# set protocols ospf area 0.0.0.0 interface lo0.0 passive user@ABR# set protocols ospf area 0.0.0.0 interface ge-0/0/0.0 user@ABR# set protocols ospf area 0.0.0.1 interface ge-0/0/2.0 user@ABR# set protocols ospf area 0.0.0.1 interface ge-0/0/3.0 配置 RSVP 协议。 [edit] user@ABR# set protocols rsvp interface lo0.0 user@ABR# set protocols rsvp interface ge-0/0/0.0 user@ABR# set protocols rsvp interface ge-0/0/2.0 user@ABR# set protocols rsvp interface ge-0/0/3.0 配置 MPLS 协议并指定面向 PE1 和 PE2 的 LSP。 针对 PE2 创建了两个 LSP，以便对流量进行负载均衡，以显示使用了不同的 LSP 和接口。 [edit] user@ABR# set protocols mpls icmp-tunneling user@ABR# set protocols mpls label-switched-path abr-pe1 to 10.1.255.2 user@ABR# set protocols mpls label-switched-path abr-pe1 entropy-label user@ABR# set protocols mpls label-switched-path abr-pe2 to 10.1.255.6 user@ABR# set protocols mpls label-switched-path abr-pe2 entropy-label user@ABR# set protocols mpls label-switched-path abr-pe2 primary to-r6-1 user@ABR# set protocols mpls label-switched-path abr-pe2-2 to 10.1.255.6 user@ABR# set protocols mpls label-switched-path abr-pe2-2 entropy-label user@ABR# set protocols mpls label-switched-path abr-pe2-2 primary to-r6-2 user@ABR# set protocols mpls path to-r6-1 10.1.45.2 strict user@ABR# set protocols mpls path to-r6-1 10.1.56.2 strict user@ABR# set protocols mpls path to-r6-2 10.1.45.6 strict user@ABR# set protocols mpls path to-r6-2 10.1.56.6 strict user@ABR# set protocols mpls interface lo0.0 user@ABR# set protocols mpls interface ge-0/0/0.0 user@ABR# set protocols mpls interface ge-0/0/2.0 user@ABR# set protocols mpls interface ge-0/0/3.0 使用 将 family inet labeled-unicast IBGP 同时配置为 PE1 和 PE2。 应用策略以通告来自 PE1 和 PE2 的 inet.3 环路路由。我们将在下一步中显示策略。 [edit] user@ABR# set protocols bgp group ibgp type internal user@ABR# set protocols bgp group ibgp local-address 10.1.255.4 user@ABR# set protocols bgp group ibgp family inet labeled-unicast rib inet.3 user@ABR# set protocols bgp group ibgp neighbor 10.1.255.2 export send-inet3-pe2 user@ABR# set protocols bgp group ibgp neighbor 10.1.255.6 export send-inet3-pe1 在 PE1 和 PE2 的环路地址上定义要匹配的策略。 [edit] user@ABR# set policy-options policy-statement send-inet3-pe1 from route-filter 10.1.255.2/32 exact user@ABR# set policy-options policy-statement send-inet3-pe1 then accept user@ABR# set policy-options policy-statement send-inet3-pe2 from route-filter 10.1.255.6/32 exact user@ABR# set policy-options policy-statement send-inet3-pe2 then accept 定义负载平衡策略，并在 . routing-options forwarding-table [edit] user@ABR# set policy-options policy-statement pplb then load-balance per-packet user@ABR# set routing-options forwarding-table export pplb",
+          "sections": [
+            {
+              "title": "分步过程",
+              "level": 5,
+              "step_by_step": [
+                {
+                  "step": 1,
+                  "description": "配置物理接口。",
+                  "code": [
+                    "[edit]",
+                    "user@ABR# set interfaces ge-0/0/0 unit 0 family inet address 10.1.34.2/30",
+                    "user@ABR# set interfaces ge-0/0/0 unit 0 family mpls",
+                    "user@ABR# set interfaces ge-0/0/2 unit 0 family inet address 10.1.45.1/30",
+                    "user@ABR# set interfaces ge-0/0/2 unit 0 family mpls",
+                    "user@ABR# set interfaces ge-0/0/3 unit 0 family inet address 10.1.45.5/30",
+                    "user@ABR# set interfaces ge-0/0/3 unit 0 family mpls"
+                  ]
+                },
+                {
+                  "step": 2,
+                  "description": "配置环路接口。",
+                  "code": [
+                    "[edit]",
+                    "user@ABR# set interfaces lo0 unit 0 family inet address 10.1.255.4/32 primary"
+                  ]
+                },
+                {
+                  "step": 3,
+                  "description": "配置路由器用于将数据包散列到其目标以进行负载平衡的 MPLS 标签。",
+                  "code": [
+                    "[edit]",
+                    "user@ABR# set forwarding-options hash-key family mpls label-1",
+                    "user@ABR# set forwarding-options hash-key family mpls label-2",
+                    "user@ABR# set forwarding-options hash-key family mpls label-3",
+                    "user@ABR# set forwarding-options enhanced-hash-key family mpls no-payload"
+                  ]
+                },
+                {
+                  "step": 4,
+                  "description": "配置 路由器 ID 和自治系统编号。",
+                  "code": [
+                    "[edit]",
+                    "user@ABR# set routing-options router-id 10.1.255.4",
+                    "user@ABR# set routing-options autonomous-system 65000"
+                  ]
+                },
+                {
+                  "step": 5,
+                  "description": "配置 OSPF 协议。",
+                  "code": [
+                    "[edit]",
+                    "user@ABR# set protocols ospf traffic-engineering",
+                    "user@ABR# set protocols ospf area 0.0.0.0 interface lo0.0 passive",
+                    "user@ABR# set protocols ospf area 0.0.0.0 interface ge-0/0/0.0",
+                    "user@ABR# set protocols ospf area 0.0.0.1 interface ge-0/0/2.0",
+                    "user@ABR# set protocols ospf area 0.0.0.1 interface ge-0/0/3.0"
+                  ]
+                },
+                {
+                  "step": 6,
+                  "description": "配置 RSVP 协议。",
+                  "code": [
+                    "[edit]",
+                    "user@ABR# set protocols rsvp interface lo0.0",
+                    "user@ABR# set protocols rsvp interface ge-0/0/0.0",
+                    "user@ABR# set protocols rsvp interface ge-0/0/2.0",
+                    "user@ABR# set protocols rsvp interface ge-0/0/3.0"
+                  ]
+                },
+                {
+                  "step": 7,
+                  "description": "配置 MPLS 协议并指定面向 PE1 和 PE2 的 LSP。 针对 PE2 创建了两个 LSP，以便对流量进行负载均衡，以显示使用了不同的 LSP 和接口。",
+                  "code": [
+                    "[edit]",
+                    "user@ABR# set protocols mpls icmp-tunneling",
+                    "user@ABR# set protocols mpls label-switched-path abr-pe1 to 10.1.255.2",
+                    "user@ABR# set protocols mpls label-switched-path abr-pe1 entropy-label",
+                    "user@ABR# set protocols mpls label-switched-path abr-pe2 to 10.1.255.6",
+                    "user@ABR# set protocols mpls label-switched-path abr-pe2 entropy-label",
+                    "user@ABR# set protocols mpls label-switched-path abr-pe2 primary to-r6-1",
+                    "user@ABR# set protocols mpls label-switched-path abr-pe2-2 to 10.1.255.6",
+                    "user@ABR# set protocols mpls label-switched-path abr-pe2-2 entropy-label",
+                    "user@ABR# set protocols mpls label-switched-path abr-pe2-2 primary to-r6-2",
+                    "user@ABR# set protocols mpls path to-r6-1 10.1.45.2 strict",
+                    "user@ABR# set protocols mpls path to-r6-1 10.1.56.2 strict",
+                    "user@ABR# set protocols mpls path to-r6-2 10.1.45.6 strict",
+                    "user@ABR# set protocols mpls path to-r6-2 10.1.56.6 strict",
+                    "user@ABR# set protocols mpls interface lo0.0",
+                    "user@ABR# set protocols mpls interface ge-0/0/0.0",
+                    "user@ABR# set protocols mpls interface ge-0/0/2.0",
+                    "user@ABR# set protocols mpls interface ge-0/0/3.0"
+                  ]
+                },
+                {
+                  "step": 8,
+                  "description": "使用 将 family inet labeled-unicast IBGP 同时配置为 PE1 和 PE2。 应用策略以通告来自 PE1 和 PE2 的 inet.3 环路路由。我们将在下一步中显示策略。",
+                  "code": [
+                    "[edit]",
+                    "user@ABR# set protocols bgp group ibgp type internal",
+                    "user@ABR# set protocols bgp group ibgp local-address 10.1.255.4",
+                    "user@ABR# set protocols bgp group ibgp family inet labeled-unicast rib inet.3",
+                    "user@ABR# set protocols bgp group ibgp neighbor 10.1.255.2 export send-inet3-pe2",
+                    "user@ABR# set protocols bgp group ibgp neighbor 10.1.255.6 export send-inet3-pe1"
+                  ]
+                },
+                {
+                  "step": 9,
+                  "description": "在 PE1 和 PE2 的环路地址上定义要匹配的策略。",
+                  "code": [
+                    "[edit]",
+                    "user@ABR# set policy-options policy-statement send-inet3-pe1 from route-filter 10.1.255.2/32 exact",
+                    "user@ABR# set policy-options policy-statement send-inet3-pe1 then accept",
+                    "user@ABR# set policy-options policy-statement send-inet3-pe2 from route-filter 10.1.255.6/32 exact",
+                    "user@ABR# set policy-options policy-statement send-inet3-pe2 then accept"
+                  ]
+                },
+                {
+                  "step": 10,
+                  "description": "定义负载平衡策略，并在 . routing-options forwarding-table",
+                  "code": [
+                    "[edit]",
+                    "user@ABR# set policy-options policy-statement pplb then load-balance per-packet",
+                    "user@ABR# set routing-options forwarding-table export pplb"
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "（可选）端口镜像配置",
+          "level": 4,
+          "content": "要查看应用的熵标签，您可以捕获流量。在此示例中，在 P1 上面向 PE1 的接口上应用过滤器，以捕获 CE1 到 CE2 流量。流量将发送到主机 1 进行查看。捕获流量的方法与我们在此示例中使用的方法不同。有关详细信息，请参见 了解端口镜像和分析器。 以下示例要求您在配置层次结构中导航各个级别。有关导航 CLI 的信息，请参阅 CLI 用户指南中的在配置模式下使用 CLI 编辑器。 要配置路由器 P1： 配置接口。在此示例中，我们将连接到 Host1 的接口放在桥接域中，并创建一个 IRB 接口来验证与 Host1 的连接。 [edit] user@P1# set interfaces ge-0/0/4 unit 0 family bridge interface-mode access user@P1# set interfaces ge-0/0/4 unit 0 family bridge vlan-id 100 user@P1# set interfaces irb unit 0 family inet address 10.1.31.1/30 配置桥接域。 [edit] user@P1# set bridge-domains v100 vlan-id 100 user@P1# set bridge-domains v100 routing-interface irb.0 配置过滤器以捕获流量。在本例中，我们将捕获所有流量。 [edit] user@P1# set firewall family any filter test term 1 then count test user@P1# set firewall family any filter test term 1 then port-mirror user@P1# set firewall family any filter test term 1 then accept 将过滤器应用于面向 PE1 的接口。 [edit] user@P1# set interfaces ge-0/0/0 unit 0 filter input test 配置端口镜像选项。在本例中，我们将镜像所有流量并将其发送到连接到接口 ge-0/0/4 的 Host1。 [edit] user@P1# set forwarding-options port-mirroring input rate 1 user@P1# set forwarding-options port-mirroring family any output interface ge-0/0/4.0",
+          "sections": [
+            {
+              "title": "分步过程",
+              "level": 5,
+              "step_by_step": [
+                {
+                  "step": 1,
+                  "description": "配置接口。在此示例中，我们将连接到 Host1 的接口放在桥接域中，并创建一个 IRB 接口来验证与 Host1 的连接。",
+                  "code": [
+                    "[edit]",
+                    "user@P1# set interfaces ge-0/0/4 unit 0 family bridge interface-mode access",
+                    "user@P1# set interfaces ge-0/0/4 unit 0 family bridge vlan-id 100",
+                    "user@P1# set interfaces irb unit 0 family inet address 10.1.31.1/30"
+                  ]
+                },
+                {
+                  "step": 2,
+                  "description": "配置桥接域。",
+                  "code": [
+                    "[edit]",
+                    "user@P1# set bridge-domains v100 vlan-id 100",
+                    "user@P1# set bridge-domains v100 routing-interface irb.0"
+                  ]
+                },
+                {
+                  "step": 3,
+                  "description": "配置过滤器以捕获流量。在本例中，我们将捕获所有流量。",
+                  "code": [
+                    "[edit]",
+                    "user@P1# set firewall family any filter test term 1 then count test",
+                    "user@P1# set firewall family any filter test term 1 then port-mirror",
+                    "user@P1# set firewall family any filter test term 1 then accept"
+                  ]
+                },
+                {
+                  "step": 4,
+                  "description": "将过滤器应用于面向 PE1 的接口。",
+                  "code": [
+                    "[edit]",
+                    "user@P1# set interfaces ge-0/0/0 unit 0 filter input test"
+                  ]
+                },
+                {
+                  "step": 5,
+                  "description": "配置端口镜像选项。在本例中，我们将镜像所有流量并将其发送到连接到接口 ge-0/0/4 的 Host1。",
+                  "code": [
+                    "[edit]",
+                    "user@P1# set forwarding-options port-mirroring input rate 1",
+                    "user@P1# set forwarding-options port-mirroring family any output interface ge-0/0/4.0"
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "content": "此示例说明如何为标记为单播的 BGP 配置熵标签，以使用熵标签实现端到端负载均衡。当 IP 数据包有多条路径到达其目的地时，Junos OS 使用数据包标头的某些字段将数据包散列为确定性路径。这需要一个熵标签，一个可以携带流信息的特殊负载平衡标签。核心中的 LSR 只需使用熵标签作为密钥，将数据包散列到正确的路径。熵标签可以是 16 到 1048575 之间的任何标签值（常规 20 位标签范围）。由于此范围与现有的常规标签范围重叠，因此在熵标签之前插入一个称为熵标签指示器 （ELI） 的特殊标签。ELI 是 IANA 分配的特殊标签，值为 7。 BGP 标记的单播通常跨多个 IGP 区域或多个自治系统连接 RSVP 或 LDP LSP。RSVP 或 LDP 熵标签与 RSVP 或 LDP 标签一起在倒数第二个跃点节点弹出。此功能允许在拼接点使用熵标签来弥合倒数第二个跃点和拼接点之间的间隙，以实现 BGP 流量的端到端熵标签负载平衡。 要求 此示例使用以下硬件和软件组件： 7 个带 MPC 的 MX 系列路由器 在所有设备上运行的 Junos OS 15.1 或更高版本 使用 Junos OS Relese 22.4 重新验证 在为 BGP 标记的单播配置熵标签之前，请确保： 配置设备接口。 配置 OSPF 或任何其他 IGP 协议。 配置 BGP。 配置 RSVP。 配置 MPLS"
+}
