@@ -28,8 +28,8 @@ def extract_think_content(text):
     return text, None
 
 class LLMClient:
-    def __init__(self, api_key="sk-7b818fc469ff47fa8d95d7b24a530869", base_url="https://api.deepseek.com", model="deepseek-chat"):
-    # def __init__(self, api_key="sk-GdmMOsWLYBdMwUBwJsaZGKOhM0k7cfuonqzTPvzLVVo1N4SL", base_url="https://chat.cloudapi.vip/v1/", model="claude-sonnet-4-20250514"):
+    def __init__(self, api_key="sk-xxxxxxxxxxxxxxxxxxxxxxxxx", base_url="https://api.deepseek.com", model="deepseek-chat"):
+    # def __init__(self, api_key="sk-xxxxxxxxxxxxxxxxxxxxxxxxx", base_url="https://chat.cloudapi.vip/v1/", model="claude-sonnet-4-20250514"):
         """
         初始化LLM客户端。
 
