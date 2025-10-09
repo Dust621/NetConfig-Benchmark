@@ -1,0 +1,21 @@
+{
+  "topology": "基于网络拓扑图的详细分析，增强后的网络拓扑描述如下：\n\n**网络拓扑结构：**\n\n该网络由6台设备组成，分为三个OSPF区域：IS-IS Network、OSPF Network Area0和OSPF Network Area1。\n\n**设备配置：**\n- DeviceS：位于IS-IS Network区域，通过interface1连接DeviceA，通过interface2连接DeviceN，通过interface3连接DeviceE\n- DeviceA：ASBR设备，interface1连接DeviceS（cost=10），interface2连接DeviceE（Link T，cost=15）\n- DeviceN：interface1连接DeviceS（cost=10），interface2连接DeviceE（cost=10）\n- DeviceE：interface1连接DeviceA（Link T，cost=15），interface2连接DeviceN（cost=10），interface3连接DeviceD（cost=5）\n- DeviceD：位于OSPF Network Area1，通过interface1连接DeviceE\n\n**链路成本配置：**\n- DeviceS-DeviceA：cost=10\n- DeviceS-DeviceN：cost=10  \n- DeviceA-DeviceE（Link T）：cost=15\n- DeviceN-DeviceE：cost=10\n- DeviceE-DeviceD：cost=5\n\n**OSPF IP FRR配置：**\n主链路为Link T（DeviceA-DeviceE，cost=15），备份链路为DeviceS-DeviceN-DeviceE路径（总cost=20）。当Link T故障时，流量从DeviceS快速切换至通过DeviceN的备份路径，避免经过ASBR设备DeviceA，满足FRR流量保护不等式要求。",
+  "requirement": "当网络中的主链路Link T出现故障时，流量会切换到备份链路，这时会出现两个问题：OSPF故障恢复需要经历几百毫秒才能将流量切换到新的链路上，故障恢复期间，流量都被中断了；流量可能被切换到从DeviceA经过。而DeviceA是ASBR，并不希望承担备份设备的角色。通过配置OSPF IP FRR功能可以将流量快速切换到备份链路上，而不用等待路由收敛，从而达到流量不中断的目的。而且还可以配置DeviceA所在的链路不承担FRR备份链路。",
+  "steps": [
+    "在各路由器上使能OSPF基本功能。",
+    "在Area0区域的所有设备上配置BFD for OSPF基本功能。",
+    "配置cost值，使流量优选链路T。",
+    "阻止DeviceS上指定接口的FRR能力。",
+    "由于需保护的是DeviceS转发的流量，因此在DeviceS上使能OSPF IP FRR。"
+  ],
+  "configs": {
+    "DeviceS": "#\nsysname DeviceS\n#\nbfd\n#\ninterface GigabitEthernet1/0/0\n ip address 10.1.1.1 255.255.255.0\n ospf frr block\n ospf cost\n#\ninterface GigabitEthernet2/0/0\n ip address 10.1.2.1 255.255.255.0\n ospf cost\n#\ninterface GigabitEthernet3/0/0\n ip address 10.1.3.1 255.255.255.0\n ospf cost\n#\ninterface LoopBack0\n ip address 1.1.1.1 255.255.255.255\n#\nospf 1\n router-id 1.1.1.1\n bfd all-interfaces enable\n bfd all-interfaces frr-binding\n frr\n loop-free-alternate\n area 0.0.0.0\n network 10.1.1.0 0.0.0.255\n network 10.1.2.0 0.0.0.255\n network 10.1.3.0 0.0.0.255\n#\nreturn",
+    "DeviceA": "#\nsysname DeviceA\n#\nbfd\n#\ninterface GigabitEthernet1/0/0\n ip address 10.1.1.2 255.255.255.0\n ospf cost\n#\ninterface GigabitEthernet2/0/0\n ip address 10.2.1.2 255.255.255.0\n ospf cost\n#\ninterface LoopBack0\n ip address 2.2.2.2 255.255.255.255\n#\nospf 1\n router-id 2.2.2.2\n bfd all-interfaces enable\n bfd all-interfaces frr-binding\n frr\n loop-free-alternate\n area 0.0.0.0\n network 10.1.1.0 0.0.0.255\n network 10.2.2.0 0.0.0.255\n#\nreturn",
+    "DeviceN": "#\nsysname DeviceN\n#\nbfd\n#\ninterface GigabitEthernet1/0/0\n ip address 10.1.3.2 255.255.255.0\n ospf cost\n#\ninterface GigabitEthernet2/0/0\n ip address 10.2.3.2 255.255.255.0\n ospf cost\n#\ninterface LoopBack0\n ip address 3.3.3.3 255.255.255.255\n#\nospf 1\n router-id 3.3.3.3\n bfd all-interfaces enable\n bfd all-interfaces frr-binding\n area 0.0.0.0\n network 10.1.3.0 0.0.0.255\n network 10.2.3.0 0.0.0.255\n#\nreturn",
+    "DeviceE": "#\nsysname DeviceE\n#\nbfd\n#\ninterface GigabitEthernet1/0/0\n ip address 10.2.1.1 255.255.255.0\n#\ninterface GigabitEthernet2/0/0\n ip address 10.1.2.2 255.255.255.0\n#\ninterface GigabitEthernet3/0/0\n ip address 10.2.3.1 255.255.255.0\n#\ninterface GigabitEthernet1/0/1\n ip address 172.17.1.1 255.255.255.0\n ospf cost\n#\ninterface LoopBack0\n ip address 4.4.4.4 255.255.255.255\n#\nospf 1\n router-id 4.4.4.4\n bfd all-interfaces enable\n bfd all-interfaces frr-binding\n area 0.0.0.0\n network 10.1.1.0 0.0.0.255\n network 10.1.2.0 0.0.0.255\n network 10.1.3.0 0.0.0.255\n network 172.17.1.0 0.0.0.255\n#\nreturn"
+  },
+  "related_images": [
+    "图1-50 配置OSPF IP FRR组网图.png"
+  ],
+  "topology_original": "所有的路由器都运行OSPF。链路开销值满足OSPF IP FRR流量保护不等式。当主链路T出现故障时，DeviceS转发的流量快速切换到备份链路上，通过DeviceN转发。网络规划中，DeviceA所在的链路不承担FRR备份链路。"
+}

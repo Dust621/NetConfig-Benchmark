@@ -1,0 +1,16 @@
+{
+  "topology": "DeviceA、DeviceB、DeviceC三台路由器。DeviceA配置RIPng网段 `2001:db8:3::1/96`、`2001:db8:4::1/96` 和 `2001:db8:5::1/96`。DeviceB配置RIPng网段 `2001:db8:1::2/64` 和 `2001:db8:2::2/64`。DeviceC配置RIPng网段 `2001:db8:7::1/96`、`2001:db8:8::1/96` 和 `2001:db8:9::1/96`。",
+  "requirement": "组网需求如图1-83所示，所有路由器的接口已经配置过IP地址，并且各路由器上都配置了RIPng，RIPng业务正常运行。要求重新在DeviceA和DeviceC上配置水平分割。",
+  "steps": [
+    "使能水平分割功能。",
+    "配置过程中需注意以下事项：同时配置水平分割和毒性反转时，只有毒性反转生效；为了提升安全性，推荐部署RIPng的IPSec认证功能。"
+  ],
+  "configs": {
+    "DeviceA": "#\nsysname DeviceA\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ipv6 enable\n ipv6 address 2001:db8:1::1/64\n ripng 1 enable\n#\ninterface GigabitEthernet1/0/1\n undo shutdown\n ipv6 enable\n ipv6 address 2001:db8:3::1/96\n ripng 1 enable\n#\ninterface GigabitEthernet1/0/2\n undo shutdown\n ip address 10.2.1.1 255.255.0.0\n#\ninterface GigabitEthernet1/0/3\n undo shutdown\n ipv6 enable\n ipv6 address 2001:db8:5::1/96\n ripng 1 enable\n#\nripng\n#\nreturn",
+    "DeviceB": "#\nsysname DeviceB\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ipv6 enable\n ipv6 address 2001:db8:1::2/64\n ripng 1 enable\n#\ninterface GigabitEthernet2/0/0\n undo shutdown\n ipv6 enable\n ipv6 address 2001:db8:2::2/64\n ripng 1 enable\n#\nreturn",
+    "DeviceC": "#\nsysname DeviceC\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ipv6 enable\n ipv6 address 2001:db8:2::1/64\n ripng 1 enable\n#\ninterface GigabitEthernet1/0/1\n undo shutdown\n ipv6 enable\n ipv6 address 2001:db8:7::1/96\n ripng 1 enable\n#\ninterface GigabitEthernet1/0/2\n undo shutdown\n ipv6 enable\n ipv6 address 2001:db8:8::1/96\n ripng 1 enable\n#\ninterface GigabitEthernet1/0/3\n undo shutdown\n ipv6 enable\n ipv6 address 2001:db8:9::1/96\n ripng 1 enable\n#\nripng\n#\nreturn"
+  },
+  "related_images": [
+    "图1-83 配置水平分割示例组网图.png"
+  ]
+}

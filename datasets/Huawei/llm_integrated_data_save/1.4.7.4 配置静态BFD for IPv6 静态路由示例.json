@@ -1,0 +1,16 @@
+{
+  "topology": "基于网络拓扑图分析，增强后的网络拓扑描述如下：\n\n**网络拓扑结构：**\n- DeviceA（路由器）通过接口1（2001:db8:1::1/64）连接到SwitchC的接口1\n- SwitchC通过接口2连接到DeviceB（路由器）的接口2（2001:db8:2::1/64）\n- DeviceB通过其他接口连接至Internet云\n\n**IPv6地址规划：**\n- DeviceA-SwitchC链路：2001:db8:1::/64网段\n- SwitchC-DeviceB链路：2001:db8:2::/64网段\n- DeviceA接口地址：2001:db8:1::1/64\n- DeviceB接口地址：2001:db8:2::1/64\n\n**关键配置需求：**\n- DeviceA配置IPv6静态缺省路由指向DeviceB，实现与Internet的通信\n- DeviceA和DeviceB之间建立IPv6 BFD会话，用于快速检测链路故障\n- 静态路由与BFD会话绑定，当BFD检测到故障时快速切换路由状态\n- SwitchC作为二层转发设备，透传IPv6流量和BFD报文\n\n**网络功能：**\n通过IPv6静态路由结合BFD快速故障检测机制，提升网络收敛速度和可靠性，确保DeviceA能够稳定访问外部IPv6网络。",
+  "requirement": "为了增强IPv6网络的可靠性，通过将IPv6静态路由与BFD会话绑定，快速检测链路故障，从而提高路由的收敛速度。在DeviceA上配置静态缺省路由，使其能够与外部网络正常通信。同时，在DeviceA和DeviceB之间配置BFD会话，以快速检测链路故障。",
+  "steps": [
+    "在DeviceA和DeviceB上配置BFD会话，检测DeviceA和DeviceB之间的链路。",
+    "配置DeviceA到外部的缺省路由，并绑定BFD会话。"
+  ],
+  "configs": {
+    "DeviceA": "#\nsysname DeviceA\n#\nbfd\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ipv6 enable\n ipv6 address 2001:db8:1::1/64\n#\nipv6 route-static :: 0 2001:db8:1::2 track bfd-session aa\n#\nbfd aa bind peer-ipv6 2001:db8:1::\n discriminator local \n discriminator remote \n#\nreturn",
+    "DeviceB": "#\nsysname DeviceB\n#\nbfd\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ipv6 enable\n ipv6 address 2001:db8:1::2/64\n#\ninterface GigabitEthernet2/0/0\n undo shutdown\n ipv6 enable\n ipv6 address 2001:db8:2::1/64\n#\nbfd bb bind peer-ipv6 2001:db8:1::\n discriminator local \n discriminator remote \n#\nreturn"
+  },
+  "related_images": [
+    "图1-32 配置静态BFD for IPv6 静态路由组网图.png"
+  ],
+  "topology_original": "DeviceA通过SwitchC与DeviceB相连。DeviceA配置静态缺省路由与外部网络通信，DeviceA和DeviceB之间配置BFD会话以快速检测链路故障。"
+}

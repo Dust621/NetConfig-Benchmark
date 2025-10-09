@@ -1,0 +1,18 @@
+{
+  "topology": "网络拓扑由四台路由器DeviceA、DeviceB、DeviceC、DeviceD组成，运行OSPF协议并划分为两个区域Area1（0.0.0.1）和Area2（0.0.0.2）。\n\n物理连接关系：\n- DeviceA和DeviceB通过GigabitEthernet1/0/0接口直连，形成高速链路（10.1.1.0/24网段）\n- DeviceA通过GigabitEthernet2/0/0接口连接DeviceC的GigabitEthernet2/0/0接口（10.1.2.0/24网段）\n- DeviceC通过GigabitEthernet1/0/0接口连接DeviceD的GigabitEthernet1/0/0接口（10.1.4.0/24网段）\n- DeviceD通过GigabitEthernet2/0/0接口连接DeviceB的GigabitEthernet2/0/0接口（10.1.3.0/24网段）\n\nOSPF区域配置：\n- Area1（0.0.0.1）：包含DeviceA-DeviceB直连链路和DeviceB的LoopBack0接口\n- Area2（0.0.0.2）：包含DeviceA-DeviceC-DeviceD-DeviceB路径的所有链路\n\n关键配置特性：\nDeviceA和DeviceB的直连接口（GigabitEthernet1/0/0）同时启用了多区域邻接功能，该接口既属于Area1又属于Area2，使得Area2内的流量可以通过DeviceA-DeviceB高速直连链路转发，而不必经过DeviceA->DeviceC->DeviceD->DeviceB的冗长路径。\n\nIP地址分配：\n- 10.1.1.0/24：DeviceA（10.1.1.1）- DeviceB（10.1.1.2）\n- 10.1.2.0/24：DeviceA（10.1.2.1）- DeviceC（10.1.2.2）\n- 10.1.3.0/24：DeviceB（10.1.3.1）- DeviceD（10.1.3.2）\n- 10.1.4.0/24：DeviceC（10.1.4.1）- DeviceD（10.1.4.2）\n- DeviceB环回接口：1.1.1.1/32",
+  "requirement": "配置OSPF多区域邻接，在DeviceA和DeviceB之间建立多区域接口，使该多区域接口属于Area2。这样，Area2中DeviceA到DeviceB的流量可以沿DeviceA->DeviceB这条高速链路转发。",
+  "steps": [
+    "在各路由器上使能OSPF。",
+    "使能接口的OSPF。",
+    "使能多区域邻接接口的OSPF。"
+  ],
+  "configs": {
+    "DeviceA": "#\nsysname DeviceA\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ip address 10.1.1.1 255.255.255.0\n ospf enable 1 area 0.0.0.1\n ospf enable multi-area 0.0.0.2\n#\ninterface GigabitEthernet2/0/0\n undo shutdown\n ip address 10.1.2.1 255.255.255.0\n ospf enable 1 area 0.0.0.2\n#\nospf 1\n area 0.0.0.1\n area 0.0.0.2\n#\nreturn",
+    "DeviceB": "#\nsysname DeviceB\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ip address 10.1.1.2 255.255.255.0\n ospf enable 1 area 0.0.0.1\n ospf enable multi-area 0.0.0.2\n#\ninterface GigabitEthernet2/0/0\n undo shutdown\n ip address 10.1.3.1 255.255.255.0\n ospf enable 1 area 0.0.0.2\n#\ninterface LoopBack0\n ip address 1.1.1.1 255.255.255.255\n ospf enable 1 area 0.0.0.1\n#\nospf 1\n area 0.0.0.1\n area 0.0.0.2\n#\nreturn",
+    "DeviceC": "#\nsysname DeviceC\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ip address 10.1.4.1 255.255.255.0\n ospf enable 1 area 0.0.0.2\n#\ninterface GigabitEthernet2/0/0\n undo shutdown\n ip address 10.1.2.2 255.255.255.0\n ospf enable 1 area 0.0.0.2\n#\nospf 1\n area 0.0.0.2\n#\nreturn",
+    "DeviceD": "#\nsysname DeviceD\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ip address 10.1.4.2 255.255.255.0\n ospf enable 1 area 0.0.0.2\n#\ninterface GigabitEthernet2/0/0\n undo shutdown\n ip address 10.1.3.2 255.255.255.0\n ospf enable 1 area 0.0.0.2\n#\nospf 1\n area 0.0.0.2\n#\nreturn"
+  },
+  "related_images": [
+    "图1-55配置OSPF多区域邻接组网图.png"
+  ]
+}

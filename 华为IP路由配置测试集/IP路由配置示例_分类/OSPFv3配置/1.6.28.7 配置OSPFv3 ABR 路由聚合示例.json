@@ -1,0 +1,18 @@
+{
+  "topology": "基于提供的网络拓扑图和配置文件，以下是增强和完善的网络拓扑描述：\n\n该网络拓扑由四台设备组成，采用OSPFv3协议进行IPv6路由。网络划分为两个OSPF区域：\n\n**物理连接和设备配置：**\n- ABR（区域边界路由器，Router-ID: 2.2.2.2）作为核心设备，连接Area 0和Area 1\n- Device A（Router-ID: 3.3.3.3）位于Area 1，通过GigabitEthernet2/0/0接口连接ABR\n- Device C（Router-ID: 4.4.4.4）位于Area 1，通过GigabitEthernet3/0/0接口连接ABR  \n- Device B（Router-ID: 1.1.1.1）位于Area 0，通过GigabitEthernet1/0/0接口连接ABR\n\n**IPv6地址分配：**\n- ABR-Device B链路：ABR(2001:DB8:1::1/64) - Device B(2001:DB8:1::2/64)\n- ABR-Device A链路：ABR(2001:DB8:2::2/64) - Device A(2001:DB8:2::1/64)\n- ABR-Device C链路：ABR(2001:DB8:3::2/64) - Device C(2001:DB8:3::1/64)\n\n**OSPF区域配置：**\n- Area 0（骨干区域）：包含Device B和ABR的GE1/0/0接口\n- Area 1（存根区域）：包含Device A、Device C和ABR的GE2/0/0、GE3/0/0接口\n\n**路由聚合配置：**\nABR配置了区域间路由聚合（abr-summary 2001:DB8::/32），将Area 1内所有以2001:DB8开头的IPv6路由聚合为单条路由2001:DB8::/32后通告给Area 0，有效减少了路由表规模并提高了网络稳定性，避免Area 1内部链路振荡影响整个网络。",
+  "requirement": "路由聚合是指将多条具有相同 IPv6 前缀的路由聚合成一条路由。当大规模部署 OSPFv3 网络时，可能会出现由于 OSPFv3 路由表规模过大而降低路由查找速度的现象。为了解决这个问题，可以配置路由聚合，减小路由表的规模，降低管理的复杂度。此外，如果被聚合的 IPv6 地址范围内的某条链路频繁 Up 和 Down，该变化并不会通告到被聚合的 IPv6 地址范围外的设备。因此，路由聚合还可以避免网络中的路由振荡，在一定程度上提高了网络的稳定性。",
+  "steps": [
+    "配置各接口的 IP 地址，使网络互通。",
+    "在所有设备上使能 OSPFv3 的基本功能。",
+    "在 ABR 上配置 OSPFv3 ABR 路由聚合。"
+  ],
+  "configs": {
+    "DeviceA": "#\nsysname DeviceA\n#\nospfv3 1\n router-id 3.3.3.3\n area 0.0.0.1\n#\ninterface GigabitEthernet2/0/0\n undo shutdown\n ipv6 enable\n ipv6 address 2001:DB8:2::1/64\n ospfv3 1 area 0.0.0.1\n#\nreturn",
+    "DeviceB": "#\nsysname DeviceB\n#\nospfv3 1\n router-id 1.1.1.1\n area 0.0.0.0\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ipv6 enable\n ipv6 address 2001:DB8:1::2/64\n ospfv3 1 area 0.0.0.0\n#\nreturn",
+    "DeviceC": "#\nsysname DeviceC\n#\nospfv3 1\n router-id 4.4.4.4\n area 0.0.0.1\n#\ninterface GigabitEthernet3/0/0\n undo shutdown\n ipv6 enable\n ipv6 address 2001:DB8:3::1/64\n ospfv3 1 area 0.0.0.1\n#\nreturn",
+    "ABR": "#\nsysname ABR\n#\nospfv3 1\n router-id 2.2.2.2\n area 0.0.0.0\n area 0.0.0.1\n  abr-summary 2001:DB8::/32\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ipv6 enable\n ipv6 address 2001:DB8:1::1/64\n ospfv3 1 area 0.0.0.0\n#\ninterface GigabitEthernet2/0/0\n undo shutdown\n ipv6 enable\n ipv6 address 2001:DB8:2::2/64\n ospfv3 1 area 0.0.0.1\n#\ninterface GigabitEthernet3/0/0\n undo shutdown\n ipv6 enable\n ipv6 address 2001:DB8:3::2/64\n ospfv3 1 area 0.0.0.1\n#\nreturn"
+  },
+  "related_images": [
+    "图1-67 配置 OSPFv3 ABR 路由聚合组网图.png"
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "topology": "根据网络拓扑图分析，增强后的网络拓扑描述如下：\n\n**网络拓扑结构：**\n该网络由4台路由器设备组成星型拓扑结构，其中DeviceB作为中心节点，DeviceA、DeviceC和DeviceD分别与DeviceB直连。\n\n**设备连接关系：**\n- DeviceA通过interface1(192.168.1.1/24)连接到DeviceB的interface1(192.168.1.2/24)\n- DeviceC通过interface2(172.16.1.2/24)连接到DeviceB的interface2(172.16.1.1/24)  \n- DeviceD通过interface3(10.1.1.2/24)连接到DeviceB的interface3(10.1.1.1/24)\n\n**网络分段：**\n- 网段1：192.168.1.0/24（DeviceA-DeviceB链路）\n- 网段2：172.16.1.0/24（DeviceB-DeviceC链路）\n- 网段3：10.1.1.0/24（DeviceB-DeviceD链路）\n\n**协议配置：**\n所有设备的接口均启用RIP-2协议，实现网络互连和路由学习。DeviceB作为中心路由器负责转发各网段间的流量。",
+  "requirement": "在DeviceA、DeviceB、DeviceC和DeviceD的所有接口上使能RIP，并通过RIP-2进行网络互连。",
+  "steps": [
+    "配置各接口的IP地址，使网络可达。",
+    "配置RIP-2报文的认证方式。",
+    "在各路由器上使能RIP，配置RIP基本功能。",
+    "在各路由器上配置RIP-2版本，查看子网掩码信息。"
+  ],
+  "configs": {
+    "DeviceA": "#\nsysname DeviceA\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ip address 192.168.1.1 255.255.255.0\n rip authentication-mode hmac-sha256 cipher %^%#c;\\wJ4Qi8I1FMGM}KmIK9rha/.D.!$\"~0(Ep66z~%^%#\n#\ninterface LoopBack0\n ip address 1.1.1.1 255.255.255.255\n rip enable\n#\nrip version 2\n network 192.168.1.0\n#\nreturn",
+    "DeviceB": "#\nsysname DeviceB\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ip address 192.168.1.2 255.255.255.0\n rip authentication-mode hmac-sha256 cipher %^%#*&/]\"$OoC.u#h5%iA0Q.3,$mP{]0;Ivk-,Gyy/w4%^%#\n#\ninterface GigabitEthernet2/0/0\n undo shutdown\n ip address 172.16.1.1 255.255.255.0\n rip authentication-mode hmac-sha256 cipher %^%#BVZr*tW;4\"],!H~L\\*XPyb.Y!BVdHE`D,uM~1q\"<%^%#\n#\ninterface GigabitEthernet3/0/0\n undo shutdown\n ip address 10.1.1.1 255.255.255.0\n rip authentication-mode hmac-sha256 cipher %^%#D[hPG}hUbHNR-EJM.%=P&OR}NU]W&L>GAd84)-7,%^%#\n#\ninterface LoopBack0\n ip address 2.2.2.2 255.255.255.255\n rip enable\n#\nrip version 2\n network 10.0.0.0\n network 172.16.0.0\n network 192.168.1.0\n#\nreturn",
+    "DeviceC": "#\nsysname DeviceC\n#\ninterface GigabitEthernet2/0/0\n undo shutdown\n ip address 172.16.1.2 255.255.255.0\n rip authentication-mode hmac-sha256 cipher %^%#ogrEOF0J;)8umQDUcfm8uc92G2xV@By=^#;<~2zF%^%#\n#\ninterface LoopBack0\n ip address 3.3.3.3 255.255.255.255\n rip enable\n#\nrip version 2\n network 172.16.0.0\n#\nreturn",
+    "DeviceD": "#\nsysname DeviceD\n#\ninterface GigabitEthernet3/0/0\n undo shutdown\n ip address 10.1.1.2 255.255.255.0\n rip authentication-mode hmac-sha256 cipher %^%#+40P:fm\"RB,[>}'<6O1B\"!K[Go_=u4Q]Yp$Hh:wJ%^%#\n#\ninterface LoopBack0\n ip address 4.4.4.4 255.255.255.255\n rip enable\n#\nrip version 2\n network 10.0.0.0\n#\nreturn"
+  },
+  "related_images": [
+    "图1-77 配置RIP基本功能组网图.png"
+  ],
+  "topology_original": "DeviceA、DeviceB、DeviceC和DeviceD的所有接口上使能RIP，通过RIP-2进行网络互连。"
+}

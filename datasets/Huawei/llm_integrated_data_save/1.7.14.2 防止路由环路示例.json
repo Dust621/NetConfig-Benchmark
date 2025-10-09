@@ -1,0 +1,16 @@
+{
+  "topology": "DeviceA、DeviceB和DeviceC通过接口连接，所有路由器都配置了RIP-2，RIP业务正常运行。DeviceA和DeviceC使能过有类聚合。",
+  "requirement": "在DeviceA和DeviceC上配置水平分割，以防止路由环路。取消有类聚合后，需要再配置水平分割或者毒性逆转。",
+  "steps": [
+    "取消路由聚合。",
+    "使能水平分割功能。"
+  ],
+  "configs": {
+    "DeviceA": "#\nsysname DeviceA\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ip address 192.168.1.1 255.255.255.0\n rip version 2 multicast\n#\ninterface GigabitEthernet1/0/1\n undo shutdown\n ip address 10.1.1.1 255.255.0.0\n rip version 2 multicast\n#\ninterface GigabitEthernet1/0/2\n undo shutdown\n ip address 10.2.1.1 255.255.0.0\n rip version 2 multicast\n#\ninterface GigabitEthernet1/0/3\n undo shutdown\n ip address 10.3.1.1 255.255.0.0\n rip version 2 multicast\n#\nrip\n network 10.1.0.0\n network 10.2.0.0\n network 10.3.0.0\n network 192.168.0.0\n undo summary\nreturn",
+    "DeviceB": "#\nsysname DeviceB\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ip address 192.168.1.2 255.255.255.0\n rip version 2 multicast\n#\ninterface GigabitEthernet1/0/1\n undo shutdown\n ip address 192.168.2.1 255.255.255.0\n rip version 2 multicast\n#\nrip\n network 192.168.0.0\n undo summary\nreturn",
+    "DeviceC": "#\nsysname DeviceC\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ip address 192.168.2.2 255.255.255.0\n rip version 2 multicast\n#\ninterface GigabitEthernet1/0/1\n undo shutdown\n ip address 172.16.1.1 255.255.0.0\n rip version 2 multicast\n#\ninterface GigabitEthernet1/0/2\n undo shutdown\n ip address 172.17.1.1 255.255.0.0\n rip version 2 multicast\n#\ninterface GigabitEthernet1/0/3\n undo shutdown\n ip address 172.18.1.1 255.255.0.0\n rip version 2 multicast\n#\nrip\n network 172.16.0.0\n network 172.17.0.0\n network 172.18.0.0\n network 192.168.0.0\nreturn"
+  },
+  "related_images": [
+    "图1-78 防止路由环路示例组网图.png"
+  ]
+}

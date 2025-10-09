@@ -1,0 +1,18 @@
+{
+  "topology": "基于图片分析，增强后的网络拓扑描述如下：\n\n网络拓扑由四台路由器设备组成菱形（钻石形）拓扑结构：DeviceA、DeviceB、DeviceC和DeviceD。所有设备均为路由器（标识为R）。\n\n**物理连接关系：**\n- DeviceA与DeviceB通过GE接口直连\n- DeviceB与DeviceC通过GE接口直连  \n- DeviceC与DeviceD通过GE接口直连\n- DeviceD与DeviceA通过GE接口直连\n- 形成闭合的四边形拓扑结构\n\n**IPv6配置：**\n- 所有路由器GE接口配置IPv6链路本地地址\n- IPv6地址前缀长度统一为/64\n- 路由器之间配置IPv6静态路由协议\n\n**路由配置：**\n- 路径A显示Preference=60（较高优先级）\n- 路径B显示Preference=100（较低优先级）\n- 通过静态路由优先级控制实现路径选择和负载均衡\n\n**组网特点：**\n- 菱形拓扑提供冗余路径，增强网络可靠性\n- 采用IPv6静态路由实现全网互通\n- 通过路由优先级实现主备路径机制\n- 支持任意两台设备间的双向通信",
+  "requirement": "利用IPv6静态路由，实现网络中任意两台设备之间的互通。所有IPv6地址的前缀长度都为64，各路由器之间配置IPv6静态路由协议后，所有主机和路由器之间可以互通。路由器的GE接口使用IPv6链路本地地址。",
+  "steps": [
+    "首先配置各路由器各GE接口的IPv6地址，使网络互通。",
+    "在各路由器上配置到目的地址的IPv6静态路由及缺省路由。",
+    "在各主机上配置IPv6缺省网关，使任意两台主机可以互通。"
+  ],
+  "configs": {
+    "DeviceA": "#\nsysname DeviceA\n#\ninterface GigabitEthernet2/0/0\n undo shutdown\n ipv6 enable\n ipv6 address 2001:db8:1::1/64\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ipv6 enable\n ipv6 address 2001:db8:4::1/64\n#\nipv6 route-static :: 0 GigabitEthernet1/0/0 2001:db8:4::\n#\nreturn",
+    "DeviceB": "#\nsysname DeviceB\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ipv6 enable\n ipv6 address 2001:db8:4::2/64\n#\ninterface GigabitEthernet2/0/0\n undo shutdown\n ipv6 enable\n ipv6 address 2001:db8:5::2/64\n#\ninterface GigabitEthernet3/0/0\n undo shutdown\n ipv6 enable\n ipv6 address 2001:db8:2::1/64\n#\nipv6 route-static 2001:db8:1:: 64 GigabitEthernet1/0/0 2001:db8:4::\n#\nipv6 route-static 2001:db8:3:: 64 GigabitEthernet2/0/0 2001:db8:5::\n#\nreturn",
+    "DeviceC": "#\nsysname DeviceC\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ipv6 enable\n ipv6 address 2001:db8:5::1/64\n#\ninterface GigabitEthernet2/0/0\n undo shutdown\n ipv6 enable\n ipv6 address 2001:db8:3::1/64\n#\nipv6 route-static :: 0 GigabitEthernet1/0/0 2001:db8:5::\n#\nreturn"
+  },
+  "related_images": [
+    "图1-28 IPv6 静态路由FRR.png"
+  ],
+  "topology_original": "DeviceA、DeviceB和DeviceC通过GE接口连接，DeviceA和DeviceC配置缺省路由，DeviceB配置两条静态路由。主机PC1、PC2、PC3分别连接到DeviceA、DeviceB和DeviceC。"
+}

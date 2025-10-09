@@ -1,0 +1,19 @@
+{
+  "topology": "## 网络拓扑详细描述\n\n### 物理拓扑结构\n本网络采用星型拓扑架构，由三台华为AR系列路由器（R1、R2、R3）通过一台以太网交换机S1构成广播式多路访问网络。所有设备间通过千兆以太网链路互连，形成单一广播域的L2网络基础。\n\n### 设备连接关系\n- **R1路由器**: GE0/0/3接口连接至S1交换机，配置IP地址10.0.123.1/24\n- **R2路由器**: GE0/0/4接口连接至S1交换机，配置IP地址10.0.123.2/24  \n- **R3路由器**: GE0/0/4接口连接至S1交换机，配置IP地址10.0.123.3/24\n- **S1交换机**: 作为二层汇聚设备，提供三台路由器间的以太网互连\n\n### IP地址规划方案\n**互连网段**: 10.0.123.0/24网段用于设备间互连\n- 采用/24子网掩码，提供254个可用主机地址\n- 地址分配遵循设备编号规律（R1=.1, R2=.2, R3=.3）\n\n**环回接口**: 各路由器配置Loopback0接口作为Router ID\n- R1: 10.0.1.x/24\n- R2: 10.0.2.x/24  \n- R3: 10.0.3.x/24\n\n### OSPF协议配置架构\n**区域规划**: 所有接口均归属OSPF Area 0（骨干区域）\n- 互连接口GE0/0/x激活OSPF进程\n- Loopback0接口激活OSPF进程\n- 手动指定Router ID确保网络稳定性\n\n**网络类型**: 互连接口运行在广播网络类型\n- 支持DR/BDR选举机制\n- 适用于以太网多路访问环境\n- LSA类型1、2在区域内泛洪\n\n### 安全增强配置\n**OSPF区域认证**: 部署认证机制防范路由攻击\n- 防止未授权设备注入虚假路由信息\n- 确保OSPF邻居关系建立的合法性\n- 提升网络整体安全防护能力\n\n### 实验验证点\n**邻居关系验证**: 检查OSPF邻居状态达到Full状态\n**路由学习验证**: 验证各设备学习到完整的OSPF路由表\n**连通性测试**: 确保所有Loopback接口间端到端可达\n**动态调优**: 通过Cost值调整、接口类型修改、Silent-Interface配置等手段验证OSPF协议特性\n\n### 网络特征总结\n本拓扑构建了典型的OSPF单区域网络环境，通过以太网交换技术实现设备互连，采用标准化IP地址规划，并集成安全认证机制，为企业级网络提供了可靠的三层路由基础架构。",
+  "requirement": "你是公司的网络管理员。现在公司的网络中有三台AR 路由器，通过以太网实现相互的连通。在以太网这样的广播式多路访问网络上，可能存在安全隐患，所有你选择采用OSPF 区域认证的方法来避免恶意的路由攻击。",
+  "steps": [
+    "设备IP 地址配置。",
+    "在R1、R2、R3 上配置OSPF，手动指定Router ID，并在互联接口、Loopback0 接口上激活OSPF。",
+    "配置完成后，在R1、R2、R3 上检查OSPF 邻居关系状态、OSPF 路由表，并检查R1、R2、R3 环回口之间的连通性。",
+    "手动关闭R1、R2、R3 的互联接口，开启debug 以观察OSPF 邻居关系的建立过程，再同时开启互联接口，观察设备的debug 输出。",
+    "手动修改R2 Loopback0 接口的网络类型，观察OSPF 路由的掩码长度变化。",
+    "手动修改OSPF 接口的Cost 值。",
+    "分别将互联接口、Loopback0 接口配置为OSPF Silent-Interface，观察现象的区别。"
+  ],
+  "configs": {
+    "R1": "# \nsysname R1 \n# \ninterface GigabitEthernet0/0/3 \n ip address 10.0.123.1 255.255.255.0 \n ospf cost 20 \n# \ninterface LoopBack0 \n ip address 10.0.1.1 255.255.255.0 \n# \nospf 1 router-id 10.0.1.1                  \n area 0.0.0.0 \n  authentication-mode simple plain huawei \n  network 10.0.123.1 0.0.0.0 \n  network 10.0.1.1 0.0.0.0 \n# \nreturn",
+    "R2": "# \nsysname R2 \n# \ninterface GigabitEthernet0/0/4 \n ip address 10.0.123.2 255.255.255.0 \n# \ninterface LoopBack0 \n ip address 10.0.2.2 255.255.255.0 \n ospf network-type broadcast \n# \nospf 1 router-id 10.0.2.2                  \n silent-interface LoopBack0 \n area 0.0.0.0 \n  authentication-mode simple plain huawei \n  network 10.0.123.2 0.0.0.0 \n  network 10.0.2.2 0.0.0.0 \n# \nreturn",
+    "R3": "# \nsysname R3 \n# \ninterface GigabitEthernet0/0/4 \n ip address 10.0.123.3 255.255.255.0 \n ospf cost 10 \n# \ninterface LoopBack0 \n ip address 10.0.3.3 255.255.255.0 \n# \nospf 1 router-id 10.0.3.3                  \n silent-interface LoopBack0 \n area 0.0.0.0 \n  authentication-mode simple plain huawei \n  network 10.0.3.3 0.0.0.0 \n  network 10.0.123.3 0.0.0.0 \nuser-interface vty 16 20 \n# \nReturn"
+  },
+  "topology_original": "R1、R2、R3 之间通过交换机S1 相连，其接口、IP 地址如图所示。R1、R2、R3 上均创建Loopback0，IP 地址为10.0.x.x/24，其中x 为设备编号。R1、R2、R3 所有接口都属于区域0，在互联接口、Loopback0 接口上激活OSPF。"
+}

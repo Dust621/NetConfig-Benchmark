@@ -1,0 +1,20 @@
+{
+  "topology": "该网络拓扑采用OSPF三区域设计，包含6台路由器设备。\n\n**骨干区域（Area 0）**：\n- 网段：192.168.0.0/24\n- DeviceA（Router ID: 1.1.1.1）interface1连接192.168.0.1/24\n- DeviceB（Router ID: 2.2.2.2）interface1连接192.168.0.2/24\n- 两台设备通过骨干区域直连，配置HMAC-SHA256认证\n\n**区域边界路由器（ABR）**：\n- DeviceA：连接Area 0和Area 1，interface2配置192.168.1.1/24\n- DeviceB：连接Area 0和Area 2，interface2配置192.168.2.1/24\n\n**区域1（Area 0.0.0.1）**：\n- 区域间连接网段：192.168.1.0/24\n- 区域内网段：172.16.1.0/24\n- DeviceC（Router ID: 3.3.3.3）：interface1连接192.168.1.2/24，interface2连接172.16.1.1/24\n- DeviceE（Router ID: 5.5.5.5）：interface2连接172.16.1.2/24\n- DeviceC与DeviceE通过172.16.1.0/24网段直连\n\n**区域2（Area 0.0.0.2）**：\n- 区域间连接网段：192.168.2.0/24\n- 区域内网段：172.17.1.0/24\n- DeviceD（Router ID: 4.4.4.4）：interface1连接192.168.2.2/24，interface2连接172.17.1.1/24\n- DeviceF（Router ID: 6.6.6.6）：interface2连接172.17.1.2/24\n- DeviceD与DeviceF通过172.17.1.0/24网段直连\n\n所有设备运行OSPF协议，通过ABR实现区域间路由交换，确保全网路由可达性。",
+  "requirement": "所有的路由器都运行OSPF，并将整个自治系统划分为3个区域。其中，DeviceA和DeviceB作为ABR（区域边界路由器）来转发区域之间的路由。配置完成后，每台路由器都应学到自治系统内的所有网段的路由。",
+  "steps": [
+    "在各路由器上使能OSPF。",
+    "指定不同区域内的网段。",
+    "配置OSPF区域的密文验证模式。"
+  ],
+  "configs": {
+    "DeviceA": "#\nsysname DeviceA\n#\nrouter id 1.1.1.1\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ip address 192.168.0.1 255.255.255.0\n#\ninterface GigabitEthernet2/0/0\n undo shutdown\n ip address 192.168.1.1 255.255.255.0\n#\nospf\n area 0.0.0.0\n  network 192.168.0.0 0.0.0.255\n  authentication-mode hmac-sha256 1 cipher YsHsjx_\n area 0.0.0.1\n  network 192.168.1.0 0.0.0.255\n#\nreturn",
+    "DeviceB": "#\nsysname DeviceB\n#\nrouter id 2.2.2.2\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ip address 192.168.0.2 255.255.255.0\n#\ninterface GigabitEthernet2/0/0\n undo shutdown\n ip address 192.168.2.1 255.255.255.0\n#\nospf\n area 0.0.0.0\n  network 192.168.0.0 0.0.0.255\n  authentication-mode hmac-sha256 1 cipher YsHsjx_\n area 0.0.0.2\n  network 192.168.2.0 0.0.0.255\n#\nreturn",
+    "DeviceC": "#\nsysname DeviceC\n#\nrouter id 3.3.3.3\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ip address 192.168.1.2 255.255.255.0\n#\ninterface GigabitEthernet2/0/0\n undo shutdown\n ip address 172.16.1.1 255.255.255.0\n#\nospf\n area 0.0.0.1\n  network 192.168.1.0 0.0.0.255\n  network 172.16.1.0 0.0.0.255\n#\nreturn",
+    "DeviceD": "#\nsysname DeviceD\n#\nrouter id 4.4.4.4\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ip address 192.168.2.2 255.255.255.0\n#\ninterface GigabitEthernet2/0/0\n undo shutdown\n ip address 172.17.1.1 255.255.255.0\n#\nospf\n area 0.0.0.2\n  network 192.168.2.0 0.0.0.255\n  network 172.17.1.0 0.0.0.255\n#\nreturn",
+    "DeviceE": "#\nsysname DeviceE\n#\nrouter id 5.5.5.5\n#\ninterface GigabitEthernet2/0/0\n undo shutdown\n ip address 172.16.1.2 255.255.255.0\n#\nospf\n area 0.0.0.1\n  network 172.16.1.0 0.0.0.255\n#\nreturn",
+    "DeviceF": "#\nsysname DeviceF\n#\nrouter id 6.6.6.6\n#\ninterface GigabitEthernet2/0/0\n undo shutdown\n ip address 172.17.1.2 255.255.255.0\n#\nospf\n area 0.0.0.2\n  network 172.17.1.0 0.0.0.255\n#\nreturn"
+  },
+  "related_images": [
+    "图1-42 配置 OSPF 基本功能组网图.png"
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "topology": "基于网络拓扑图和配置文件分析，该网络拓扑为一个基于OSPFv3的IPv6广播网络环境：\n\n**网络拓扑结构：**\n四台路由器设备（DeviceA、DeviceB、DeviceC、DeviceD）通过各自的GigabitEthernet1/0/0接口连接在同一个广播网段中，形成星型或总线型物理连接。\n\n**IP地址分配：**\n所有设备位于同一IPv6子网2001:db8:1001::/64中：\n- DeviceA：interface1配置2001:db8:1001::1/96\n- DeviceB：interface1配置2001:db8:1001::2/96  \n- DeviceC：interface1配置2001:db8:1001::3/96\n- DeviceD：interface1配置2001:db8:1001::4/96\n\n**OSPFv3协议配置：**\n所有设备运行OSPFv3进程1，归属于骨干区域0.0.0.0，Router-ID分别为1.1.1.1、2.2.2.2、3.3.3.3、4.4.4.4。\n\n**DR/BDR选举机制：**\n通过配置不同的DR优先级实现指定路由器选举：\n- DeviceA：DR优先级100（最高），当选为DR\n- DeviceC：DR优先级2，当选为BDR  \n- DeviceB：DR优先级0，无法参与DR/BDR选举\n- DeviceD：使用默认优先级1\n\n该拓扑构成了一个典型的OSPFv3广播网络环境，通过DR优先级配置实现了可控的DR/BDR选举过程。",
+  "requirement": "在广播网络中，配置接口上的DR优先级进行DR选择的过程。DeviceA 的优先级为100，它是网络上的最高优先级，因此被选为DR。DeviceC 的优先级为2，是优先级第二高的设备，被选为BDR。DeviceB 的优先级为0，这意味着它将无法成为DR或BDR。DeviceD 没有配置优先级，取缺省值1。",
+  "steps": [
+    "配置各路由器上的 `router id`，使能OSPFv3，并指定网段。",
+    "在缺省优先级情况下，查看各路由器的DR/BDR状态。",
+    "配置接口上的DR优先级，查看DR/BDR状态。",
+    "重新进行DR/BDR选择。",
+    "验证配置结果。"
+  ],
+  "configs": {
+    "DeviceA": "#\nsysname DeviceA\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ipv6 enable\n ipv6 address 2001:db8:1001::1/64\n ospfv3 1 area 0.0.0.0\n ospfv3 dr-priority 100\n#\nospfv3\n router-id 1.1.1.1\n area 0.0.0.0\n#\nreturn",
+    "DeviceB": "#\nsysname DeviceB\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ipv6 enable\n ipv6 address 2001:db8:1001::2/64\n ospfv3 1 area 0.0.0.0\n ospfv3 dr-priority 0\n#\nospfv3\n router-id 2.2.2.2\n area 0.0.0.0\n#\nreturn",
+    "DeviceC": "#\nsysname DeviceC\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ipv6 enable\n ipv6 address 2001:db8:1001::3/64\n ospfv3 1 area 0.0.0.0\n ospfv3 dr-priority 2\n#\nospfv3\n router-id 3.3.3.3\n area 0.0.0.0\n#\nreturn",
+    "DeviceD": "#\nsysname DeviceD\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ipv6 enable\n ipv6 address 2001:db8:1001::4/64\n ospfv3 1 area 0.0.0.0\n#\nospfv3\n router-id 4.4.4.4\n area 0.0.0.0\n#\nreturn"
+  },
+  "related_images": [
+    "图1-62 配置 OSPFv3 的 DR 选择组网图.png"
+  ]
+}

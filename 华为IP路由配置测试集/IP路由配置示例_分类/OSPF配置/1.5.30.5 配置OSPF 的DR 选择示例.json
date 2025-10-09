@@ -1,0 +1,19 @@
+{
+  "topology": "基于提供的网络拓扑图和配置文件，以下是增强和完善的网络拓扑描述：\n\n四台路由器DeviceA（Router ID: 1.1.1.1）、DeviceB（Router ID: 2.2.2.2）、DeviceC（Router ID: 3.3.3.3）和DeviceD（Router ID: 4.4.4.4）通过以太网广播网络192.168.1.0/24互连。所有设备均通过各自的GigabitEthernet1/0/0接口连接到同一广播域，IP地址分别为192.168.1.1/24、192.168.1.2/24、192.168.1.3/24和192.168.1.4/24。\n\n网络运行OSPF协议，所有设备均配置在区域0.0.0.0（骨干区域）中。基于DR优先级配置实现指定路由器选举：DeviceA配置最高优先级100被选为DR；DeviceC配置优先级2成为BDR；DeviceB优先级设置为0，无法参与DR/BDR选举；DeviceD未显式配置优先级，使用默认值1。\n\n该拓扑演示了OSPF广播网络中通过调整接口DR优先级来控制指定路由器选举过程的典型配置场景。",
+  "requirement": "在广播网络中，配置接口上的DR优先级进行DR选择的过程。DeviceA接口优先级为100，是网络上的最高优先级，因此被选为DR；DeviceC优先级为2，是第二高的优先级，被选为BDR；DeviceB优先级为0，无法成为DR或BDR；DeviceD未配置优先级，取缺省值1。",
+  "steps": [
+    "在各路由器上配置OSPF基本功能，实现互连。",
+    "在各路由器上配置Router ID。",
+    "在缺省优先级情况下，查看各路由器DR或BDR状态。",
+    "配置接口上的DR优先级，查看DR或BDR状态。"
+  ],
+  "configs": {
+    "DeviceA": "#\nsysname DeviceA\n#\nrouter id 1.1.1.1\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ip address 192.168.1.1 255.255.255.0\n ospf dr-priority 100\n#\nospf area 0.0.0.0\n network 192.168.1.0 0.0.0.255\n#\nreturn",
+    "DeviceB": "#\nsysname DeviceB\n#\nrouter id 2.2.2.2\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ip address 192.168.1.2 255.255.255.0\n ospf dr-priority 0\n#\nospf area 0.0.0.0\n network 192.168.1.0 0.0.0.255\n#\nreturn",
+    "DeviceC": "#\nsysname DeviceC\n#\nrouter id 3.3.3.3\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ip address 192.168.1.3 255.255.255.0\n ospf dr-priority 2\n#\nospf area 0.0.0.0\n network 192.168.1.0 0.0.0.255\n#\nreturn",
+    "DeviceD": "#\nsysname DeviceD\n#\nrouter id 4.4.4.4\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ip address 192.168.1.4 255.255.255.0\n#\nospf area 0.0.0.0\n network 192.168.1.0 0.0.0.255\n#\nreturn"
+  },
+  "related_images": [
+    "图1-46 配置OSPF 的DR 选择组网图.png"
+  ]
+}

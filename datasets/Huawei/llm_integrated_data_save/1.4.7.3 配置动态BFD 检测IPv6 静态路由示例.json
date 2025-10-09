@@ -1,0 +1,16 @@
+{
+  "topology": "基于网络拓扑图的详细分析，增强后的网络拓扑描述如下：\n\n**网络拓扑结构：**\n- DeviceA（路由器）通过interface1（IP：2001:db8:200::1/64）连接到SwitchC的interface1（IP：2001:db8:200::2/64）\n- DeviceB（路由器）通过interface1（IP：2001:db8:2::1/64）连接到SwitchC的interface2（IP：2001:db8:2::2/64）\n- DeviceA通过interface2（IP：2001:db8:7::1/64）连接到Internet\n- DeviceB通过interface2（IP：2001:db8:1::1/64）连接到Internet\n- SwitchC作为二层交换设备，提供DeviceA和DeviceB之间的连通性\n\n**IPv6地址规划：**\n- DeviceA-SwitchC链路：2001:db8:200::/64网段\n- DeviceB-SwitchC链路：2001:db8:2::/64网段\n- DeviceA-Internet链路：2001:db8:7::/64网段\n- DeviceB-Internet链路：2001:db8:1::/64网段\n\n**配置需求实现：**\n- DeviceA配置IPv6静态缺省路由实现与外部Internet的正常通信\n- DeviceA配置到DeviceB网段（2001:db8:1::/64）的IPv6静态路由，下一跳指向SwitchC（2001:db8:200::2）\n- DeviceA与DeviceB建立动态BFD会话，通过SwitchC进行IPv6链路状态检测\n- 当BFD检测到链路故障时，自动撤销对应的IPv6静态路由条目，实现快速故障切换",
+  "requirement": "在DeviceA上配置到DeviceB的IPv6静态路由，并配置动态BFD检测IPv6静态路由。",
+  "steps": [
+    "在DeviceA上配置到DeviceB的IPv6静态路由。",
+    "配置动态BFD检测IPv6静态路由。"
+  ],
+  "configs": {
+    "DeviceA": "#\nsysname DeviceA\n#\nbfd\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ipv6 enable\n ipv6 address 2001:db8:200::1/64\n#\ninterface GigabitEthernet2/0/0\n undo shutdown\n ipv6 enable\n ipv6 address 2001:db8:7::1/64\n#\nipv6 route-static bfd 2001:db8:200::2 local-address 2001:db8:200::1\nipv6 route-static 2001:db8:8:: 64 2001:db8:200::2 bfd enable\n#\nreturn",
+    "DeviceB": "#\nsysname DeviceB\n#\nbfd\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ipv6 enable\n ipv6 address 2001:db8:200::2/64\n#\ninterface GigabitEthernet2/0/0\n undo shutdown\n ipv6 enable\n ipv6 address 2001:db8:8::1/64\n#\nipv6 route-static bfd 2001:db8:200::1 local-address 2001:db8:200::2\nipv6 route-static 2001:db8:7:: 64 2001:db8:200::1 bfd enable\n#\nreturn"
+  },
+  "related_images": [
+    "图1-31 配置BFD forIPv6 静态路由组网图.png"
+  ],
+  "topology_original": "DeviceA通过SwitchC与DeviceB相连。DeviceA配置静态缺省路由，与外部进行正常通信。DeviceB与DeviceA建立BFD会话，检测链路故障。"
+}

@@ -1,0 +1,19 @@
+{
+  "topology": "DeviceA、DeviceB、DeviceC、DeviceD和DeviceE都运行IS-IS，IS-IS级别为Level-2。从DeviceB到DeviceD之间建立一条TE隧道。在DeviceB上使能IGP Shortcut。",
+  "requirement": "当网络中同时部署了组播和MPLS TE-Tunnel时，且TE-Tunnel上配置了IGP Shortcut，IS-IS协议在进行SPF计算时会使用处于Up状态的TE-Tunnel。因此，IS-IS路由计算得到的出接口可能不是实际的物理接口。当转发组播报文时，根据IS-IS计算的路由表，报文会通过TE-Tunnel转发，造成被TE-Tunnel跨越的路由器无法感知组播报文，也不能建立组播转发表项，从而导致组播报文被丢弃。Local MT（Local Multicast Topology，本地组播拓扑）特性可以实现在本地为组播创建单独的拓扑，当IGP计算出的路由的出接口为IGP-Shortcut（AA）类型的TE-Tunnel时，同时为该路由计算出一个（或一组）实际的物理出接口，可以有效解决TE-Tunnel与组播的冲突问题。",
+  "steps": [
+    "在各路由器上使能IS-IS基本功能。",
+    "配置组播PIM-SM。",
+    "配置MPLS RSVP-TE隧道，并使能IGP Shortcut。",
+    "使能本地MT特性。"
+  ],
+  "configs": {
+    "DeviceA": "#\nmulticast routing-enable\n#\ninterface gigabitethernet 1/0/0\n pim sm\n quit\n#\ninterface gigabitethernet 2/0/0\n pim sm\n quit\n#\ncommit\n#\ninterface gigabitethernet 1/0/0\n igmp enable\n igmp version 2\n commit",
+    "DeviceB": "#\nmpls lsr-id 2.2.2.2\n#\nmpls\n mpls te\n mpls rsvp-te\n mpls te cspf\n quit\n#\ninterface gigabitethernet 2/0/0\n mpls\n mpls te\n mpls rsvp-te\n quit\n#\nisis 1\n cost-style wide\n traffic-eng level-2\n commit\n quit\n#\ninterface Tunnel10\n ip address unnumbered interface loopback0\n tunnel-protocol mpls te\n destination 4.4.4.4\n mpls te tunnel-id 100\n mpls te igp shortcut isis\n mpls te igp metric relative -10\n isis enable 1\n commit\n quit\n#\nisis 1\n local-mt enable\n commit",
+    "DeviceC": "#\nmpls lsr-id 3.3.3.3\n#\nmpls\n mpls te\n mpls rsvp-te\n mpls te cspf\n quit\n#\ninterface gigabitethernet 1/0/0\n mpls\n mpls te\n mpls rsvp-te\n quit\n#\ninterface gigabitethernet 2/0/0\n mpls\n mpls te\n mpls rsvp-te\n quit\n#\nisis 1\n cost-style wide\n traffic-eng level-2\n commit\n quit",
+    "DeviceD": "#\nmpls lsr-id 4.4.4.4\n#\nmpls\n mpls te\n mpls rsvp-te\n mpls te cspf\n quit\n#\ninterface gigabitethernet 1/0/0\n mpls\n mpls te\n mpls rsvp-te\n quit\n#\nisis 1\n cost-style wide\n traffic-eng level-2\n commit\n quit\n#\npim\n c-bsr LoopBack0\n c-rp LoopBack0\n commit"
+  },
+  "related_images": [
+    "图1-97 配置本地组播拓扑特性组网图.png"
+  ]
+}

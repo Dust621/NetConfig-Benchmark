@@ -1,0 +1,16 @@
+{
+  "topology": "本网络拓扑由三台路由器设备组成：DeviceA、DeviceB和DeviceC，采用三角形连接结构。\n\n**设备连接关系：**\n- DeviceA通过GigabitEthernet1/0/0接口（192.168.1.1/24）连接DeviceB的GigabitEthernet1/0/0接口（192.168.1.2/24）\n- DeviceB通过GigabitEthernet1/0/1接口（192.168.2.1/24）连接DeviceC的GigabitEthernet1/0/0接口（192.168.2.2/24）\n- DeviceA和DeviceC之间无直连链路\n\n**网络分段和IP地址分配：**\n- DeviceA管理三个10.x.x.x/16网段：\n  - interface1连接10.1.0.0/16网段（接口IP：10.1.1.1）\n  - interface2连接10.2.0.0/16网段（接口IP：10.2.1.1） \n  - interface3连接10.3.0.0/16网段（接口IP：10.3.1.1）\n\n- DeviceC管理三个172.x.x.x/16网段：\n  - interface1连接172.16.0.0/16网段（接口IP：172.16.1.1）\n  - interface2连接172.17.0.0/16网段（接口IP：172.17.1.1）\n  - interface3连接172.18.0.0/16网段（接口IP：172.18.1.1）\n\n**RIP-2协议配置：**\n- 所有设备运行RIP-2协议，使用multicast模式\n- DeviceA和DeviceC已配置\"undo summary\"取消有类聚合\n- DeviceB保持默认有类聚合配置\n- 所有接口均宣告进入对应的主类网络\n\n**配置需求：**\n需在DeviceA和DeviceC上配置水平分割或毒性逆转机制，防止由于取消有类聚合可能引起的路由环路问题。",
+  "requirement": "在DeviceA和DeviceC上配置水平分割，以防止路由环路。取消有类聚合后，需要再配置水平分割或者毒性逆转。",
+  "steps": [
+    "取消路由聚合。",
+    "使能水平分割功能。"
+  ],
+  "configs": {
+    "DeviceA": "#\nsysname DeviceA\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ip address 192.168.1.1 255.255.255.0\n rip version 2 multicast\n#\ninterface GigabitEthernet1/0/1\n undo shutdown\n ip address 10.1.1.1 255.255.0.0\n rip version 2 multicast\n#\ninterface GigabitEthernet1/0/2\n undo shutdown\n ip address 10.2.1.1 255.255.0.0\n rip version 2 multicast\n#\ninterface GigabitEthernet1/0/3\n undo shutdown\n ip address 10.3.1.1 255.255.0.0\n rip version 2 multicast\n#\nrip\n network 10.1.0.0\n network 10.2.0.0\n network 10.3.0.0\n network 192.168.0.0\n undo summary\nreturn",
+    "DeviceB": "#\nsysname DeviceB\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ip address 192.168.1.2 255.255.255.0\n rip version 2 multicast\n#\ninterface GigabitEthernet1/0/1\n undo shutdown\n ip address 192.168.2.1 255.255.255.0\n rip version 2 multicast\n#\nrip\n network 192.168.0.0\n undo summary\nreturn",
+    "DeviceC": "#\nsysname DeviceC\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ip address 192.168.2.2 255.255.255.0\n rip version 2 multicast\n#\ninterface GigabitEthernet1/0/1\n undo shutdown\n ip address 172.16.1.1 255.255.0.0\n rip version 2 multicast\n#\ninterface GigabitEthernet1/0/2\n undo shutdown\n ip address 172.17.1.1 255.255.0.0\n rip version 2 multicast\n#\ninterface GigabitEthernet1/0/3\n undo shutdown\n ip address 172.18.1.1 255.255.0.0\n rip version 2 multicast\n#\nrip\n network 172.16.0.0\n network 172.17.0.0\n network 172.18.0.0\n network 192.168.0.0\nreturn"
+  },
+  "related_images": [
+    "图1-78防止路由环路组网图.png"
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "topology": "基于提供的网络拓扑图和配置文件分析，该网络由四台路由器组成的OSPF网络拓扑结构如下：\n\n**物理拓扑连接：**\n- DeviceA（Router ID: 1.1.1.1）通过三个接口连接：GE1/0/0连接DeviceC（192.168.0.0/24网段），GE2/0/0连接DeviceD（192.168.3.0/24网段），GE3/0/0连接DeviceB（192.168.1.0/24网段）\n- DeviceB（Router ID: 2.2.2.2）通过三个接口连接：GE1/0/0连接DeviceA（192.168.1.0/24网段），GE2/0/0连接DeviceC（192.168.2.0/24网段），GE3/0/0连接DeviceD（192.168.4.0/24网段）  \n- DeviceC（Router ID: 3.3.3.3）作为骨干区域核心路由器，通过GE1/0/0连接DeviceA，GE2/0/0连接DeviceB\n- DeviceD（Router ID: 4.4.4.4）作为ASBR，连接DeviceA和DeviceB，并引入外部静态路由10.0.0.0/8\n\n**OSPF区域划分：**\n- Area 0（骨干区域）：包含DeviceA、DeviceB、DeviceC之间的连接网段192.168.0.0/24和192.168.2.0/24\n- Area 1（NSSA区域）：包含网段192.168.1.0/24、192.168.3.0/24和192.168.4.0/24\n\n**ABR和ASBR角色：**\n- DeviceA和DeviceB作为ABR，连接骨干区域Area 0和NSSA区域Area 1\n- DeviceA配置为NSSA区域的Translator Always，负责7类LSA到5类LSA的转换\n- DeviceD作为ASBR在NSSA区域内引入外部静态路由10.0.0.0/8\n\n**NSSA区域特性：**\nArea 1配置为NSSA（Not-So-Stubby Area），阻止来自其他区域的外部路由传播，但允许本区域内ASBR引入外部路由，通过7类LSA在NSSA区域内传播，由ABR转换为5类LSA向骨干区域通告，有效减少了路由表规模和资源消耗。",
+  "requirement": "某些网络由于引入大量外部路由导致路由表的规模过大，网络资源浪费，CPU占用率较高。为了解决这个问题，可以将位于自治系统边缘的非骨干区域配置成NSSA区域，减少传递的路由信息数量。配置区域为NSSA区域后，不传播来自OSPF网络其它区域的外部路由，但引入自治系统外部的路由，这样可以避免大量外部路由对路由器带宽和存储资源的消耗。",
+  "steps": [
+    "在各路由器上使能OSPF，配置OSPF基本功能，实现OSPF协议互连。参见配置OSPF的基本功能。",
+    "配置Area1为NSSA区域。",
+    "在DeviceD上配置引入静态路由10.0.0.0/8。",
+    "配置NSSA区域中的DeviceA为转换路由器。"
+  ],
+  "configs": {
+    "DeviceA": "#\nsysname DeviceA\n#\nrouter id 1.1.1.1\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ip address 192.168.0.1 255.255.255.0\n#\ninterface GigabitEthernet2/0/0\n undo shutdown\n ip address 192.168.3.1 255.255.255.0\n#\ninterface GigabitEthernet3/0/0\n undo shutdown\n ip address 192.168.1.1 255.255.255.0\n#\nospf 1\n area 0.0.0.0\n  network 192.168.0.0 0.0.0.255\n area 0.0.0.1\n  network 192.168.1.0 0.0.0.255\n  network 192.168.3.0 0.0.0.255\n  nssa default-route-advertise no-summary translator-always\n#\nreturn",
+    "DeviceB": "#\nsysname DeviceB\n#\nrouter id 2.2.2.2\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ip address 192.168.1.2 255.255.255.0\n#\ninterface GigabitEthernet2/0/0\n undo shutdown\n ip address 192.168.2.1 255.255.255.0\n#\ninterface GigabitEthernet3/0/0\n undo shutdown\n ip address 192.168.4.2 255.255.255.0\n#\nospf 1\n area 0.0.0.0\n  network 192.168.2.0 0.0.0.255\n area 0.0.0.1\n  network 192.168.1.0 0.0.0.255\n  network 192.168.4.0 0.0.0.255\n  nssa\n#\nreturn",
+    "DeviceC": "#\nsysname DeviceC\n#\nrouter id 3.3.3.3\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ip address 192.168.0.2 255.255.255.0\n#\ninterface GigabitEthernet2/0/0\n undo shutdown\n ip address 192.168.2.2 255.255.255.0\n#\nospf 1\n area 0.0.0.0\n  network 192.168.0.0 0.0.0.255\n  network 192.168.2.0 0.0.0.255\n#\nreturn",
+    "DeviceD": "#\nsysname DeviceD\n#\nrouter id 4.4.4.4\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ip address 192.168.3.2 255.255.255.0\n#\ninterface GigabitEthernet2/0/0\n undo shutdown\n ip address 192.168.4.1 255.255.255.0\n#\nospf 1\n import-route static\n area 0.0.0.1\n  network 192.168.3.0 0.0.0.255\n  network 192.168.4.0 0.0.0.255\n  nssa\n#\nip route-static 10.0.0.0 255.0.0.0 NULL\n#\nreturn"
+  },
+  "related_images": [
+    "图1-45配置OSPFNSSA区域组网图.png"
+  ]
+}

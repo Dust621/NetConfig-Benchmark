@@ -1,0 +1,18 @@
+{
+  "topology": "基于网络拓扑图的详细分析，增强后的网络拓扑描述如下：\n\n**网络拓扑结构：**\n本网络采用三角形拓扑结构，由三台路由器设备（DeviceA、DeviceB、DeviceC）构成核心转发平面，每台路由器下挂一台主机设备。\n\n**设备连接关系：**\n- DeviceA通过interface1（10.1.4.1/30）连接DeviceB的interface1（10.1.4.2/30）\n- DeviceB通过interface2（10.1.4.5/30）连接DeviceC的interface1（10.1.4.6/30）  \n- DeviceC通过interface2（10.1.3.1/24）连接DeviceA的interface2（10.1.1.1/24）\n\n**主机接入配置：**\n- PC1（10.1.2.2/24）通过DeviceA的interface2（10.1.1.1/24）接入网络\n- PC2（10.1.2.2/24）通过DeviceB的interface3（10.1.2.1/24）接入网络\n- PC3（10.1.3.2/24）通过DeviceC的interface2（10.1.3.1/24）接入网络\n\n**网络分段：**\n- 路由器互联段1：10.1.4.0/30（DeviceA-DeviceB）\n- 路由器互联段2：10.1.4.4/30（DeviceB-DeviceC）\n- 主机接入段1：10.1.1.0/24（DeviceA-PC1）\n- 主机接入段2：10.1.2.0/24（DeviceB-PC2）\n- 主机接入段3：10.1.3.0/24（DeviceC-PC3）\n\n**路由配置要求：**\n需在各路由器上配置IPv4静态路由，确保所有网段间的双向可达性，实现PC1、PC2、PC3之间的全网互通。",
+  "requirement": "利用IPv4静态路由，实现网络中任意两台设备之间的互通。要求采用静态路由，使图中任意两台主机之间都能互通。",
+  "steps": [
+    "配置各路由器各接口的IPv4地址，使网络互通。",
+    "在路由器上配置到目的地址的IPv4静态路由及缺省路由。",
+    "在各主机上配置IPv4缺省网关，使任意两台主机可以互通。"
+  ],
+  "configs": {
+    "DeviceA": "#\nsysname DeviceA\n#\ninterface GigabitEthernet1/0/\n undo shutdown\n ip address 10.1.4.1 255.255.255.0\n#\ninterface GigabitEthernet2/0/\n undo shutdown\n ip address 10.1.1.1 255.255.255.0\n#\nip route-static 0.0.0.0 0.0.0.0 10.1.4.2\n#\nreturn",
+    "DeviceB": "#\nsysname DeviceB\n#\ninterface GigabitEthernet1/0/\n undo shutdown\n ip address 10.1.4.2 255.255.255.0\n#\ninterface GigabitEthernet2/0/\n undo shutdown\n ip address 10.1.4.5 255.255.255.0\n#\ninterface GigabitEthernet3/0/\n undo shutdown\n ip address 10.1.2.1 255.255.255.0\n#\nip route-static 10.1.1.0 255.255.255.0 10.1.4.1\n#\nip route-static 10.1.3.0 255.255.255.0 10.1.4.6\n#\nreturn",
+    "DeviceC": "#\nsysname DeviceC\n#\ninterface GigabitEthernet1/0/\n undo shutdown\n ip address 10.1.4.6 255.255.255.0\n#\ninterface GigabitEthernet2/0/\n undo shutdown\n ip address 10.1.3.1 255.255.255.0\n#\nip route-static 0.0.0.0 0.0.0.0 10.1.4.5\n#\nreturn"
+  },
+  "related_images": [
+    "图1-19 配置IPv4静态路由组网图.png"
+  ],
+  "topology_original": "路由器DeviceA、DeviceB和DeviceC通过接口连接，主机PC1、PC2和PC3分别连接到DeviceA、DeviceB和DeviceC。"
+}

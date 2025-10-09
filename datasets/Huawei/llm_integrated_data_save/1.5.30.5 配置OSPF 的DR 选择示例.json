@@ -1,0 +1,20 @@
+{
+  "topology": "## 网络拓扑描述\n\n**物理拓扑结构：**\n本网络由四台路由器设备（DeviceA、DeviceB、DeviceC、DeviceD）组成，通过单一广播网络实现全连接。所有设备均通过interface1接口连接到同一个二层广播域。\n\n**IP地址配置：**\n- DeviceA interface1: 192.168.1.1/24\n- DeviceB interface1: 192.168.1.2/24  \n- DeviceC interface1: 192.168.1.3/24\n- DeviceD interface1: 192.168.1.4/24\n\n所有设备位于同一个192.168.1.0/24子网内，通过广播网络直接通信。\n\n**OSPF协议配置：**\n网络运行OSPF协议，在广播网络类型下进行DR/BDR选举机制：\n\n- **DeviceA（DR）**: 接口优先级配置为100，具有最高优先级，成功选举为指定路由器（Designated Router）\n- **DeviceC（BDR）**: 接口优先级配置为2，为第二高优先级，被选举为备份指定路由器（Backup Designated Router）  \n- **DeviceB（DROther）**: 接口优先级配置为0，无法参与DR/BDR选举，作为普通路由器\n- **DeviceD（DROther）**: 接口优先级使用默认值1，优先级低于BDR，作为普通路由器\n\n**网络特性：**\n采用OSPF广播网络类型，所有路由器在同一碰撞域内，DR负责与所有其他路由器建立邻接关系并进行LSA泛洪，BDR作为DR的备份，DROther设备仅与DR和BDR建立完全邻接关系。",
+  "requirement": "在广播网络中，配置接口上的DR优先级进行DR选择的过程。DeviceA接口优先级为100，是网络上的最高优先级，因此被选为DR；DeviceC优先级为2，是第二高的优先级，被选为BDR；DeviceB优先级为0，无法成为DR或BDR；DeviceD未配置优先级，取缺省值1。",
+  "steps": [
+    "在各路由器上配置OSPF基本功能，实现互连。",
+    "在各路由器上配置Router ID。",
+    "在缺省优先级情况下，查看各路由器DR或BDR状态。",
+    "配置接口上的DR优先级，查看DR或BDR状态。"
+  ],
+  "configs": {
+    "DeviceA": "#\nsysname DeviceA\n#\nrouter id 1.1.1.1\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ip address 192.168.1.1 255.255.255.0\n ospf dr-priority 100\n#\nospf area 0.0.0.0\n network 192.168.1.0 0.0.0.255\n#\nreturn",
+    "DeviceB": "#\nsysname DeviceB\n#\nrouter id 2.2.2.2\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ip address 192.168.1.2 255.255.255.0\n ospf dr-priority 0\n#\nospf area 0.0.0.0\n network 192.168.1.0 0.0.0.255\n#\nreturn",
+    "DeviceC": "#\nsysname DeviceC\n#\nrouter id 3.3.3.3\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ip address 192.168.1.3 255.255.255.0\n ospf dr-priority 2\n#\nospf area 0.0.0.0\n network 192.168.1.0 0.0.0.255\n#\nreturn",
+    "DeviceD": "#\nsysname DeviceD\n#\nrouter id 4.4.4.4\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ip address 192.168.1.4 255.255.255.0\n#\nospf area 0.0.0.0\n network 192.168.1.0 0.0.0.255\n#\nreturn"
+  },
+  "related_images": [
+    "图1-46 配置OSPF 的DR 选择组网图.png"
+  ],
+  "topology_original": "DeviceA、DeviceB、DeviceC和DeviceD通过广播网络互连，DeviceA被选为DR，DeviceC被选为BDR，DeviceB无法成为DR或BDR，DeviceD优先级取缺省值1。"
+}

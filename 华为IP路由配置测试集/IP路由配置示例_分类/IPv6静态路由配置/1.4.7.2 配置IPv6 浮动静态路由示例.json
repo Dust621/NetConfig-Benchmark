@@ -1,0 +1,22 @@
+{
+  "topology": "该网络拓扑由4台路由器组成，采用菱形双路径冗余结构：\n\n**物理拓扑结构：**\n- DeviceA通过interface1连接DeviceB的interface1（主路径）\n- DeviceA通过interface2连接DeviceC的interface2（备份路径）\n- DeviceB通过interface3连接DeviceD的interface3\n- DeviceC通过interface4连接DeviceD的interface4\n- DeviceD通过interface5连接目的网段\n\n**IPv6地址分配（所有前缀长度为/64）：**\n- DeviceA-DeviceB链路：2001:db8:1::/64网段（DeviceA: 2001:db8:1::1/64, DeviceB: 2001:db8:1::2/64）\n- DeviceA-DeviceC链路：2001:db8:2::/64网段（DeviceA: 2001:db8:2::1/64, DeviceC: 2001:db8:2::2/64）\n- DeviceB-DeviceD链路：2001:db8:3::/64网段（DeviceB: 2001:db8:3::1/64, DeviceD: 2001:db8:3::2/64）\n- DeviceC-DeviceD链路：2001:db8:4::/64网段（DeviceC: 2001:db8:4::1/64, DeviceD: 2001:db8:4::2/64）\n- DeviceD本地网段：2001:db8:5::/64（DeviceD: 2001:db8:5::1/64）\n\n**浮动静态路由配置：**\n- DeviceA配置两条到2001:db8:5::/64的静态路由：\n  * 主路由：下一跳2001:db8:1::2（DeviceB），优先级60（默认值）\n  * 浮动路由：下一跳2001:db8:2::2（DeviceC），优先级100\n- DeviceB配置静态路由：目的地址2001:db8:5::/64，下一跳2001:db8:3::2（DeviceD）\n- DeviceC配置静态路由：目的地址2001:db8:5::/64，下一跳2001:db8:4::2（DeviceD）\n- DeviceD配置回程路由：\n  * 目的地址2001:db8:1::/64，下一跳2001:db8:3::1（DeviceB）\n  * 目的地址2001:db8:2::/64，下一跳2001:db8:4::1（DeviceC）",
+  "requirement": "利用IPv6浮动静态路由实现IPv6静态路由备份。在DeviceA上配置两条去往2001:db8:5::/64的IPv6静态路由：优先级较高的主静态路由经过DeviceB，浮动静态路由经过DeviceC。",
+  "steps": [
+    "配置各路由器各接口的IPv6地址。",
+    "在DeviceB和DeviceC上配置到目的地址2001:db8:5::/64的静态路由。",
+    "在DeviceA上配置两条去往2001:db8:5::/64的优先级不同的静态路由。",
+    "在DeviceD上配置去往2001:db8:1::/64和2001:db8:2::/64的静态路由。"
+  ],
+  "configs": {
+    "DeviceA": "#\nsysname DeviceA\n#\ninterface GigabitEthernet1/0/1\n undo shutdown\n ipv6 enable\n ipv6 address 2001:db8:1::1/64\n#\ninterface GigabitEthernet1/0/2\n undo shutdown\n ipv6 enable\n ipv6 address 2001:db8:2::1/64\n#\nipv6 route-static 2001:db8:5:: 64 2001:db8:1::2\nipv6 route-static 2001:db8:5:: 64 2001:db8:2::2 preference 100\n#\nreturn",
+    
+    "DeviceB": "#\nsysname DeviceB\n#\ninterface GigabitEthernet1/0/1\n undo shutdown\n ipv6 enable\n ipv6 address 2001:db8:1::2/64\n#\ninterface GigabitEthernet1/0/3\n undo shutdown\n ipv6 enable\n ipv6 address 2001:db8:3::1/64\n#\nipv6 route-static 2001:db8:5:: 64 2001:db8:3::2\n#\nreturn",
+    
+    "DeviceC": "#\nsysname DeviceC\n#\ninterface GigabitEthernet1/0/2\n undo shutdown\n ipv6 enable\n ipv6 address 2001:db8:2::2/64\n#\ninterface GigabitEthernet2/0/3\n undo shutdown\n ipv6 enable\n ipv6 address 2001:db8:4::1/64\n#\nipv6 route-static 2001:db8:5:: 64 2001:db8:4::2\n#\nreturn",
+    
+    "DeviceD": "#\nsysname DeviceD\n#\ninterface GigabitEthernet1/0/3\n undo shutdown\n ipv6 enable\n ipv6 address 2001:db8:3::2/64\n#\ninterface GigabitEthernet2/0/3\n undo shutdown\n ipv6 enable\n ipv6 address 2001:db8:4::2/64\n#\ninterface GigabitEthernet3/0/3\n undo shutdown\n ipv6 enable\n ipv6 address 2001:db8:5::1/64\n#\nipv6 route-static 2001:db8:1:: 64 2001:db8:3::1\nipv6 route-static 2001:db8:2:: 64 2001:db8:4::1\n#\nreturn"
+  },
+  "related_images": [
+    "图1-30配置IPv6浮动静态路由组网图.png"
+  ]
+}

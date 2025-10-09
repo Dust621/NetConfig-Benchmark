@@ -1,0 +1,17 @@
+{
+  "topology": "根据提供的网络拓扑图和配置文件分析，增强后的网络拓扑描述如下：\n\n**网络拓扑描述：**\n\nDeviceA和DeviceB为两台路由器设备，通过公共Internet网络连接。两台设备均配置IPv6地址，位于同一子网2001:DB8::/64中，其中DeviceA的接口地址为2001:DB8::1/64，DeviceB的接口地址为2001:DB8::2/64。\n\n两台设备运行OSPFv3路由协议，均属于骨干区域0.0.0.0。DeviceA的Router-ID为1.1.1.1，DeviceB的Router-ID为2.2.2.2。\n\n为保障OSPFv3协议报文的安全性，在DeviceA和DeviceB之间建立IPSec安全隧道。安全配置采用ESP传输模式，使用AES-256加密算法和SHA2-256认证算法。DeviceA配置IPSec SA为sa1，DeviceB配置IPSec SA为sa2，两端ESP SPI均设置为12345，通过预共享密钥进行身份验证。\n\n物理连接通过各自的GigabitEthernet1/0/1接口实现，接口均启用IPv6功能并加入OSPFv3进程区域0.0.0.0。",
+  "requirement": "为了防止DeviceA和DeviceB之间的路由协议报文被攻击者更改或仿冒，需要在DeviceA和DeviceB之间配置IPSec安全隧道，对它们收发的OSPFv3协议报文进行安全保护。安全协议采用ESP（Encapsulating Security Payload），认证算法采用SHA2-256（Secure Hash Algorithm2-256）。",
+  "steps": [
+    "配置OSPFv3基本功能，使DeviceA和DeviceB之间能够建立OSPFv3路由。",
+    "配置IPSec安全提议，并配置提议使用的安全协议为ESP，以及ESP协议采用的认证算法为SHA2-256、加密算法为AES 256。",
+    "配置安全联盟参数。",
+    "在OSPFv3进程上应用安全联盟，以实现IPSec对DeviceA和DeviceB之间OSPFv3路由协议报文的保护。"
+  ],
+  "configs": {
+    "DeviceA": "#\nsysname DeviceA\n#\nipsec proposal proposal1\nencapsulation-mode transport\nesp authentication-algorithm sha2-256\nesp encryption-algorithm aes 256\n#\nipsec sa sa1\nproposal proposal1\nsa spi inbound esp 12345\nsa string-key inbound esp %#%#<}jb{br9\\zi%X+/Y@:Y>Lw(L\\v#*^KsM\"/8RaRe$%#%#\nsa spi outbound esp 12345\nsa string-key outbound esp %#%#<}j/@X4355SE9JZTD0>GQf\"}w2@X,k6.E\\Z,z\\{#%#%#\n#\nospfv3 1\nrouter-id 1.1.1.1\nipsec sa sa1\narea 0.0.0.0\n#\ninterface GigabitEthernet1/0/1\nundo shutdown\nipv6 enable\nipv6 address 2001:db8::1/64\nospfv3 1 area 0.0.0.0\n#\nreturn",
+    "DeviceB": "#\nsysname DeviceB\n#\nipsec proposal proposal2\nencapsulation-mode transport\nesp authentication-algorithm sha2-256\nesp encryption-algorithm aes 256\n#\nipsec sa sa2\nproposal proposal2\nsa spi inbound esp 12345\nsa string-key inbound esp %#%#<}j/@XSE9JZT5]2\"T#]2\"T<}j/@XSE9JZT5>%#%#\nsa spi outbound esp 12345\nsa string-key outbound esp %#%#)YTP%@nFE7bL^B&WSBiQ1[p#M\"/8RaRe%$7$%#%#\n#\nospfv3 1\nrouter-id 2.2.2.2\nipsec sa sa2\narea 0.0.0.0\n#\ninterface GigabitEthernet1/0/1\nundo shutdown\nipv6 enable\nipv6 address 2001:db8::2/64\nospfv3 1 area 0.0.0.0\n#\nreturn"
+  },
+  "related_images": [
+    "图1-65配置IPSec组网图.png"
+  ]
+}

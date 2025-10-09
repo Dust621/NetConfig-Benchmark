@@ -1,0 +1,19 @@
+{
+  "topology": "根据网络拓扑图分析，增强后的网络拓扑描述如下：\n\n网络由两个自治系统组成：AS65008和AS65009。\n\n**AS65008**包含单台设备DeviceA，配置接口interface1（IP地址：192.168.1.1/24）作为边界路由器。\n\n**AS65009**包含两台设备DeviceB和DeviceC：\n- DeviceB作为AS边界路由器，配置两个接口：\n  - interface2（IP地址：172.16.1.2/24）连接AS65008的DeviceA\n  - interface1（IP地址：10.1.1.1/24）连接AS65009内部的DeviceC\n- DeviceC作为内部路由器，配置两个接口：\n  - interface2（IP地址：10.1.2.1/24）连接DeviceB\n  - interface1（IP地址：10.1.1.2/24）与DeviceB形成内部连接\n\n**网络连接关系**：\n- AS间连接：DeviceA的interface1与DeviceB的interface2通过172.16.1.0/24网段互连\n- AS65009内部连接：DeviceB与DeviceC通过10.1.1.0/24网段互连，同时DeviceC还配置10.1.2.0/24网段\n\n**协议配置**：\n- AS65009内部运行OSPF作为IGP协议\n- DeviceB作为ASBR（AS边界路由器）运行BGP协议与AS65008进行路由交换\n- 配置BGP与IGP双向路由重分发，实现跨AS通信和路由传播",
+  "requirement": "配置BGP与IGP交互后，IGP路由可以被引入到BGP路由表进行高效广泛的传播，BGP路由也可以被引入到IGP路由表，实现对其他AS的访问。",
+  "steps": [
+    "在DeviceB和DeviceC上配置OSPF协议。",
+    "在DeviceA和DeviceB上配置EBGP连接。",
+    "在DeviceB上配置BGP与OSPF互相引入，查看路由信息。",
+    "在DeviceB上配置BGP路由聚合，简化BGP路由表。"
+  ],
+  "configs": {
+    "DeviceA": "#\nsysname DeviceA\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ip address 192.168.1.1 255.255.255.0\n#\ninterface GigabitEthernet2/0/0\n undo shutdown\n ip address 172.16.1.2 255.255.255.0\n#\nbgp 65008\n router-id 1.1.1.1\n peer 172.16.1.1 as-number 65009\n ipv4-family unicast\n  undo synchronization\n  network 192.168.1.0 255.255.255.0\n  peer 172.16.1.1 enable\n#\nreturn",
+    "DeviceB": "#\nsysname DeviceB\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ip address 10.1.1.1 255.255.255.0\n#\ninterface GigabitEthernet2/0/0\n undo shutdown\n ip address 172.16.1.1 255.255.255.0\n#\nbgp 65009\n router-id 2.2.2.2\n peer 172.16.1.2 as-number 65008\n ipv4-family unicast\n  undo synchronization\n  summary automatic\n  import-route ospf\n  peer 172.16.1.2 enable\n#\nospf 1\n import-route bgp\n area 0.0.0.0\n  network 10.1.1.0 0.0.0.255\n#\nreturn",
+    "DeviceC": "#\nsysname DeviceC\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ip address 10.1.1.2 255.255.255.0\n#\ninterface GigabitEthernet2/0/0\n undo shutdown\n ip address 10.1.2.1 255.255.255.0\n#\nospf 1\n area 0.0.0.0\n  network 10.1.1.0 0.0.0.255\n  network 10.1.2.0 0.0.0.255\n#\nreturn"
+  },
+  "related_images": [
+    "图1-144 配置BGP与IGP交互配置组网图.png"
+  ],
+  "topology_original": "用户将网络划分为AS65008和AS65009。在AS65009内，使用OSPF作为IGP协议。AS边缘路由器上配置BGP与IGP交互，实现两个AS之间的互访。"
+}

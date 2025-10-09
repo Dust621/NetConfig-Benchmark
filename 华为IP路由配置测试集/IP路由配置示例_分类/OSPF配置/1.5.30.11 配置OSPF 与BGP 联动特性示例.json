@@ -1,0 +1,23 @@
+{
+  "topology": "该网络拓扑由两个自治系统组成：AS10和AS20。\n\nAS10内部包含四台路由器（DeviceA、DeviceB、DeviceC、DeviceD），形成环形连接结构：\n- DeviceA通过interface1连接DeviceB（10.1.1.1/30 - 10.1.1.2/30）\n- DeviceA通过interface2连接DeviceC（10.1.2.1/30 - 10.1.2.2/30）  \n- DeviceB通过interface2连接DeviceD（10.1.3.1/30 - 10.1.3.2/30）\n- DeviceC通过interface1连接DeviceD（10.1.4.1/30 - 10.1.4.2/30）\n\nAS10内部运行OSPF作为IGP协议，所有设备位于area 0.0.0.0。各设备配置LoopBack0接口作为Router ID（DeviceA: 1.1.1.1/32, DeviceB: 2.2.2.2/32, DeviceC: 3.3.3.3/32, DeviceD: 4.4.4.4/32）。AS10内设备间建立IBGP全网状连接，使用LoopBack接口建立BGP邻居关系。\n\nAS20包含一台路由器DeviceE，配置LoopBack0接口5.5.5.5/32作为Router ID。\n\nAS间连接通过DeviceD和DeviceE之间的EBGP连接实现（10.2.1.1/30 - 10.2.1.2/30）。DeviceE连接外部网络10.3.1.0/24。\n\nDeviceB配置了OSPF stub-router on-startup功能，在设备启动时临时降低OSPF优先级，确保流量切换的平滑性。DeviceC在连接DeviceA和DeviceD的接口上配置了较高的OSPF开销值（cost 2），用于路径优化。DeviceD作为ASBR，将直连路由和OSPF路由重分发到BGP中。",
+  "requirement": "在DeviceB上使能OSPF与BGP联动功能，使得当DeviceB重启后，从DeviceA到AS20的流量不发生中断。",
+  "steps": [
+    "在DeviceA、DeviceB、DeviceC和DeviceD上使能OSPF协议，指定相同区域内的网段。",
+    "在DeviceA、DeviceB、DeviceC和DeviceD之间建立IBGP连接。",
+    "在DeviceC上配置OSPF协议的开销值。",
+    "在DeviceD和DeviceE之间配置EBGP连接。",
+    "在DeviceD上配置BGP引入直连路由和OSPF进程。",
+    "在DeviceE上配置BGP。",
+    "在DeviceB上使能OSPF与BGP联动功能。"
+  ],
+  "configs": {
+    "DeviceA": "#\nsysname DeviceA\n#\nrouter id 1.1.1.1\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ip address 10.1.1.1 255.255.255.252\n#\ninterface GigabitEthernet2/0/0\n undo shutdown\n ip address 10.1.2.1 255.255.255.252\n#\ninterface LoopBack0\n ip address 1.1.1.1 255.255.255.255\n#\nbgp 10\n router-id 1.1.1.1\n peer 2.2.2.2 as-number 10\n peer 2.2.2.2 connect-interface LoopBack0\n peer 3.3.3.3 as-number 10\n peer 3.3.3.3 connect-interface LoopBack0\n peer 4.4.4.4 as-number 10\n peer 4.4.4.4 connect-interface LoopBack0\n#\nospf 1\n area 0.0.0.0\n  network 1.1.1.1 0.0.0.0\n  network 10.1.1.0 0.0.0.3\n  network 10.1.2.0 0.0.0.3\n#\nreturn",
+    "DeviceB": "#\nsysname DeviceB\n#\nrouter id 2.2.2.2\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ip address 10.1.1.2 255.255.255.252\n#\ninterface GigabitEthernet2/0/0\n undo shutdown\n ip address 10.1.3.1 255.255.255.252\n#\ninterface LoopBack0\n ip address 2.2.2.2 255.255.255.255\n#\nbgp 10\n router-id 2.2.2.2\n peer 1.1.1.1 as-number 10\n peer 1.1.1.1 connect-interface LoopBack0\n peer 3.3.3.3 as-number 10\n peer 3.3.3.3 connect-interface LoopBack0\n peer 4.4.4.4 as-number 10\n peer 4.4.4.4 connect-interface LoopBack0\n#\nospf 1\n stub-router on-startup\n area 0.0.0.0\n  network 10.1.1.0 0.0.0.3\n  network 10.1.3.0 0.0.0.3\n  network 2.2.2.2 0.0.0.0\n#\nreturn",
+    "DeviceC": "#\nsysname DeviceC\n#\nrouter id 3.3.3.3\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ip address 10.1.4.1 255.255.255.252\n ospf cost 2\n#\ninterface GigabitEthernet2/0/0\n undo shutdown\n ip address 10.1.2.2 255.255.255.252\n ospf cost 2\n#\ninterface LoopBack0\n ip address 3.3.3.3 255.255.255.255\n#\nbgp 10\n router-id 3.3.3.3\n peer 1.1.1.1 as-number 10\n peer 1.1.1.1 connect-interface LoopBack0\n peer 2.2.2.2 as-number 10\n peer 2.2.2.2 connect-interface LoopBack0\n peer 4.4.4.4 as-number 10\n peer 4.4.4.4 connect-interface LoopBack0\n#\nospf 1\n area 0.0.0.0\n  network 10.1.2.0 0.0.0.3\n  network 10.1.4.0 0.0.0.3\n  network 3.3.3.3 0.0.0.0\n#\nreturn",
+    "DeviceD": "#\nsysname DeviceD\n#\nrouter id 4.4.4.4\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ip address 10.1.4.2 255.255.255.252\n#\ninterface GigabitEthernet2/0/0\n undo shutdown\n ip address 10.1.3.2 255.255.255.252\n#\ninterface GigabitEthernet3/0/0\n undo shutdown\n ip address 10.2.1.1 255.255.255.252\n#\ninterface LoopBack0\n ip address 4.4.4.4 255.255.255.255\n#\nbgp 10\n router-id 4.4.4.4\n peer 10.2.1.2 as-number 20\n peer 1.1.1.1 as-number 10\n peer 1.1.1.1 connect-interface LoopBack0\n peer 2.2.2.2 as-number 10\n peer 2.2.2.2 connect-interface LoopBack0\n peer 3.3.3.3 as-number 10\n peer 3.3.3.3 connect-interface LoopBack0\n#\n ipv4-family unicast\n  undo synchronization\n  import-route direct\n  import-route ospf 1\n  peer 10.2.1.2 enable\n#\nospf 1\n area 0.0.0.0\n  network 4.4.4.4 0.0.0.0\n  network 10.1.3.0 0.0.0.3\n  network 10.1.4.0 0.0.0.3\n#\nreturn",
+    "DeviceE": "#\nsysname DeviceE\n#\nrouter id 5.5.5.5\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ip address 10.2.1.2 255.255.255.252\n#\ninterface GigabitEthernet2/0/0\n undo shutdown\n ip address 10.3.1.1 255.255.255.0\n#\ninterface LoopBack0\n ip address 5.5.5.5 255.255.255.255\n#\nbgp 20\n router-id 5.5.5.5\n peer 10.2.1.1 as-number 10\n#\n ipv4-family unicast\n  undo synchronization\n  network 10.3.1.0 255.255.255.0\n  peer 10.2.1.1 enable\n#\nreturn"
+  },
+  "related_images": [
+    "图1-52 配置OSPF 与BGP 联动组网图.png"
+  ]
+}

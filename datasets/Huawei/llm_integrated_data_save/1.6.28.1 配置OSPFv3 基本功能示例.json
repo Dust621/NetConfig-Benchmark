@@ -1,0 +1,17 @@
+{
+  "topology": "所有的路由器都运行OSPFv3，整个自治系统划分为3个区域。其中DeviceB和DeviceC作为ABR（区域边界路由器）来转发区域之间的路由。DeviceA、DeviceB、DeviceC、DeviceD 均运行OSPFv3。",
+  "requirement": "配置完成后，每台路由器都应学到AS内的所有网段的路由。整个自治系统划分为3个区域：Area 0（骨干区域）、Area 1和Area 2。",
+  "steps": [
+    "在各路由器上使能OSPFv3的基本功能。",
+    "指定不同区域内的网段。"
+  ],
+  "configs": {
+    "DeviceA": "#\nsysname DeviceA\n#\ninterface GigabitEthernet2/0/0\n undo shutdown\n ipv6 enable\n ipv6 address 2001:db8:2::2/64\n ospfv3 1 area 0.0.0.1\n#\ninterface GigabitEthernet3/0/0\n undo shutdown\n ipv6 enable\n ipv6 address 2001:db8:4::1/64\n ospfv3 1 area 0.0.0.1\n#\nospfv3 1\n router-id 1.1.1.1\n area 0.0.0.1\n#\nreturn",
+    "DeviceB": "#\nsysname DeviceB\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ipv6 enable\n ipv6 address 2001:db8:1::1/64\n ospfv3 1 area 0.0.0.0\n#\ninterface GigabitEthernet2/0/0\n undo shutdown\n ipv6 enable\n ipv6 address 2001:db8:2::1/64\n ospfv3 1 area 0.0.0.1\n#\nospfv3 1\n router-id 2.2.2.2\n area 0.0.0.0\n area 0.0.0.1\n#\nreturn",
+    "DeviceC": "#\nsysname DeviceC\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ipv6 enable\n ipv6 address 2001:db8:1::2/64\n ospfv3 1 area 0.0.0.0\n#\ninterface GigabitEthernet2/0/0\n undo shutdown\n ipv6 enable\n ipv6 address 2001:db8:3::1/64\n ospfv3 1 area 0.0.0.2\n#\nospfv3 1\n router-id 3.3.3.3\n area 0.0.0.0\n area 0.0.0.2\n#\nreturn",
+    "DeviceD": "#\nsysname DeviceD\n#\ninterface GigabitEthernet2/0/0\n undo shutdown\n ipv6 enable\n ipv6 address 2001:db8:3::2/64\n ospfv3 1 area 0.0.0.2\n#\nospfv3 1\n router-id 4.4.4.4\n area 0.0.0.2\n#\nreturn"
+  },
+  "related_images": [
+    "图1-61 配置OSPFv3基本功能组网图.png"
+  ]
+}

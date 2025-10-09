@@ -1,0 +1,17 @@
+{
+  "topology": "本网络拓扑采用OSPFv3协议构建IPv6网络，包含4台路由器设备（DeviceA、DeviceB、DeviceC、DeviceD），划分为3个OSPF区域：\n\n**区域划分：**\n- Area 0（骨干区域）：网段2001:DB8:1::/64\n- Area 1：网段2001:DB8:2::/64和2001:DB8:4::/64  \n- Area 2：网段2001:DB8:3::/64\n\n**设备角色：**\n- DeviceB：ABR路由器，连接Area 0和Area 1，Router-ID 2.2.2.2\n- DeviceC：ABR路由器，连接Area 0和Area 2，Router-ID 3.3.3.3\n- DeviceA：Area 1内部路由器，Router-ID 1.1.1.1\n- DeviceD：Area 2内部路由器，Router-ID 4.4.4.4\n\n**物理连接：**\n- DeviceB与DeviceC：通过interface1连接，形成骨干区域链路（2001:DB8:1::1/64 ↔ 2001:DB8:1::2/64）\n- DeviceB与DeviceA：通过interface2连接，跨区域链路（2001:DB8:2::1/64 ↔ 2001:DB8:2::2/64）\n- DeviceC与DeviceD：通过interface2连接，跨区域链路（2001:DB8:3::1/64 ↔ 2001:DB8:3::2/64）\n- DeviceA的interface3配置为2001:DB8:4::1/64，属于Area 1的Stub网段\n\n通过ABR设备DeviceB和DeviceC实现区域间路由交换，确保全网IPv6路由可达性。",
+  "requirement": "配置完成后，每台路由器都应学到AS内的所有网段的路由。整个自治系统划分为3个区域：Area 0（骨干区域）、Area 1和Area 2。",
+  "steps": [
+    "在各路由器上使能OSPFv3的基本功能。",
+    "指定不同区域内的网段。"
+  ],
+  "configs": {
+    "DeviceA": "#\nsysname DeviceA\n#\ninterface GigabitEthernet2/0/0\n undo shutdown\n ipv6 enable\n ipv6 address 2001:db8:2::2/64\n ospfv3 1 area 0.0.0.1\n#\ninterface GigabitEthernet3/0/0\n undo shutdown\n ipv6 enable\n ipv6 address 2001:db8:4::1/64\n ospfv3 1 area 0.0.0.1\n#\nospfv3 1\n router-id 1.1.1.1\n area 0.0.0.1\n#\nreturn",
+    "DeviceB": "#\nsysname DeviceB\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ipv6 enable\n ipv6 address 2001:db8:1::1/64\n ospfv3 1 area 0.0.0.0\n#\ninterface GigabitEthernet2/0/0\n undo shutdown\n ipv6 enable\n ipv6 address 2001:db8:2::1/64\n ospfv3 1 area 0.0.0.1\n#\nospfv3 1\n router-id 2.2.2.2\n area 0.0.0.0\n area 0.0.0.1\n#\nreturn",
+    "DeviceC": "#\nsysname DeviceC\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ipv6 enable\n ipv6 address 2001:db8:1::2/64\n ospfv3 1 area 0.0.0.0\n#\ninterface GigabitEthernet2/0/0\n undo shutdown\n ipv6 enable\n ipv6 address 2001:db8:3::1/64\n ospfv3 1 area 0.0.0.2\n#\nospfv3 1\n router-id 3.3.3.3\n area 0.0.0.0\n area 0.0.0.2\n#\nreturn",
+    "DeviceD": "#\nsysname DeviceD\n#\ninterface GigabitEthernet2/0/0\n undo shutdown\n ipv6 enable\n ipv6 address 2001:db8:3::2/64\n ospfv3 1 area 0.0.0.2\n#\nospfv3 1\n router-id 4.4.4.4\n area 0.0.0.2\n#\nreturn"
+  },
+  "related_images": [
+    "图1-61配置OSPFv3区域组网图.png"
+  ]
+}

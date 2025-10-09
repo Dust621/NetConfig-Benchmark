@@ -1,0 +1,18 @@
+{
+  "topology": "DeviceA、DeviceB、DeviceC 及 DeviceD 之间运行 RIP 协议。业务流量经过主链路 DeviceA → DeviceB → DeviceD 进行传输。在 DeviceA 和 DeviceB 相连的链路接口上使能静态 BFD。",
+  "requirement": "通过配置 BFD for RIP 特性，可以快速检测链路的状态，故障检测时间可以达到毫秒级，提高链路状态变化时 RIP 的收敛速度。当主链路发生故障，BFD 可以快速的检测到并通知 RIP，业务流量会快速切换到备份路径进行传输。",
+  "steps": [
+    "在各路由器上配置 RIP 的基本功能，建立 RIP 邻居。",
+    "使能全局 BFD 功能。",
+    "在 DeviceA 和 DeviceB 相连接的接口上使能静态 BFD 功能。"
+  ],
+  "configs": {
+    "DeviceA": "#\nsysname DeviceA\n#\nbfd\n#\ninterface gigabitethernet1/0/0\n undo shutdown\n ip address 2.2.2.1 255.255.255.0\n rip bfd static\n#\ninterface gigabitethernet2/0/0\n undo shutdown\n ip address 3.3.3.1 255.255.255.0\n#\nrip 1\n version 2\n network 2.0.0.0\n network 3.0.0.0\n#\nbfd 1 bind peer-ip 2.2.2.2 interface gigabitethernet1/0/0 source-ip 2.2.2.1\n discriminator local 1\n discriminator remote 2\n#\nreturn",
+    "DeviceB": "#\nsysname DeviceB\n#\nbfd\n#\ninterface gigabitethernet1/0/0\n undo shutdown\n ip address 2.2.2.2 255.255.255.0\n rip bfd static\n#\ninterface gigabitethernet2/0/0\n undo shutdown\n ip address 4.4.4.1 255.255.255.0\n#\ninterface gigabitethernet3/0/0\n undo shutdown\n ip address 172.16.1.1 255.255.255.0\n#\nrip 1\n version 2\n network 2.0.0.0\n network 4.0.0.0\n network 172.16.0.0\n#\nbfd 1 bind peer-ip 2.2.2.1 interface gigabitethernet1/0/0 source-ip 2.2.2.2\n discriminator local 2\n discriminator remote 1\n#\nreturn",
+    "DeviceC": "#\nsysname DeviceC\n#\ninterface gigabitethernet1/0/0\n undo shutdown\n ip address 4.4.4.2 255.255.255.0\n#\ninterface gigabitethernet2/0/0\n undo shutdown\n ip address 3.3.3.2 255.255.255.0\n#\nrip 1\n version 2\n network 3.0.0.0\n network 4.0.0.0\n#\nreturn",
+    "DeviceD": "#\nsysname DeviceD\n#\ninterface gigabitethernet1/0/0\n undo shutdown\n ip address 172.16.1.2 255.255.255.0\n#\nrip 1\n version 2\n network 172.16.0.0\n#\nreturn"
+  },
+  "related_images": [
+    "图1-81 配置静态BFD for RIP 特性示例组网图.png"
+  ]
+}

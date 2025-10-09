@@ -1,0 +1,17 @@
+{
+  "topology": "网络拓扑由三台路由器组成：DeviceA、DeviceB和DeviceC，通过以太网接口串联连接。\n\nDeviceA作为左侧边界路由器，配置两个接口：GigabitEthernet1/0/0（IP：192.168.1.1/24）连接到DeviceB，GigabitEthernet2/0/0（IP：192.168.0.1/24）连接本地网段。DeviceA运行单个RIP进程，通告192.168.0.0/24和192.168.1.0/24网段。\n\nDeviceB作为中心汇聚路由器，配置两个接口：GigabitEthernet1/0/0（IP：192.168.1.2/24）连接DeviceA，GigabitEthernet2/0/0（IP：192.168.2.1/24）连接DeviceC。DeviceB运行两个独立的RIP进程：RIP 100进程管理与DeviceA的路由交换，通告192.168.1.0/24网段；RIP 200进程管理与DeviceC的路由交换，通告192.168.2.0/24网段。两个RIP进程通过路由重分发实现互通，RIP 100进程引入RIP 200路由时设置缺省度量值为3，并通过ACL 2000过滤阻止192.168.4.0/24路由向DeviceA发布。\n\nDeviceC作为右侧边界路由器，配置三个接口：GigabitEthernet1/0/0（IP：192.168.2.2/24）连接DeviceB，GigabitEthernet2/0/0（IP：192.168.3.1/24）和GigabitEthernet3/0/0（IP：192.168.4.1/24）分别连接两个本地网段。DeviceC运行单个RIP进程，通告192.168.2.0/24、192.168.3.0/24和192.168.4.0/24网段。\n\n整个网络形成线性拓扑结构，通过DeviceB的双RIP进程架构实现不同区域间的路由控制和策略管理。",
+  "requirement": "在各路由器上使能RIP100和RIP200，并指定网段。在DeviceB上配置两个不同RIP进程互相引入路由，并将引入的RIP200路由的缺省度量值设为3。在DeviceB上配置ACL，对引入的RIP200的路由进行过滤，阻止192.168.4.0/24路由发布给DeviceA。",
+  "steps": [
+    "在各路由器上使能RIP100和RIP200，并指定网段。",
+    "在DeviceB上配置两个不同RIP进程互相引入路由，并将引入的RIP200路由的缺省度量值设为3。",
+    "在DeviceB上配置ACL，对引入的RIP200的路由进行过滤，阻止192.168.4.0/24路由发布给DeviceA。"
+  ],
+  "configs": {
+    "DeviceA": "#\nsysname DeviceA\n#\ninterface GigabitEthernet2/0/0\n undo shutdown\n ip address 192.168.0.1 255.255.255.0\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ip address 192.168.1.1 255.255.255.0\n#\nrip\n network 192.168.0.0\n network 192.168.1.0\n#\nreturn",
+    "DeviceB": "#\nsysname DeviceB\n#\nacl number 2000\n rule 5 deny source 192.168.4.0 0.0.0.255\n rule 10 permit\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ip address 192.168.1.2 255.255.255.0\n#\ninterface GigabitEthernet2/0/0\n undo shutdown\n ip address 192.168.2.1 255.255.255.0\n#\nrip\n default-cost 3\n network 192.168.1.0\n filter-policy 2000 export\n import-route rip 200\n#\nrip\n network 192.168.2.0\n import-route rip 100\n#\nreturn",
+    "DeviceC": "#\nsysname DeviceC\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ip address 192.168.2.2 255.255.255.0\n#\ninterface GigabitEthernet2/0/0\n undo shutdown\n ip address 192.168.3.1 255.255.255.0\n#\ninterface GigabitEthernet3/0/0\n undo shutdown\n ip address 192.168.4.1 255.255.255.0\n#\nrip\n network 192.168.2.0\n network 192.168.3.0\n network 192.168.4.0\n#\nreturn"
+  },
+  "related_images": [
+    "图1-79 配置 RIP 引入外部路由组网图.png"
+  ]
+}

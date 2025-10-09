@@ -1,0 +1,19 @@
+{
+  "topology": "Device1 与 Device2 构成 VRRP 备份组作为用户侧网关，Device1、Device2 和 Device3 之间运行 OSPF 协议以实现 IP 层互通。",
+  "requirement": "将 Device1 与 Device2 构成的 VRRP 备份组作为用户侧网关，用户访问网络的上行流量将发往 VRRP 主用设备 Device1。同时，Device1、Device2 和 Device3 之间运行 OSPF 协议以实现 IP 层互通。由网络返回到用户的下行流量路径将由 OSPF 选路决定。在本例中，Device3 上存在去往用户网段 10.1.1.0/24 的两条等价 OSPF 路由，因此下行流量将出现负载分担的情况。这样就导致了上下行流量路径不一致。",
+  "steps": [
+    "在 Device1 和 Device2 上配置 VRRP 备份组。",
+    "在 Device1、Device2 和 Device3 上配置 OSPF，实现 IP 路由互通。",
+    "在 Device1 和 Device2 上配置直连路由与 VRRP 联动。",
+    "在 Device1 和 Device2 上配置 OSPF 引入直连路由，并配置继承 cost。"
+  ],
+  "configs": {
+    "Switch": "#\nsysname Switch\n#\nvlan batch 10\n#\ninterface GigabitEthernet1/0/0\n portswitch\n undo shutdown\n port default vlan 10\n#\ninterface GigabitEthernet1/0/1\n portswitch\n undo shutdown\n port default vlan 10",
+    "Device1": "#\nsysname Device1\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ip address 10.1.1.1 255.255.255.0\n vrrp vrid 1 virtual-ip 10.1.1.111\n vrrp vrid 1 priority 120\n direct-route track vrrp vrid 1 degrade-cost 300\n#\ninterface GigabitEthernet1/0/1\n undo shutdown\n ip address 10.1.3.1 255.255.255.0\n#\nospf 1\n default cost inherit-metric\n import-route direct\n area 0.0.0.0\n  network 10.1.3.0 0.0.0.255",
+    "Device2": "#\nsysname Device2\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ip address 10.1.1.2 255.255.255.0\n vrrp vrid 1 virtual-ip 10.1.1.111\n direct-route track vrrp vrid 1 degrade-cost 300\n#\ninterface GigabitEthernet1/0/1\n undo shutdown\n ip address 10.1.2.1 255.255.255.0\n#\nospf 1\n default cost inherit-metric\n import-route direct\n area 0.0.0.0\n  network 10.1.2.0 0.0.0.255",
+    "Device3": "#\nsysname Device3\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ip address 10.1.3.2 255.255.255.0\n#\ninterface GigabitEthernet1/0/1\n undo shutdown\n ip address 10.1.2.2 255.255.255.0\n#\nospf 1\n area 0.0.0.0\n  network 10.1.2.0 0.0.0.255\n  network 10.1.3.0 0.0.0.255"
+  },
+  "related_images": [
+    "图1-15 配置直连路由联动 VRRP 状态组网图.png"
+  ]
+}

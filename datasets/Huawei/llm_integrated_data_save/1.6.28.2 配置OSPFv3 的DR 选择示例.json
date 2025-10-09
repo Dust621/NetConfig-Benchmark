@@ -1,0 +1,21 @@
+{
+  "topology": "基于网络拓扑图的详细分析，增强后的网络拓扑描述如下：\n\n**网络拓扑结构：**\n四台路由器设备（DeviceA、DeviceB、DeviceC、DeviceD）通过以太网连接在同一个广播域中，形成多点访问网络拓扑。所有设备均通过interface1接口连接到共享的以太网段。\n\n**IP地址配置：**\n- DeviceA：interface1配置IP地址2001:DB8:1001::1/96\n- DeviceB：interface1配置IP地址2001:DB8:1001::2/96  \n- DeviceC：interface1配置IP地址2001:DB8:1001::3/96\n- DeviceD：interface1配置IP地址2001:DB8:1001::4/96\n\n所有设备位于同一IPv6子网2001:DB8:1001::/96中，采用/96子网掩码。\n\n**OSPF协议配置：**\n网络运行OSPF协议，在广播网络类型下进行DR/BDR选举机制配置：\n- DeviceA：DR优先级设置为100，作为指定路由器（DR）\n- DeviceB：DR优先级设置为0，不参与DR/BDR选举\n- DeviceC：DR优先级设置为2，作为备份指定路由器（BDR）\n- DeviceD：DR优先级采用默认值1\n\n**网络特性：**\n采用广播型网络，支持多路访问，通过DR选举机制优化LSA泛洪和邻接关系建立，减少网络中的OSPF流量开销。",
+  "requirement": "在广播网络中，配置接口上的DR优先级进行DR选择的过程。DeviceA 的优先级为100，它是网络上的最高优先级，因此被选为DR。DeviceC 的优先级为2，是优先级第二高的设备，被选为BDR。DeviceB 的优先级为0，这意味着它将无法成为DR或BDR。DeviceD 没有配置优先级，取缺省值1。",
+  "steps": [
+    "配置各路由器上的 `router id`，使能OSPFv3，并指定网段。",
+    "在缺省优先级情况下，查看各路由器的DR/BDR状态。",
+    "配置接口上的DR优先级，查看DR/BDR状态。",
+    "重新进行DR/BDR选择。",
+    "验证配置结果。"
+  ],
+  "configs": {
+    "DeviceA": "#\nsysname DeviceA\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ipv6 enable\n ipv6 address 2001:db8:1001::1/64\n ospfv3 1 area 0.0.0.0\n ospfv3 dr-priority 100\n#\nospfv3\n router-id 1.1.1.1\n area 0.0.0.0\n#\nreturn",
+    "DeviceB": "#\nsysname DeviceB\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ipv6 enable\n ipv6 address 2001:db8:1001::2/64\n ospfv3 1 area 0.0.0.0\n ospfv3 dr-priority 0\n#\nospfv3\n router-id 2.2.2.2\n area 0.0.0.0\n#\nreturn",
+    "DeviceC": "#\nsysname DeviceC\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ipv6 enable\n ipv6 address 2001:db8:1001::3/64\n ospfv3 1 area 0.0.0.0\n ospfv3 dr-priority 2\n#\nospfv3\n router-id 3.3.3.3\n area 0.0.0.0\n#\nreturn",
+    "DeviceD": "#\nsysname DeviceD\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ipv6 enable\n ipv6 address 2001:db8:1001::4/64\n ospfv3 1 area 0.0.0.0\n#\nospfv3\n router-id 4.4.4.4\n area 0.0.0.0\n#\nreturn"
+  },
+  "related_images": [
+    "图1-62 配置 OSPFv3 的 DR 选择组网图.png"
+  ],
+  "topology_original": "DeviceA、DeviceB、DeviceC 和 DeviceD 连接在同一个广播网络中，通过配置接口上的DR优先级进行DR选择。"
+}

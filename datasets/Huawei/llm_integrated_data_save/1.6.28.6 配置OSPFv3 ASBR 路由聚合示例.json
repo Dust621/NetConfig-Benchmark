@@ -1,0 +1,17 @@
+{
+  "topology": "ASBR和Device A设备都运行OSPFv3。在ASBR上引入三条具有相同前缀的静态路由（2001:DB8:2::1/128、2001:DB8:3::1/128和2001:DB8:4::1/128）。通过在ASBR上配置这三条具有相同前缀的静态路由聚合为一条路由2001:DB8::/32之后，ASBR将只发布这条路由到Area0区域。",
+  "requirement": "路由聚合是指将多条具有相同IPv6前缀的路由聚合成一条路由。当大规模部署OSPFv3网络时，可能会出现由于OSPFv3路由表规模过大而降低路由查找速度的现象。为了解决这个问题，可以配置路由聚合，减小路由表的规模，降低管理的复杂度。此外，如果被聚合的IPv6地址范围内的某条链路频繁Up和Down，该变化并不会通告到被聚合的IPv6地址范围外的设备。因此，路由聚合还可以避免网络中的路由振荡，在一定程度上提高了网络的稳定性。",
+  "steps": [
+    "配置各接口的IP地址，使网络互通。",
+    "在ASBR和Device A设备上使能OSPFv3的基本功能。",
+    "在ASBR上配置三条具有相同前缀的静态路由（2001:DB8:2::1/128、2001:DB8:3::1/128和2001:DB8:4::1/128），并引入这三条静态路由到OSPFv3中。",
+    "在ASBR上配置OSPFv3 ASBR路由聚合。"
+  ],
+  "configs": {
+    "DeviceA": "#\nsysname DeviceA\n#\nospfv3 1\n router-id 1.1.1.1\n area 0.0.0.0\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ipv6 enable\n ipv6 address 2001:DB8:1::2/64\n ospfv3 1 area 0.0.0.0\n#\nreturn",
+    "ASBR": "#\nsysname ASBR\n#\nospfv3 1\n router-id 2.2.2.2\n import-route static\n asbr-summary 2001:DB8:: 32\n area 0.0.0.0\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ipv6 enable\n ipv6 address 2001:DB8:1::1/64\n ospfv3 1 area 0.0.0.0\n#\nipv6 route-static 2001:DB8:2::1 128 NULL0\n ipv6 route-static 2001:DB8:3::1 128 NULL0\n ipv6 route-static 2001:DB8:4::1 128 NULL0\n#\nreturn"
+  },
+  "related_images": [
+    "图1-66 配置OSPFv3 ASBR 路由聚合示例组网图.png"
+  ]
+}

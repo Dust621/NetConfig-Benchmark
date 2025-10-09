@@ -1,0 +1,22 @@
+{
+  "topology": "该网络拓扑由4台设备组成：1台交换机SwitchA和3台路由器DeviceA、DeviceB、DeviceC、DeviceD。\n\n物理连接关系：\n- SwitchA作为二层交换机，通过三个千兆接口分别连接DeviceA（G1/0/0）、DeviceB（G2/0/0）和DeviceC（G3/0/0）\n- DeviceA通过G1/0/0接口连接到SwitchA\n- DeviceB通过G1/0/0接口连接到SwitchA  \n- DeviceC通过G1/0/0接口连接到SwitchA，同时通过G2/0/0接口与DeviceD直连\n- DeviceD通过G1/0/0接口与DeviceC直连\n\n网络分段与地址分配：\n- VLAN10网段：2001:db8:2000::/64，包含DeviceA（::3/64）、DeviceB（::4/64）、DeviceC的Vlanif10（::1/64）和SwitchA的Vlanif10（::2/64）\n- DeviceC与DeviceD间直连网段：2001:db8:2001::/64，DeviceC地址为::1/64，DeviceD地址为::2/64\n\n协议配置：\n- BGP AS100：DeviceC和DeviceD建立iBGP邻居关系\n- DeviceC配置IPv6 NDP Vlink直连路由发布，通过路由策略policy1仅允许发布DeviceB的主机路由（2001:db8:2000::4/128）\n- DeviceC向DeviceD通过BGP导入直连路由，并应用路由策略policy2过滤网段路由和DeviceA相关路由\n\n该拓扑实现DeviceD仅与DeviceB的精确互访需求，通过路由策略控制阻止DeviceD访问DeviceA。",
+  "requirement": "通过发布IPv6 NDP Vlink直连路由，可以使远端设备获得VLAN内的明细路由，从而实现对流量的精确控制。在DeviceC上配置发布IPv6 NDP Vlink直连路由，并利用路由策略过滤掉网段路由和到DeviceA的路由。",
+  "steps": [
+    "在SwitchA和DeviceC上创建VLANIF，并且配置IPv6地址，保证DeviceA、DeviceB、SwitchA和DeviceC之间的互通。",
+    "在DeviceC和DeviceD之间配置BGP4+协议，保证DeviceC和DeviceD之间可以相互传递IPv6路由。",
+    "在DeviceC上配置发布IPv6 NDP Vlink直连路由，使IPv6 NDP Vlink直连路由可发布。",
+    "在DeviceC上配置路由策略，只允许来源于DeviceB的IPv6路由通过。",
+    "在DeviceC上配置BGP4+引入IPv6直连路由，并且应用路由策略只引入来源于DeviceB的IPv6路由。",
+    "在DeviceC上配置BGP4+使用路由出口过滤策略，过滤掉VLAN所在网段路由，使DeviceD无法看到网段路由，只能使用IPv6 NDP Vlink直连路由与VLAN内的用户通信，这样便于控制VLAN内用户与VLAN外的通信。"
+  ],
+  "configs": {
+    "SwitchA": "#\nsysname SwitchA\n#\nvlan batch 10\n#\ninterface Vlanif10\n ipv6 enable\n ipv6 address 2001:db8:2000::2/64\n#\ninterface GigabitEthernet1/0/0\n portswitch\n undo shutdown\n port link-type access\n port default vlan 10\n#\ninterface GigabitEthernet2/0/0\n portswitch\n undo shutdown\n port link-type access\n port default vlan 10\n#\ninterface GigabitEthernet3/0/0\n portswitch\n undo shutdown\n port link-type access\n port default vlan 10\n#\nreturn",
+    "DeviceA": "#\nsysname DeviceA\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ipv6 enable\n ipv6 address 2001:db8:2000::3/64\n#\nreturn",
+    "DeviceB": "#\nsysname DeviceB\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ipv6 enable\n ipv6 address 2001:db8:2000::4/64\n#\nreturn",
+    "DeviceC": "#\nsysname DeviceC\n#\nip ipv6-prefix prefix1 index 10 permit 2001:db8:2000::4 128\n#\nip ipv6-prefix prefix2 index 10 deny 2001:db8:2000:: 64\n#\nip ipv6-prefix prefix2 index 20 permit :: 0 less-equal 128\n#\nroute-policy policy1 permit node 10\n if-match ipv6 address prefix-list prefix1\n#\nroute-policy policy2 permit node 10\n if-match ipv6 address prefix-list prefix2\n#\nipv6 nd vlink-direct-route advertise route-policy policy1\n#\nvlan batch 10\n#\ninterface Vlanif10\n ipv6 enable\n ipv6 address 2001:db8:2000::1/64\n#\ninterface GigabitEthernet1/0/0\n portswitch\n undo shutdown\n port link-type access\n port default vlan 10\n#\ninterface GigabitEthernet2/0/0\n undo shutdown\n ipv6 enable\n ipv6 address 2001:db8:2001::1/64\n#\nbgp 100\n router-id 1.1.1.1\n peer 2001:db8:2001::2 as-number 100\n ipv4-family unicast\n  undo synchronization\n ipv6-family unicast\n  undo synchronization\n  import-route direct\n  peer 2001:db8:2001::2 enable\n  peer 2001:db8:2001::2 route-policy policy2 export\n#\nreturn",
+    "DeviceD": "#\nsysname DeviceD\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ipv6 enable\n ipv6 address 2001:db8:2001::2/64\n#\nbgp 100\n router-id 2.2.2.2\n peer 2001:db8:2001::1 as-number 100\n ipv4-family unicast\n  undo synchronization\n ipv6-family unicast\n  undo synchronization\n  peer 2001:db8:2001::1 enable\n#\nreturn"
+  },
+  "related_images": [
+    "图1-17 配置BGP4_引入IPv6 NDP Vlink 直连路由组网图.png"
+  ]
+}

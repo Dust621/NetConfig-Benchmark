@@ -1,0 +1,20 @@
+{
+  "topology": "基于网络拓扑图和配置文件分析，完善的网络拓扑描述如下：\n\n**网络拓扑结构**\n\n该网络由四台路由器设备组成：DeviceT、DeviceA、DeviceB和DeviceC，构成双归属冗余架构。\n\n**物理连接关系**\n\n1. **DeviceT作为核心节点**：\n   - GE1/0/0接口（IP：172.16.1.1/24）连接用户网络\n   - GE2/0/0接口（IP：192.168.10.1/24）通过Link A连接DeviceA的GE1/0/0接口（IP：192.168.10.2/24）\n   - GE3/0/0接口（IP：192.168.20.1/24）通过Link B连接DeviceB的GE1/0/0接口（IP：192.168.20.2/24）\n\n2. **DeviceA中间节点**：\n   - GE1/0/0接口（IP：192.168.10.2/24）连接DeviceT\n   - GE2/0/0接口（IP：192.168.11.2/24）连接DeviceC的GE2/0/0接口（IP：192.168.11.1/24）\n\n3. **DeviceB中间节点**：\n   - GE1/0/0接口（IP：192.168.20.2/24）连接DeviceT  \n   - GE2/0/0接口（IP：192.168.21.2/24）连接DeviceC的GE3/0/0接口（IP：192.168.21.1/24）\n\n4. **DeviceC目标节点**：\n   - GE1/0/0接口（IP：172.17.1.1/24）连接目标网络172.17.1.0/24\n   - GE2/0/0接口（IP：192.168.11.1/24）连接DeviceA\n   - GE3/0/0接口（IP：192.168.21.1/24）连接DeviceB\n\n**网络分段**\n\n- 用户网段：172.16.1.0/24\n- 目标网段：172.17.1.0/24\n- Link A网段：192.168.10.0/24和192.168.11.0/24\n- Link B网段：192.168.20.0/24和192.168.21.0/24\n\n**冗余和故障切换机制**\n\nDeviceT配置两条到达172.17.1.0/24网段的静态路由：\n- 主路径：DeviceT → DeviceA → DeviceC（preference 40，配置BFD检测）\n- 备份路径：DeviceT → DeviceB → DeviceC（默认preference 60）\n\n通过BFD（双向转发检测）机制监控Link A的连通性，当主链路故障时自动切换至备份链路，实现快速故障恢复。",
+  "requirement": "在DeviceT上配置下一跳分别为DeviceA和DeviceB的两条IPv4静态路由，使链路B为链路A的备份。当链路A出现故障时，流量可以快速切换到链路B上。",
+  "steps": [
+    "在DeviceT上配置下一跳分别为DeviceA和DeviceB的两条IPv4静态路由。",
+    "在DeviceT上为链路A配置较低的Preference值，使系统优选链路A。",
+    "在DeviceT上使能IPv4静态路由FRR功能，查看备份出接口和备份下一跳的信息。",
+    "配置静态BFD for IPv4静态路由，以达到快速检测故障的目的。",
+    "IPv4静态路由FRR去使能后，查看备份出接口和备份下一跳的信息。"
+  ],
+  "configs": {
+    "DeviceT": "#\nsysname DeviceT\n#\nbfd\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ip address 172.16.1.1 255.255.255.0\n#\ninterface GigabitEthernet2/0/0\n undo shutdown\n ip address 192.168.10.1 255.255.255.0\n#\ninterface GigabitEthernet3/0/0\n undo shutdown\n ip address 192.168.20.1 255.255.255.0\n#\nbfd aa bind peer-ip 192.168.11.1 source-ip 192.168.10.1\n discriminator local 1\n discriminator remote 2\n#\nip route-static frr\nip route-static 172.17.1.0 24 GigabitEthernet2/0/0 192.168.10.2 preference 40 track bfd-session aa\nip route-static 172.17.1.0 24 GigabitEthernet3/0/0 192.168.20.2\nip route-static 192.168.11.0 24 GigabitEthernet2/0/0 192.168.10.2\nip route-static 192.168.21.0 24 GigabitEthernet3/0/0 192.168.20.2\n#\nreturn",
+    "DeviceA": "#\nsysname DeviceA\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ip address 192.168.10.2 255.255.255.0\n#\ninterface GigabitEthernet2/0/0\n undo shutdown\n ip address 192.168.11.2 255.255.255.0\n#\nip route-static 172.16.1.0 24 GigabitEthernet1/0/0 192.168.10.1\nip route-static 172.17.1.0 24 GigabitEthernet2/0/0 192.168.11.1\n#\nreturn",
+    "DeviceB": "#\nsysname DeviceB\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ip address 192.168.20.2 255.255.255.0\n#\ninterface GigabitEthernet2/0/0\n undo shutdown\n ip address 192.168.21.2 255.255.255.0\n#\nip route-static 172.16.1.0 24 GigabitEthernet1/0/0 192.168.20.1\nip route-static 172.17.1.0 24 GigabitEthernet2/0/0 192.168.21.1\n#\nreturn",
+    "DeviceC": "#\nsysname DeviceC\n#\nbfd\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ip address 172.17.1.0 255.255.255.0\n#\ninterface GigabitEthernet2/0/0\n undo shutdown\n ip address 192.168.11.1 255.255.255.0\n#\ninterface GigabitEthernet3/0/0\n undo shutdown\n ip address 192.168.21.1 255.255.255.0\n#\nbfd ab bind peer-ip 192.168.10.1 source-ip 192.168.11.1\n discriminator local 2\n discriminator remote 1\n#\nip route-static 172.16.1.0 24 GigabitEthernet2/0/0 192.168.11.2\nip route-static 172.16.1.0 24 GigabitEthernet3/0/0 192.168.21.2\nip route-static 192.168.10.0 255.255.255.0 GigabitEthernet2/0/0 192.168.11.2\nip route-static 192.168.20.0 255.255.255.0 GigabitEthernet3/0/0 192.168.21.2\n#\nreturn"
+  },
+  "related_images": [
+    "图1-26 配置公网IPv4静态路由FRR组网图.png"
+  ]
+}

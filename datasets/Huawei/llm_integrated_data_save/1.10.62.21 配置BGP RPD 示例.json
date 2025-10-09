@@ -1,0 +1,18 @@
+{
+  "topology": "基于网络拓扑图的详细分析，增强后的网络拓扑描述如下：\n\n**网络拓扑结构：**\n该网络由三个自治系统组成，包含4台设备：\n- AS 100：包含DeviceA和DeviceB两台路由器\n- AS 200：包含DeviceC一台路由器  \n- AS 300：包含NCE-IP控制器\n\n**设备连接关系：**\n1. DeviceA与DeviceB之间通过Interface1和Interface2建立双链路连接，IP地址分别为1.1.1.1/24和2.1.1.1/24\n2. DeviceA通过Interface1连接DeviceC，IP地址为10.2.1.1/24\n3. DeviceB通过Interface2连接DeviceC，IP地址为10.3.1.1/24\n4. DeviceC配置LoopBack1接口，IP地址为10.1.1.1/24\n5. NCE-IP控制器通过Interface1连接AS 100网络\n\n**路由协议配置：**\n- 所有设备运行BGP协议进行跨AS路由交换\n- AS 100内部DeviceA和DeviceB建立iBGP邻居关系\n- DeviceA和DeviceB分别与AS 200的DeviceC建立eBGP邻居关系\n- NCE-IP控制器与AS 100建立BGP连接用于路径控制\n\n**流量工程特性：**\n- 部署RPD（Route Policy Decision）特性支持入方向流量调优\n- 支持基于NCE-IP控制器的集中式路径计算和流量引导\n- 实现从AS 200到目标网段192.168.1.0/24的双路径负载均衡\n- 具备链路故障时的自动流量重定向能力",
+  "requirement": "在城域入口或IGW场景下，当链路资源利用不均匀或链路故障导致局部流量路径拥塞时，为使用户充分利用网络带宽，可部署入方向流量调优方案，指定流量调优方案，影响路由优先级，将流量引导至空闲链路。此时，路由器作为转发设备，需要部署RPD特性。",
+  "steps": [
+    "在DeviceA和DeviceC、DeviceB和DeviceC之间配置EBGP连接。",
+    "在DeviceA和DeviceB上部署RPD，分别和控制器建立RPD邻居。",
+    "在DeviceA，DeviceB和DeviceC配置IPv4单播，即DeviceA和DeviceC、DeviceB和DeviceC互为IPv4单播邻居。"
+  ],
+  "configs": {
+    "DeviceA": "#\nbgp\nrouter-id 1.1.1.1\npeer 10.2.1.2 as-number 200\npeer 1.1.1.1 as-number 300\nipv4-family unicast\nnetwork 192.168.1.0 255.255.255.0\ncommit\nquit\nquit\n#\nbgp\npeer 1.1.1.1 as-number 300\nrpd-family\npeer 1.1.1.1 enable\nquit\nipv4-family unicast\npeer 10.2.1.2 rpd-policy export enable\ncommit\nquit\nquit",
+    "DeviceB": "#\nbgp\nrouter-id 2.2.2.2\npeer 10.3.1.2 as-number 200\npeer 2.1.1.1 as-number 300\nipv4-family unicast\nnetwork 192.168.1.0 255.255.255.0\ncommit\nquit\nquit\n#\nbgp\npeer 2.1.1.1 as-number 300\nrpd-family\npeer 2.1.1.1 enable\nquit\nipv4-family unicast\npeer 10.3.1.2 rpd-policy export enable\ncommit\nquit\nquit",
+    "DeviceC": "#\nbgp\nrouter-id 3.3.3.3\npeer 10.2.1.1 as-number 100\npeer 10.3.1.1 as-number 100\nipv4-family unicast\ncommit\nquit\nquit"
+  },
+  "related_images": [
+    "图1-163 配置BGP RPD 组网图.png"
+  ],
+  "topology_original": "所有路由器都配置BGP，DeviceA和DeviceB在AS 100中，DeviceC在AS 200中，控制器在AS 300中。来自AS 200 DeviceC发送至目的地址为192.168.1.0的流量可以从DeviceA和DeviceB进入AS 100。"
+}

@@ -1,0 +1,20 @@
+{
+  "topology": "基于网络拓扑图和配置文件分析，该网络为OSPFv3单区域（Area 0）拓扑，包含五台设备：DeviceS、DeviceA、DeviceN、DeviceE和DeviceD。\n\n**网络连接关系：**\n- DeviceS通过GE1/0/0接口（IPv6地址2001:db8:1000::1/64）连接DeviceA的GE1/0/0接口（IPv6地址2001:db8:1000::2/64），形成主链路T\n- DeviceS通过GE3/0/0接口（IPv6地址2001:db8:1002::1/64）连接DeviceN的GE1/0/0接口（IPv6地址2001:db8:1002::2/64），形成备份链路\n- DeviceA通过GE2/0/0接口（IPv6地址2001:db8:2000::2/64）连接DeviceE的GE1/0/0接口（IPv6地址2001:db8:2000::1/64）\n- DeviceN通过GE2/0/0接口（IPv6地址2001:db8:2002::2/64）连接DeviceE的GE3/0/0接口（IPv6地址2001:db8:2002::1/64）\n- DeviceE通过GE1/0/1接口（IPv6地址2001:db8:3000::1/64）连接DeviceD，接口开销值为5\n- DeviceE内部还有GE2/0/0接口（IPv6地址2001:db8:2001::1/64），形成Area2的OSPFv3网络\n\n**FRR配置特点：**\n- DeviceS在GE3/0/0接口配置了\"ospfv3 frr block\"，阻止该接口成为其他链路的备份\n- 所有设备启用BFD快速故障检测和FRR绑定\n- DeviceS、DeviceA、DeviceN配置了loop-free-alternate FRR功能\n- 当主链路T故障时，DeviceS的流量通过备份链路经DeviceN转发到目的地\n\n**网络分段：**\n- 主要网络位于IS-IS Network和OSPFv3 Network Area1中\n- DeviceD连接的网络形成独立的OSPFv3 Network Area2\n- 所有IPv6地址采用2001:db8系列，实现网络分段管理",
+  "requirement": "当网络出现故障时，通过配置OSPFv3 IP FRR功能可以将流量快速切换到备份链路上，而不用等待路由收敛，从而达到流量不中断的目的。链路开销值满足OSPFv3 IP FRR流量保护不等式。当主链路T出现故障时，DeviceS转发的流量快速切换到备份链路上，通过DeviceN转发。",
+  "steps": [
+    "在各路由器上使能OSPFv3基本功能。",
+    "在Area0区域的所有设备上配置BFD for OSPFv3基本功能。",
+    "配置cost值，使流量优选链路T。",
+    "阻止DeviceS上指定接口的FRR能力。",
+    "在DeviceA上使能OSPFv3 IP FRR。"
+  ],
+  "configs": {
+    "DeviceS": "#\nsysname DeviceS\n#\nbfd\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ipv6 enable\n ipv6 address 2001:db8:1000::1/\n ospfv3 1 area 0.0.0.0\n ospfv3 cost\n#\ninterface GigabitEthernet2/0/0\n undo shutdown\n ipv6 enable\n ipv6 address 2001:db8:1001::1/\n ospfv3 1 area 0.0.0.0\n ospfv3 cost\n#\ninterface GigabitEthernet3/0/0\n undo shutdown\n ipv6 enable\n ipv6 address 2001:db8:1002::1/\n ospfv3 1 area 0.0.0.0\n ospfv3 frr block\n ospfv3 cost\n#\nospfv3 1\n router-id 1.1.1.1\n bfd all-interfaces enable\n bfd all-interfaces frr-binding\n frr loop-free-alternate\n area 0.0.0.0\n#\nreturn",
+    "DeviceA": "#\nsysname DeviceA\n#\nbfd\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ipv6 enable\n ipv6 address 2001:db8:1000::2/\n ospfv3 1 area 0.0.0.0\n ospfv3 cost\n#\ninterface GigabitEthernet2/0/0\n undo shutdown\n ipv6 enable\n ipv6 address 2001:db8:2000::2/\n ospfv3 1 area 0.0.0.0\n ospfv3 cost\n#\nospfv3 1\n router-id 2.2.2.2\n bfd all-interfaces enable\n bfd all-interfaces frr-binding\n frr loop-free-alternate\n area 0.0.0.0\n#\nreturn",
+    "DeviceN": "#\nsysname DeviceN\n#\nbfd\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ipv6 enable\n ipv6 address 2001:db8:1002::2/\n ospfv3 1 area 0.0.0.0\n ospfv3 cost\n#\ninterface GigabitEthernet2/0/0\n undo shutdown\n ipv6 enable\n ipv6 address 2001:db8:2002::2/\n ospfv3 1 area 0.0.0.0\n ospfv3 cost\n#\nospfv3 1\n router-id 3.3.3.3\n bfd all-interfaces enable\n bfd all-interfaces frr-binding\n frr\n area 0.0.0.0\n#\nreturn",
+    "DeviceE": "#\nsysname DeviceE\n#\nbfd\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ipv6 enable\n ipv6 address 2001:db8:2000::1/\n ospfv3 1 area 0.0.0.0\n#\ninterface GigabitEthernet2/0/0\n undo shutdown\n ipv6 enable\n ipv6 address 2001:db8:2001::1/\n ospfv3 1 area 0.0.0.0\n#\ninterface GigabitEthernet3/0/0\n undo shutdown\n ipv6 enable\n ipv6 address 2001:db8:2002::1/\n ospfv3 1 area 0.0.0.0\n#\ninterface GigabitEthernet1/0/1\n undo shutdown\n ipv6 enable\n ipv6 address 2001:db8:3000::1/\n ospfv3 1 area 0.0.0.0\n ospfv3 cost\n#\nospfv3 1\n router-id 4.4.4.4\n bfd all-interfaces enable\n bfd all-interfaces frr-binding\n area 0.0.0.0\n#\nreturn"
+  },
+  "related_images": [
+    "图1-63 配置OSPFv3 IP FRR 组网图.png"
+  ]
+}

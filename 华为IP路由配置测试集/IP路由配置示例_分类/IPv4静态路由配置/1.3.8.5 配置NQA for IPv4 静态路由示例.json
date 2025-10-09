@@ -1,0 +1,18 @@
+{
+  "topology": "该网络采用三层架构设计，具体拓扑结构如下：\n\n**核心层设备：**\n- DeviceA：核心路由器，Router ID 1.1.1.1，作为OSPF区域0的核心节点\n- 接口配置：GE1/0/1(172.16.3.1/24)连接DeviceB，GE2/0/1(172.16.4.1/24)连接DeviceC\n\n**汇聚层设备：**\n- DeviceB：主用汇聚路由器，Router ID 2.2.2.2\n  - 上行接口：GE1/0/1(172.16.3.2/24)连接DeviceA\n  - 下行接口：GE1/0/2(172.16.1.1/24)连接SwitchA\n  - 扩展接口：GE1/0/3(172.16.5.1/24)预留\n  - 配置NQA静态路由监控，目标网段172.16.7.0/24\n\n- DeviceC：备用汇聚路由器，Router ID 3.3.3.3\n  - 上行接口：GE2/0/1(172.16.4.2/24)连接DeviceA\n  - 下行接口：GE1/0/1(172.16.2.1/24)连接SwitchB\n  - 扩展接口：GE1/0/0(172.16.6.1/24)连接外部网段\n  - 配置静态路由指向172.16.7.0/24网段\n\n**接入层设备：**\n- SwitchA：主用接入交换机\n  - VLAN10：172.16.1.2/24，服务Client1-Client10\n  - VLAN30：172.16.7.1/24，服务Client91-Client100\n  - 上行：172.16.1.2/24连接DeviceB\n\n- SwitchB：备用接入交换机  \n  - VLAN10：172.16.2.2/24\n  - VLAN30：172.16.8.1/24\n  - 上行：172.16.2.2/24连接DeviceC\n\n**冗余机制：**\n- 主用路径：DeviceA→DeviceB→SwitchA，OSPF开销10\n- 备用路径：DeviceA→DeviceC→SwitchB，OSPF开销20\n- DeviceB通过NQA机制监控172.16.1.1，检测主链路状态\n- 故障时自动切换静态路由，实现业务连续性保障\n\n**协议配置：**\n- OSPF单区域0.0.0.0部署\n- DeviceB/C均配置import-route static，实现静态路由重分发\n- NQA测试实例配置5秒间隔，4秒超时，实现快速故障检测",
+  "requirement": "通过配置 NQA for IPv4 静态路由可以快速检测到网络的故障，控制静态路由的发布，实现业务切换。当网络比较简单，或者路由器不能通过动态路由协议建立到达目的网络的路由时，可以配置静态路由。但是，与动态路由协议不同，静态路由自身没有检测机制，当网络发生故障时，静态路由无法感知，需要由管理员介入，这样无法保证及时进行链路切换，可能造成业务较长时间中断。部署 BFD for 静态路由的方案可以适应链路的变化情况，但是 BFD for 静态路由要求链路两端的设备都支持 BFD 功能。如果链路两端有设备不支持 BFD 功能，可以配置 NQA for IPv4 静态路由，NQA 测试例检测到链路故障后，会把与其绑定的静态路由从 IP 路由表删除，使业务流量切换到无链路故障的路由，避免业务的长时间中断。",
+  "steps": [
+    "创建 ICMP 类型的 NQA 测试例，用来检测主用链路的故障。",
+    "配置静态路由，在主用链路上绑定 NQA 测试例。",
+    "配置动态路由协议。",
+    "OSPF 协议引入静态路由，并为主用链路设置较低的开销值。"
+  ],
+  "configs": {
+    "DeviceA": "#\nsysname DeviceA\n#\nrouter id 1.1.1.1\n#\ninterface GigabitEthernet 1/0/1\n undo shutdown\n ip address 172.16.3.1 255.255.255.0\n#\ninterface GigabitEthernet 2/0/1\n undo shutdown\n ip address 172.16.4.1 255.255.255.0\n#\nospf\n area 0.0.0.0\n  network 172.16.3.0 0.0.0.255\n  network 172.16.4.0 0.0.0.255\n#\nreturn",
+    "DeviceB": "#\nsysname DeviceB\n#\nrouter id 2.2.2.2\n#\ninterface GigabitEthernet 1/0/1\n undo shutdown\n ip address 172.16.3.2 255.255.255.0\n#\ninterface GigabitEthernet 1/0/2\n undo shutdown\n ip address 172.16.1.1 255.255.255.0\n#\ninterface GigabitEthernet 1/0/3\n undo shutdown\n ip address 172.16.5.1 255.255.255.0\n#\nospf\n import-route static cost 10\n area 0.0.0.0\n  network 172.16.3.0 0.0.0.255\n#\nip route-static 172.16.7.0 255.255.255.0 GigabitEthernet1/0/1 172.16.1.2 track nqa user test\n#\nnqa test-instance user test\n test-type icmp\n destination-address ipv4 172.16.1.1\n interval seconds 5\n timeout 4\n probe-count 2\n frequency 10\n start now\n#\nreturn",
+    "DeviceC": "#\nsysname DeviceC\n#\nrouter id 3.3.3.3\n#\ninterface GigabitEthernet 1/0/0\n undo shutdown\n ip address 172.16.6.1 255.255.255.0\n#\ninterface GigabitEthernet 1/0/1\n undo shutdown\n ip address 172.16.2.1 255.255.255.0\n#\ninterface GigabitEthernet 2/0/1\n undo shutdown\n ip address 172.16.4.2 255.255.255.0\n#\nospf\n import-route static cost 20\n area 0.0.0.0\n  network 172.16.4.0 0.0.0.255\n#\nip route-static 172.16.7.0 255.255.255.0 GigabitEthernet1/0/0 172.16.6.1\n#\nreturn"
+  },
+  "related_images": [
+    "图1-23NQAforIPv4静态路由组网图.png"
+  ]
+}

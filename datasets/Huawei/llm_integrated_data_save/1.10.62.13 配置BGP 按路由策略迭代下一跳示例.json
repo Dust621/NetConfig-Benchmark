@@ -1,0 +1,19 @@
+{
+  "topology": "基于网络拓扑图分析，增强后的网络拓扑描述如下：\n\nAS100内部网络拓扑包含三台路由器：DeviceA、DeviceB和DeviceC。网络运行OSPF作为IGP协议。\n\n**物理连接关系：**\n- DeviceA通过interface1（10.1.1.1/24）连接DeviceB的interface1（10.1.1.2/24）\n- DeviceA通过interface2（10.1.2.1/24）连接DeviceC的interface2（10.1.2.2/24）\n- DeviceB通过interface4（2.2.2.10/24）连接外部网络，该接口对应Loopback0地址2.2.2.2/32\n- DeviceC通过interface4（3.3.3.3/32）连接外部网络\n\n**BGP配置：**\n- 三台设备均属于AS100，通过各自的Loopback0接口建立IBGP邻居关系\n- DeviceA的Loopback0：1.1.1.1/32\n- DeviceB的Loopback0：2.2.2.2/32  \n- DeviceC的Loopback0：3.3.3.3/32\n\n**路由发布：**\n- DeviceB和DeviceC均向DeviceA发布10.20.1.0/24的BGP路由\n- DeviceA需优选从DeviceB学到的路由（下一跳2.2.2.2/32）\n- 正常情况下，DeviceA通过GE1/0/0接口（对应interface1）到达下一跳2.2.2.2/32\n- 为确保DeviceB故障时的流量连续性，需配置BGP路由策略实现下一跳迭代的灵活控制",
+  "requirement": "DeviceA优选从DeviceB学到的去往10.20.1.0/24的路由，原始下一跳为2.2.2.2/32。正常情况下，DeviceA将BGP路由下一跳迭代到去往2.2.2.2/32的IGP路由上，迭代出接口为GE1/0/0。为了避免在DeviceB发生故障时流量丢失，配置BGP按路由策略迭代下一跳。",
+  "steps": [
+    "配置OSPF：在DeviceA、DeviceB和DeviceC上配置OSPF，使AS100内各设备之间能够互通。",
+    "配置IBGP连接：在DeviceA和DeviceB、DeviceC之间通过Loopback0接口建立IBGP连接。",
+    "发布BGP路由：在DeviceB和DeviceC上分别发布BGP路由10.20.1.0/24，使DeviceA分别通过DeviceB和DeviceC学到去往10.20.1.0/24的路由。",
+    "配置BGP按路由策略迭代下一跳：在DeviceA上配置BGP按路由策略迭代下一跳，使DeviceA在DeviceB发生故障时，快速感知到BGP路由的变化，进而重新选择正确的BGP路由，避免流量丢失。"
+  ],
+  "configs": {
+    "DeviceA": "#\nsysname DeviceA\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ip address 10.1.1.1 255.255.255.0\n#\ninterface GigabitEthernet1/0/1\n undo shutdown\n ip address 10.1.2.1 255.255.255.0\n#\ninterface GigabitEthernet1/0/2\n undo shutdown\n ip address 2.2.2.10 255.255.255.0\n#\ninterface LoopBack0\n ip address 1.1.1.1 255.255.255.255\n#\nbgp 100\n router-id 1.1.1.1\n peer 2.2.2.2 as-number 100\n peer 2.2.2.2 connect-interface LoopBack0\n peer 3.3.3.3 as-number 100\n peer 3.3.3.3 connect-interface LoopBack0\n #\n ipv4-family unicast\n  undo synchronization\n  nexthop recursive-lookup route-policy np-by-rp\n  peer 2.2.2.2 enable\n  peer 3.3.3.3 enable\n#\nospf 1\n area 0.0.0.0\n  network 1.1.1.1 0.0.0.0\n  network 10.1.0.0 0.0.255.255\n#\nip ip-prefix np-by-rp-ip index 10 permit 0.0.0.0 0\n#\nroute-policy np-by-rp permit node 10\n if-match ip-prefix np-by-rp-ip\n#\nreturn",
+    "DeviceB": "#\nsysname DeviceB\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ip address 10.1.1.2 255.255.255.0\n#\ninterface LoopBack0\n ip address 2.2.2.2 255.255.255.255\n#\nbgp 100\n router-id 2.2.2.2\n peer 1.1.1.1 as-number 100\n peer 1.1.1.1 connect-interface LoopBack0\n #\n ipv4-family unicast\n  undo synchronization\n  import-route static\n  peer 1.1.1.1 enable\n#\nospf 1\n area 0.0.0.0\n  network 2.2.2.2 0.0.0.0\n  network 10.1.1.0 0.0.0.255\n#\nip route-static 10.20.1.0 24 NULL\n#\nreturn",
+    "DeviceC": "#\nsysname DeviceC\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ip address 10.1.2.2 255.255.255.0\n#\ninterface LoopBack0\n ip address 3.3.3.3 255.255.255.255\n#\nbgp 100\n router-id 3.3.3.3\n peer 1.1.1.1 as-number 100\n peer 1.1.1.1 connect-interface LoopBack0\n #\n ipv4-family unicast\n  undo synchronization\n  import-route static\n  peer 1.1.1.1 enable\n#\nospf 1\n area 0.0.0.0\n  network 3.3.3.3 0.0.0.0\n  network 10.1.2.0 0.0.0.255\n#\nip route-static 10.20.1.0 24 NULL\n#\nreturn"
+  },
+  "related_images": [
+    "图1-155 配置BGP 按路由策略迭代下一跳组网图.png"
+  ],
+  "topology_original": "AS100内运行的IGP协议为OSPF，DeviceA分别与DeviceB、DeviceC之间通过Loopback0接口建立IBGP连接。DeviceA、DeviceB、DeviceC均属于AS100。DeviceB和DeviceC发布10.20.1.0/24的BGP路由给DeviceA。"
+}

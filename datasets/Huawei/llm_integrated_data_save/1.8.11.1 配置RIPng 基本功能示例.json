@@ -1,0 +1,19 @@
+{
+  "topology": "基于网络拓扑图的详细分析，增强后的网络拓扑描述如下：\n\n## 网络拓扑描述\n\n该网络由四台路由器设备组成星型拓扑结构，DeviceB作为中心节点，与其他三台设备分别建立点对点连接。\n\n### 设备连接关系：\n- **DeviceA** 通过interface1（2001:db8:1:1/96）连接至 **DeviceB** 的interface1（2001:db8:1:2/96）\n- **DeviceB** 通过interface2（2001:db8:2:2/96）连接至 **DeviceC** 的interface2（2001:db8:2:1/96）  \n- **DeviceB** 通过interface3（2001:db8:3:1/96）连接至 **DeviceD** 的interface3（2001:db8:3:2/96）\n\n### 网络分段：\n- **网段1**：2001:db8:1::/96（DeviceA-DeviceB链路）\n- **网段2**：2001:db8:2::/96（DeviceB-DeviceC链路）\n- **网段3**：2001:db8:3::/96（DeviceB-DeviceD链路）\n\n### 协议配置：\n所有设备的全部接口启用RIPng协议，实现IPv6网络的动态路由。DeviceB作为中心路由器，负责转发各网段间的路由信息，确保全网IPv6路由收敛。\n\n### 技术要求：\n- 所有接口必须启用IPv6功能作为RIPng生效前提\n- 如需VPN实例绑定，RIPng进程及相关接口需同时绑定至相应VPN实例",
+  "requirement": "在 DeviceA、DeviceB、DeviceC 和 DeviceD 的所有接口上使能 RIPng，并通过 RIPng 进行网络互连。配置过程中需注意接口使能了 IPv6 功能，RIPng 才会生效。如果 RIPng 进程和一个 VPN 实例绑定，则运行该进程的接口也需要绑定到 VPN 实例。",
+  "steps": [
+    "配置各接口的 IPv6 地址，使网络可达。",
+    "在各路由器上使能 RIPng，配置 RIPng 基本功能。",
+    "配置 RIPng 进程下的 IPSec 认证。"
+  ],
+  "configs": {
+    "DeviceA": "#\nsysname DeviceA\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ipv6 enable\n ipv6 address 2001:db8:1::1/96\n ripng 1 enable\n#\ninterface LoopBack0\n ipv6 enable\n ipv6 address 2001:db8:8::1/128\n ripng 1 enable\n#\nipsec proposal proposal1\n encapsulation-mode transport\n esp authentication-algorithm sha2-256\n esp encryption-algorithm aes-128\n#\nipsec sa sa1\n proposal proposal1\n sa spi inbound esp 100\n sa string-key inbound esp abcdef\n sa spi outbound esp 100\n sa string-key outbound esp abcdef\n#\nripng\n ipsec sa sa1\n#\nreturn",
+    "DeviceB": "#\nsysname DeviceB\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ipv6 enable\n ipv6 address 2001:db8:1::2/96\n ripng 1 enable\n#\ninterface GigabitEthernet2/0/0\n undo shutdown\n ipv6 enable\n ipv6 address 2001:db8:2::1/96\n ripng 1 enable\n#\ninterface GigabitEthernet3/0/0\n undo shutdown\n ipv6 enable\n ipv6 address 2001:db8:3::1/96\n ripng 1 enable\n#\ninterface LoopBack0\n ipv6 enable\n ipv6 address 2001:db8:9::1/128\n ripng 1 enable\n#\nipsec proposal proposal1\n encapsulation-mode transport\n esp authentication-algorithm sha2-256\n esp encryption-algorithm aes-128\n#\nipsec sa sa1\n proposal proposal1\n sa spi inbound esp 100\n sa string-key inbound esp abcdef\n sa spi outbound esp 100\n sa string-key outbound esp abcdef\n#\nripng\n ipsec sa sa1\n#\nreturn",
+    "DeviceC": "#\nsysname DeviceC\n#\ninterface GigabitEthernet2/0/0\n undo shutdown\n ipv6 enable\n ipv6 address 2001:db8:2::2/96\n ripng 1 enable\n#\ninterface LoopBack0\n ipv6 enable\n ipv6 address 2001:db8:7::1/128\n ripng 1 enable\n#\nipsec proposal proposal1\n encapsulation-mode transport\n esp authentication-algorithm sha2-256\n esp encryption-algorithm aes-128\n#\nipsec sa sa1\n proposal proposal1\n sa spi inbound esp 100\n sa string-key inbound esp abcdef\n sa spi outbound esp 100\n sa string-key outbound esp abcdef\n#\nripng\n ipsec sa sa1\n#\nreturn",
+    "DeviceD": "#\nsysname DeviceD\n#\ninterface GigabitEthernet3/0/0\n undo shutdown\n ipv6 enable\n ipv6 address 2001:db8:3::2/96\n ripng 1 enable\n#\ninterface LoopBack0\n ipv6 enable\n ipv6 address 2001:db8:6::1/128\n ripng 1 enable\n#\nipsec proposal proposal1\n encapsulation-mode transport\n esp authentication-algorithm sha2-256\n esp encryption-algorithm aes-128\n#\nipsec sa sa1\n proposal proposal1\n sa spi inbound esp 100\n sa string-key inbound esp abcdef\n sa spi outbound esp 100\n sa string-key outbound esp abcdef\n#\nripng\n ipsec sa sa1\n#\nreturn"
+  },
+  "related_images": [
+    "图1-82 配置 RIPng 基本功能组网图.png"
+  ],
+  "topology_original": "DeviceA、DeviceB、DeviceC 和 DeviceD 的所有接口上使能 RIPng，并通过 RIPng 进行网络互连。"
+}

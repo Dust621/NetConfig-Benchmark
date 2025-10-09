@@ -1,0 +1,20 @@
+{
+  "topology": "基于提供的网络拓扑图和配置文件分析，以下是增强完善的网络拓扑描述：\n\n**网络拓扑结构：**\n\n该网络由5台路由器设备组成，分别为DeviceS、DeviceA（ASBR）、DeviceN、DeviceE和DeviceD，所有设备运行OSPF协议并位于Area 0区域内。\n\n**设备连接关系：**\n- DeviceS作为源设备，通过interface1（GE1/0/0，IP: 10.1.1.1/24）连接DeviceA的interface1（GE1/0/0，IP: 10.1.1.2/24）\n- DeviceS通过interface2（GE2/0/0，IP: 10.1.2.1/24）连接DeviceE的interface2（GE2/0/0，IP: 10.1.2.2/24），此链路标识为Link T（主链路）\n- DeviceS通过interface3（GE3/0/0，IP: 10.1.3.1/24）连接DeviceN的interface1（GE1/0/0，IP: 10.1.3.2/24）\n- DeviceA通过interface2（GE2/0/0，IP: 10.2.1.2/24）连接DeviceE的interface1（GE1/0/0，IP: 10.2.1.1/24）\n- DeviceN通过interface2（GE2/0/0，IP: 10.2.3.2/24）连接DeviceE的interface3（GE3/0/0，IP: 10.2.3.1/24）\n- DeviceE通过interface4（GE1/0/1，IP: 172.17.1.1/24）连接到外部网络或DeviceD\n\n**链路成本配置：**\n- DeviceS到DeviceN的链路成本为10\n- DeviceS到DeviceE（Link T）的链路成本为15\n- DeviceE到DeviceD的链路成本为5\n- 其他链路成本根据OSPF IP FRR流量保护不等式要求配置\n\n**OSPF IP FRR配置：**\n- 所有设备启用BFD检测和FRR绑定功能\n- DeviceS在interface1上配置\"ospf frr block\"，阻止经过DeviceA的流量作为FRR备份路径\n- 配置环回地址作为Router-ID：DeviceS(1.1.1.1)，DeviceA(2.2.2.2)，DeviceN(3.3.3.3)，DeviceE(4.4.4.4)\n- 启用Loop-Free Alternate（LFA）算法实现快速重路由\n\n**故障切换机制：**\n当主链路Link T（DeviceS-DeviceE）发生故障时，通过OSPF IP FRR功能，流量将快速切换至备份路径DeviceS→DeviceN→DeviceE，避开DeviceA所在链路，实现毫秒级故障恢复而无需等待OSPF路由收敛。",
+  "requirement": "当网络中的主链路Link T出现故障时，流量会切换到备份链路，这时会出现两个问题：OSPF故障恢复需要经历几百毫秒才能将流量切换到新的链路上，故障恢复期间，流量都被中断了；流量可能被切换到从DeviceA经过。而DeviceA是ASBR，并不希望承担备份设备的角色。通过配置OSPF IP FRR功能可以将流量快速切换到备份链路上，而不用等待路由收敛，从而达到流量不中断的目的。而且还可以配置DeviceA所在的链路不承担FRR备份链路。",
+  "steps": [
+    "在各路由器上使能OSPF基本功能。",
+    "在Area0区域的所有设备上配置BFD for OSPF基本功能。",
+    "配置cost值，使流量优选链路T。",
+    "阻止DeviceS上指定接口的FRR能力。",
+    "由于需保护的是DeviceS转发的流量，因此在DeviceS上使能OSPF IP FRR。"
+  ],
+  "configs": {
+    "DeviceS": "#\nsysname DeviceS\n#\nbfd\n#\ninterface GigabitEthernet1/0/0\n ip address 10.1.1.1 255.255.255.0\n ospf frr block\n ospf cost\n#\ninterface GigabitEthernet2/0/0\n ip address 10.1.2.1 255.255.255.0\n ospf cost\n#\ninterface GigabitEthernet3/0/0\n ip address 10.1.3.1 255.255.255.0\n ospf cost\n#\ninterface LoopBack0\n ip address 1.1.1.1 255.255.255.255\n#\nospf 1\n router-id 1.1.1.1\n bfd all-interfaces enable\n bfd all-interfaces frr-binding\n frr\n loop-free-alternate\n area 0.0.0.0\n network 10.1.1.0 0.0.0.255\n network 10.1.2.0 0.0.0.255\n network 10.1.3.0 0.0.0.255\n#\nreturn",
+    "DeviceA": "#\nsysname DeviceA\n#\nbfd\n#\ninterface GigabitEthernet1/0/0\n ip address 10.1.1.2 255.255.255.0\n ospf cost\n#\ninterface GigabitEthernet2/0/0\n ip address 10.2.1.2 255.255.255.0\n ospf cost\n#\ninterface LoopBack0\n ip address 2.2.2.2 255.255.255.255\n#\nospf 1\n router-id 2.2.2.2\n bfd all-interfaces enable\n bfd all-interfaces frr-binding\n frr\n loop-free-alternate\n area 0.0.0.0\n network 10.1.1.0 0.0.0.255\n network 10.2.2.0 0.0.0.255\n#\nreturn",
+    "DeviceN": "#\nsysname DeviceN\n#\nbfd\n#\ninterface GigabitEthernet1/0/0\n ip address 10.1.3.2 255.255.255.0\n ospf cost\n#\ninterface GigabitEthernet2/0/0\n ip address 10.2.3.2 255.255.255.0\n ospf cost\n#\ninterface LoopBack0\n ip address 3.3.3.3 255.255.255.255\n#\nospf 1\n router-id 3.3.3.3\n bfd all-interfaces enable\n bfd all-interfaces frr-binding\n area 0.0.0.0\n network 10.1.3.0 0.0.0.255\n network 10.2.3.0 0.0.0.255\n#\nreturn",
+    "DeviceE": "#\nsysname DeviceE\n#\nbfd\n#\ninterface GigabitEthernet1/0/0\n ip address 10.2.1.1 255.255.255.0\n#\ninterface GigabitEthernet2/0/0\n ip address 10.1.2.2 255.255.255.0\n#\ninterface GigabitEthernet3/0/0\n ip address 10.2.3.1 255.255.255.0\n#\ninterface GigabitEthernet1/0/1\n ip address 172.17.1.1 255.255.255.0\n ospf cost\n#\ninterface LoopBack0\n ip address 4.4.4.4 255.255.255.255\n#\nospf 1\n router-id 4.4.4.4\n bfd all-interfaces enable\n bfd all-interfaces frr-binding\n area 0.0.0.0\n network 10.1.1.0 0.0.0.255\n network 10.1.2.0 0.0.0.255\n network 10.1.3.0 0.0.0.255\n network 172.17.1.0 0.0.0.255\n#\nreturn"
+  },
+  "related_images": [
+    "图1-50 配置OSPF IP FRR组网图.png"
+  ]
+}

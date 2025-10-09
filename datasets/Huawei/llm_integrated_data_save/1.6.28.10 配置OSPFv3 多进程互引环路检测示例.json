@@ -1,0 +1,22 @@
+{
+  "topology": "DeviceC、DeviceD 及 DeviceE 配置 IS-IS 进程，DeviceB、DeviceC、DeviceE 及 DeviceF 配置 OSPFv3 进程 1，DeviceA、DeviceB 及 DeviceF 配置 OSPFv3 进程 2。DeviceC 配置将 IS-IS 进程引入到 OSPFv3 进程 1 中，DeviceB 配置将 OSPFv3 进程 1 引入到 OSPFv3 进程 2 中，DeviceF 配置将 OSPFv3 进程 2 引入到 OSPFv3 进程 1 中。",
+  "requirement": "在现网应用中，OSPFv3 路由可以通过路由引入的方式在其他 OSPFv3 进程进行重发布。此类场景通常通过多台设备协同配置路由策略防环。如果引入路由的设备路由策略配置不当，可能导致路由环路。为了避免该问题，可以在 OSPFv3 引入路由时，配置环路检测功能。",
+  "steps": [
+    "配置各设备接口的 IP 地址。",
+    "在设备上使能 IS-IS、OSPFv3，配置基本功能。",
+    "配置路由引入，构造环路。",
+    "验证是否存在路由环路。",
+    "使能路由环路检测功能，验证环路是否解除。"
+  ],
+  "configs": {
+    "DeviceA": "#\nsysname DeviceA\n#\nospfv3 router-id 1.1.1.1 area 0.0.0.0\n#\nroute loop-detect ospfv3 enable\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ipv6 enable\n ipv6 address 2001:db8:1::1/64\n ipv6 address FE80::A:B link-local\n ospfv3 2 area 0.0.0.0\n#\ninterface GigabitEthernet2/0/0\n undo shutdown\n ipv6 enable\n ipv6 address 2001:db8:2::2/64\n ipv6 address FE80::A:F link-local\n ospfv3 2 area 0.0.0.0\n#\nreturn",
+    "DeviceB": "#\nsysname DeviceB\n#\nospfv3 router-id 2.2.2.2 area 0.0.0.0\n#\nospfv3 router-id 2.2.2.2 import-route ospfv3 area 0.0.0.0\n#\nroute loop-detect ospfv3 enable\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ipv6 enable\n ipv6 address 2001:db8:1::2/64\n ipv6 address FE80::B:A link-local\n ospfv3 2 area 0.0.0.0\n#\ninterface GigabitEthernet2/0/0\n undo shutdown\n ipv6 enable\n ipv6 address 2001:db8:5::2/64\n ipv6 address FE80::B:F link-local\n ospfv3 1 area 0.0.0.0\n#\ninterface GigabitEthernet3/0/0\n undo shutdown\n ipv6 enable\n ipv6 address 2001:db8:3::2/64\n ipv6 address FE80::B:C link-local\n ospfv3 1 area 0.0.0.0\n#\nreturn",
+    "DeviceC": "#\nsysname DeviceC\n#\nisis is-level level-2 cost-style wide network-entity 10.0000.0000.0003.\n#\nipv6 enable topology standard\n#\nospfv3 router-id 3.3.3.3 import-route isis area 0.0.0.0\n#\nroute loop-detect ospfv3 enable\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ipv6 enable\n ipv6 address 2001:db8:3::1/64\n ipv6 address FE80::C:B link-local\n ospfv3 1 area 0.0.0.0\n#\ninterface GigabitEthernet2/0/0\n undo shutdown\n ipv6 enable\n ipv6 address 2001:db8:7::2/64\n ospfv3 1 area 0.0.0.0\n isis ipv6 enable\n#\ninterface GigabitEthernet3/0/0\n undo shutdown\n ipv6 enable\n ipv6 address 2001:db8:6::2/64\n isis ipv6 enable\n#\nreturn",
+    "DeviceD": "#\nsysname DeviceD\n#\nisis is-level level-2 cost-style wide network-entity 10.0000.0000.0004.\n#\nipv6 enable topology standard\n#\nroute loop-detect ospfv3 enable\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ipv6 enable\n ipv6 address 2001:db8:6::1/64\n isis ipv6 enable\n#\ninterface GigabitEthernet2/0/0\n undo shutdown\n ipv6 enable\n ipv6 address 2001:db8:9::2/64\n isis ipv6 enable\n#\ninterface LoopBack0\n ipv6 enable\n ipv6 address 2001:db8:44::44/64\n isis ipv6 enable\n#\nreturn",
+    "DeviceE": "#\nsysname DeviceE\n#\nisis is-level level-2 cost-style wide network-entity 10.0000.0000.0005.\n#\nipv6 enable topology standard\n#\nospfv3 router-id 5.5.5.5 import-route isis area 0.0.0.0\n#\nroute loop-detect ospfv3 enable\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ipv6 enable\n ipv6 address 2001:db8:4::1/64\n ipv6 address FE80::E:F link-local\n ospfv3 1 area 0.0.0.0\n#\ninterface GigabitEthernet2/0/0\n undo shutdown\n ipv6 enable\n ipv6 address 2001:db8:7::1/64\n ospfv3 1 area 0.0.0.0\n isis ipv6 enable\n#\ninterface GigabitEthernet3/0/0\n undo shutdown\n ipv6 enable\n ipv6 address 2001:db8:9::1/64\n isis ipv6 enable\n#\nreturn",
+    "DeviceF": "#\nsysname DeviceF\n#\nospfv3 router-id 6.6.6.6 import-route ospfv3 area 0.0.0.0\n#\nospfv3 router-id 6.6.6.6 area 0.0.0.0\n#\nroute loop-detect ospfv3 enable\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ipv6 enable\n ipv6 address 2001:db8:2::1/64\n ipv6 address FE80::F:A link-local\n ospfv3 2 area 0.0.0.0\n#\ninterface GigabitEthernet2/0/0\n undo shutdown\n ipv6 enable\n ipv6 address 2001:db8:5::1/64\n ipv6 address FE80::F:B link-local\n ospfv3 1 area 0.0.0.0\n#\ninterface GigabitEthernet3/0/0\n undo shutdown\n ipv6 enable\n ipv6 address 2001:db8:4::2/64\n ospfv3 1 area 0.0.0.0\n#\nreturn"
+  },
+  "related_images": [
+    "图1-70 配置OSPFv3 多进程互引环路检测示例组网图.png"
+  ]
+}

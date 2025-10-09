@@ -1,0 +1,19 @@
+{
+  "topology": "基于网络拓扑图和配置文件分析，增强后的网络拓扑描述如下：\n\n网络拓扑包含5台路由器设备（DeviceA、DeviceB、DeviceC、DeviceD、DeviceE），所有设备运行IS-IS Level-2协议。\n\n**设备连接关系：**\n- DeviceA（路由器ID：1.1.1.1）通过GE1/0/0接口（172.16.1.1/24）连接到客户端，通过GE2/0/0接口（10.0.0.1/24）连接DeviceB\n- DeviceB（路由器ID：2.2.2.2，LSR-ID：2.2.2.2）通过GE1/0/0接口（10.0.0.2/24）连接DeviceA，通过GE2/0/0接口（10.0.1.2/24）连接DeviceC\n- DeviceC（路由器ID：3.3.3.3，LSR-ID：3.3.3.3）通过GE1/0/0接口（10.0.1.1/24）连接DeviceB，通过GE2/0/0接口（10.0.2.1/24）连接DeviceD\n- DeviceD（路由器ID：4.4.4.4，LSR-ID：4.4.4.4）通过GE1/0/0接口（10.0.2.2/24）连接DeviceC，通过另一接口（10.0.3.1/24）连接DeviceE\n- DeviceE（路由器ID：5.5.5.5）通过接口（192.168.3.1/24）连接服务器，通过接口（10.0.3.3/24）连接DeviceD\n\n**MPLS TE配置：**\n- DeviceB到DeviceD之间建立TE隧道Tunnel10（隧道ID：100，目标地址：4.4.4.4）\n- DeviceB上启用IGP Shortcut功能，TE隧道相对度量值为-10\n- DeviceB、DeviceC、DeviceD均配置MPLS TE和RSVP-TE\n- 所有MPLS设备启用Traffic Engineering Level-2\n\n**组播配置：**\n- DeviceA启用组播路由和PIM-SM，GE1/0/0和GE2/0/0接口配置PIM-SM\n- DeviceA的GE1/0/0接口启用IGMP v2\n- DeviceD配置为C-BSR和C-RP（基于LoopBack0接口）\n- DeviceB启用Local MT特性解决TE隧道与组播冲突\n\n**特殊配置：**\n- 所有设备运行IS-IS协议，采用宽度量样式\n- DeviceB启用Local Multicast Topology功能，为组播创建独立拓扑计算路径\n- 网络支持组播报文从客户端到服务器的转发，避免因TE隧道导致的组播报文丢失问题",
+  "requirement": "当网络中同时部署了组播和MPLS TE-Tunnel时，且TE-Tunnel上配置了IGP Shortcut，IS-IS协议在进行SPF计算时会使用处于Up状态的TE-Tunnel。因此，IS-IS路由计算得到的出接口可能不是实际的物理接口。当转发组播报文时，根据IS-IS计算的路由表，报文会通过TE-Tunnel转发，造成被TE-Tunnel跨越的路由器无法感知组播报文，也不能建立组播转发表项，从而导致组播报文被丢弃。Local MT（Local Multicast Topology，本地组播拓扑）特性可以实现在本地为组播创建单独的拓扑，当IGP计算出的路由的出接口为IGP-Shortcut（AA）类型的TE-Tunnel时，同时为该路由计算出一个（或一组）实际的物理出接口，可以有效解决TE-Tunnel与组播的冲突问题。",
+  "steps": [
+    "在各路由器上使能IS-IS基本功能。",
+    "配置组播PIM-SM。",
+    "配置MPLS RSVP-TE隧道，并使能IGP Shortcut。",
+    "使能本地MT特性。"
+  ],
+  "configs": {
+    "DeviceA": "#\nmulticast routing-enable\n#\ninterface gigabitethernet 1/0/0\n pim sm\n quit\n#\ninterface gigabitethernet 2/0/0\n pim sm\n quit\n#\ncommit\n#\ninterface gigabitethernet 1/0/0\n igmp enable\n igmp version 2\n commit",
+    "DeviceB": "#\nmpls lsr-id 2.2.2.2\n#\nmpls\n mpls te\n mpls rsvp-te\n mpls te cspf\n quit\n#\ninterface gigabitethernet 2/0/0\n mpls\n mpls te\n mpls rsvp-te\n quit\n#\nisis 1\n cost-style wide\n traffic-eng level-2\n commit\n quit\n#\ninterface Tunnel10\n ip address unnumbered interface loopback0\n tunnel-protocol mpls te\n destination 4.4.4.4\n mpls te tunnel-id 100\n mpls te igp shortcut isis\n mpls te igp metric relative -10\n isis enable 1\n commit\n quit\n#\nisis 1\n local-mt enable\n commit",
+    "DeviceC": "#\nmpls lsr-id 3.3.3.3\n#\nmpls\n mpls te\n mpls rsvp-te\n mpls te cspf\n quit\n#\ninterface gigabitethernet 1/0/0\n mpls\n mpls te\n mpls rsvp-te\n quit\n#\ninterface gigabitethernet 2/0/0\n mpls\n mpls te\n mpls rsvp-te\n quit\n#\nisis 1\n cost-style wide\n traffic-eng level-2\n commit\n quit",
+    "DeviceD": "#\nmpls lsr-id 4.4.4.4\n#\nmpls\n mpls te\n mpls rsvp-te\n mpls te cspf\n quit\n#\ninterface gigabitethernet 1/0/0\n mpls\n mpls te\n mpls rsvp-te\n quit\n#\nisis 1\n cost-style wide\n traffic-eng level-2\n commit\n quit\n#\npim\n c-bsr LoopBack0\n c-rp LoopBack0\n commit"
+  },
+  "related_images": [
+    "图1-97配置IS-IS本地组播拓扑组网图.png"
+  ]
+}

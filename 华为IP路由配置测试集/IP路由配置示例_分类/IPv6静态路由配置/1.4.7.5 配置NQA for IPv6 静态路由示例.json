@@ -1,0 +1,18 @@
+{
+  "topology": "该网络为IPv6城域网冗余备份架构，具体拓扑结构如下：\n\n**核心网络层：**\n- IP网络云包含三台核心设备：DeviceA（路由器ID 1.1.1.1）、DeviceB（路由器ID 2.2.2.2）、DeviceC（路由器ID 3.3.3.3）\n- 三台设备通过OSPFv3协议在Area 0.0.0.0内建立邻接关系\n- DeviceA作为核心汇聚节点，通过GE1/0/0接口（2001:db8:1::1/64）连接DeviceB，通过GE2/0/0接口（2001:db8:2::1/64）连接DeviceC\n\n**主备链路设计：**\n- 主用路径：DeviceB → SwitchA，DeviceB的GE1/0/1接口（2001:db8:3::1/64）连接SwitchA\n- 备用路径：DeviceC → SwitchA，DeviceC的GE1/0/0接口（2001:db8:6::1/64）连接SwitchA\n- DeviceB配置静态路由优先级（cost 10），DeviceC配置备份路由优先级（cost 20）\n\n**接入层网络：**\n- SwitchA为接入层核心交换机，配置三个VLAN接口\n- VLAN 10：2001:db8:3::2/64（连接DeviceB主链路）\n- VLAN 20：2001:db8:6::2/64（连接DeviceC备链路）  \n- VLAN 30：2001:db8:7::1/64（连接下联客户端）\n\n**链路检测机制：**\n- DeviceB部署NQA for IPv6静态路由检测，目标地址2001:db8:3::，检测间隔3秒，频率10次\n- 静态路由2001:db8:7::/64通过track nqa绑定检测实例，实现链路故障时的自动路由撤销\n- DeviceC配置静态备份路由2001:db8:7::/64，确保主链路故障时业务无缝切换\n\n**地址规划：**\n- 核心互联段：2001:db8:1::/64、2001:db8:2::/64\n- 主用链路段：2001:db8:3::/64\n- 备用链路段：2001:db8:6::/64\n- 客户端接入段：2001:db8:7::/64\n- 预留扩展段：2001:db8:4::/64、2001:db8:5::/64",
+  "requirement": "通过配置NQA for IPv6静态路由可以快速检测到网络的故障，控制静态路由的发布，实现业务切换。当网络比较简单，或者路由器不能通过动态路由协议建立到达目的网络的路由时，可以配置静态路由。但是，静态路由自身没有检测机制，当网络发生故障时，静态路由无法感知，需要由管理员介入，这样无法保证及时进行链路切换，可能造成业务较长时间中断。部署BFD for静态路由的方案可以适应链路的变化情况，但是BFD for静态路由要求链路两端的设备都支持BFD功能。如果链路两端有设备不支持BFD功能，可以配置NQA for IPv6静态路由示例，NQA测试例检测到链路故障后，会通知路由管理模块把与其绑定的静态路由从IPv6路由表中删除，使业务流量切换到无链路故障的路由，避免业务的长时间中断。",
+  "steps": [
+    "创建ICMP类型的NQA测试例，用来检测主用链路的故障。",
+    "配置静态路由，在主用链路上绑定NQA测试例。",
+    "配置动态路由协议。",
+    "OSPF协议引入静态路由，并为主用链路设置较低的开销值。"
+  ],
+  "configs": {
+    "DeviceA": "#\nsysname DeviceA\n#\nospfv3 router-id 1.1.1.1 area 0.0.0.0\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ipv6 enable\n ipv6 address 2001:db8:1::1/64\n ospfv3 1 area 0.0.0.0\n#\ninterface GigabitEthernet2/0/0\n undo shutdown\n ipv6 enable\n ipv6 address 2001:db8:2::1/64\n ospfv3 1 area 0.0.0.0\n#\nreturn",
+    "DeviceB": "#\nsysname DeviceB\n#\nospfv3 router-id 2.2.2.2\n import-route static cost 10 area 0.0.0.0\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ipv6 enable\n ipv6 address 2001:db8:1::2/64\n ospfv3 1 area 0.0.0.0\n#\ninterface GigabitEthernet1/0/1\n undo shutdown\n ipv6 enable\n ipv6 address 2001:db8:3::1/64\n#\ninterface GigabitEthernet1/0/2\n undo shutdown\n ipv6 enable\n ipv6 address 2001:db8:5::1/64\n#\nipv6 route-static 2001:db8:7:: 64 GigabitEthernet1/0/1 2001:db8:3::2 track nqa admin test\n#\nnqa test-instance admin test\n test-type icmp\n destination-address ipv6 2001:db8:3::\n interval seconds 3\n frequency 10\n start now\n#\nreturn",
+    "DeviceC": "#\nsysname DeviceC\n#\nospfv3 router-id 3.3.3.3\n import-route static cost 20 area 0.0.0.0\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ipv6 enable\n ipv6 address 2001:db8:6::1/64\n#\ninterface GigabitEthernet1/0/1\n undo shutdown\n ipv6 enable\n ipv6 address 2001:db8:4::1/64\n#\ninterface GigabitEthernet2/0/0\n undo shutdown\n ipv6 enable\n ipv6 address 2001:db8:2::2/64\n ospfv3 1 area 0.0.0.0\n#\nipv6 route-static 2001:db8:7:: 64 GigabitEthernet1/0/0 2001:db8:6::\n#\nreturn"
+  },
+  "related_images": [
+    "图1-33NQAforIPv6静态路由组网图.png"
+  ]
+}

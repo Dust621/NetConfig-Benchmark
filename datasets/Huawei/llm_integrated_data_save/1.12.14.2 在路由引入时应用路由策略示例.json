@@ -1,0 +1,17 @@
+{
+  "topology": "DeviceB与DeviceA之间通过OSPF协议交换路由信息，与DeviceC之间通过IS-IS协议交换路由信息。",
+  "requirement": "在DeviceB上配置路由引入，将IS-IS路由引入到OSPF中去，并同时使用路由策略设置路由的属性。其中，设置172.16.1.0/24的路由的开销为100，设置172.16.2.0/24的路由的Tag属性为20。",
+  "steps": [
+    "在DeviceB和DeviceC上配置IS-IS基本功能。",
+    "在DeviceA和DeviceB上配置OSPF，引入IS-IS路由。",
+    "在DeviceB上配置路由策略，并在OSPF引入IS-IS路由时应用路由策略，查看路由信息。"
+  ],
+  "configs": {
+    "DeviceA": "#\nsysname DeviceA\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ip address 192.168.1.1 255.255.255.0\n#\nospf 1\n area 0.0.0.0\n  network 192.168.1.0 0.0.0.255\n#\nreturn",
+    "DeviceB": "#\nsysname DeviceB\n#\nacl number 2002\n rule 5 permit source 172.16.2.0 0.0.0.255\n#\nisis 1\n is-level level-1\n network-entity 10.0000.0000.0002.00\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ip address 192.168.1.2 255.255.255.0\n#\ninterface GigabitEthernet2/0/0\n undo shutdown\n ip address 192.168.2.2 255.255.255.0\n isis enable\n#\nospf 1\n import-route isis 1 route-policy isis2ospf\n area 0.0.0.0\n  network 192.168.1.0 0.0.0.255\n#\nroute-policy isis2ospf permit node 10\n if-match ip-prefix prefix-a\n apply cost 100\n#\nroute-policy isis2ospf permit node 20\n if-match acl 2002\n apply tag 20\n#\nip ip-prefix prefix-a index 10 permit 172.16.1.0 24\n#\nreturn",
+    "DeviceC": "#\nsysname DeviceC\n#\nisis 1\n is-level level-1\n network-entity 10.0000.0000.0001.00\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ip address 172.16.1.1 255.255.255.0\n isis enable\n#\ninterface GigabitEthernet2/0/0\n undo shutdown\n ip address 172.16.2.1 255.255.255.0\n isis enable\n#\ninterface GigabitEthernet3/0/0\n undo shutdown\n ip address 172.16.3.1 255.255.255.0\n isis enable\n#\ninterface GigabitEthernet1/0/1\n undo shutdown\n ip address 192.168.2.1 255.255.255.0\n isis enable\n#\nreturn"
+  },
+  "related_images": [
+    "图1-186 在路由引入时应用路由策略示例组网图.png"
+  ]
+}

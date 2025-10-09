@@ -1,0 +1,16 @@
+{
+  "topology": "网络拓扑详细描述：\n\n**物理拓扑结构：**\n- 三台路由器设备：DeviceA、DeviceB、DeviceC\n- 连接关系：DeviceA通过两条独立链路分别连接到DeviceB和DeviceC，DeviceB和DeviceC之间也有直连链路\n- 形成三角形拓扑结构，提供冗余路径\n\n**接口连接详情：**\n- DeviceA interface1 (2001:DB8:1::3/64) ↔ DeviceB interface1 (2001:DB8:1::2/64)\n- DeviceA interface2 (2001:DB8:3::1/64) ↔ DeviceC interface2 (2001:DB8:3::3/64)  \n- DeviceB interface2 (2001:DB8:2::1/64) ↔ DeviceC interface1 (2001:DB8:2::2/64)\n- DeviceB interface3 (2001:DB8:4::1/64) 作为额外接口\n\n**网络分段：**\n- 2001:DB8:1::/64 网段：DeviceA与DeviceB主链路\n- 2001:DB8:2::/64 网段：DeviceB与DeviceC连接\n- 2001:DB8:3::/64 网段：DeviceA与DeviceC连接\n- 2001:DB8:4::/64 网段：DeviceB扩展接口\n\n**协议配置：**\n- 所有设备运行OSPFv3协议，属于骨干区域0.0.0.0\n- Router-ID分配：DeviceA (1.1.1.1)、DeviceB (2.2.2.2)、DeviceC (3.3.3.3)\n- 全局启用BFD快速故障检测：检测间隔100ms，检测倍数3\n- 所有OSPFv3接口均启用BFD联动\n\n**路径冗余设计：**\n- 主路径：DeviceA ↔ DeviceB (直连)\n- 备份路径：DeviceA → DeviceC → DeviceB\n- BFD提供毫秒级故障检测，确保快速路径切换",
+  "requirement": "当 DeviceA 和 DeviceB 之间的链路出现故障时，BFD 能够快速检测到故障并通告给 OSPFv3 协议，使业务流量切换到备份链路。",
+  "steps": [
+    "在各路由器上使能 OSPFv3 基本功能。",
+    "配置 OSPFv3 BFD。"
+  ],
+  "configs": {
+    "DeviceA": "#\nsysname DeviceA\n#\nbfd\n#\nospfv3\n router-id 1.1.1.1\n bfd all-interfaces enable\n bfd all-interfaces min-transmit-interval 100 min-receive-interval 100 detect-multiplier 3\n area 0.0.0.0\n#\ninterface gigabitethernet1/0/0\n undo shutdown\n ipv6 enable\n ipv6 address 2001:db8:1::3/64\n ospfv3 1 area 0.0.0.0\n#\ninterface gigabitethernet1/0/1\n undo shutdown\n ipv6 enable\n ipv6 address 2001:db8:3::1/64\n ospfv3 1 area 0.0.0.0\n#\nreturn",
+    "DeviceB": "#\nsysname DeviceB\n#\nbfd\n#\nospfv3\n router-id 2.2.2.2\n bfd all-interfaces enable\n bfd all-interfaces min-transmit-interval 100 min-receive-interval 100 detect-multiplier 3\n area 0.0.0.0\n#\ninterface gigabitethernet1/0/0\n undo shutdown\n ipv6 enable\n ipv6 address 2001:db8:1::2/64\n ospfv3 1 area 0.0.0.0\n#\ninterface gigabitethernet1/0/1\n undo shutdown\n ipv6 enable\n ipv6 address 2001:db8:2::1/64\n ospfv3 1 area 0.0.0.0\n#\ninterface gigabitethernet1/0/2\n undo shutdown\n ipv6 enable\n ipv6 address 2001:db8:4::1/64\n ospfv3 1 area 0.0.0.0\n#\nreturn",
+    "DeviceC": "#\nsysname DeviceC\n#\nbfd\n#\nospfv3\n router-id 3.3.3.3\n bfd all-interfaces enable\n bfd all-interfaces min-transmit-interval 100 min-receive-interval 100 detect-multiplier 3\n area 0.0.0.0\n#\ninterface gigabitethernet1/0/0\n undo shutdown\n ipv6 enable\n ipv6 address 2001:db8:2::2/64\n ospfv3 1 area 0.0.0.0\n#\ninterface gigabitethernet1/0/1\n undo shutdown\n ipv6 enable\n ipv6 address 2001:db8:3::3/64\n ospfv3 1 area 0.0.0.0\n#\nreturn"
+  },
+  "related_images": [
+    "图1-64 配置BFD for OSPFv3 特性组网图.png"
+  ]
+}

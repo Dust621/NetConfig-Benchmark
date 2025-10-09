@@ -1,0 +1,20 @@
+{
+  "topology": "基于网络拓扑图和配置文件分析，该网络拓扑为广播型以太网络，具体描述如下：\n\n**网络架构：**\n四台路由器设备（DeviceA、DeviceB、DeviceC、DeviceD）通过共享的以太网段实现互连，形成广播域网络拓扑。\n\n**设备配置：**\n- DeviceA：Router ID 1.1.1.1，接口GigabitEthernet1/0/0配置IP地址192.168.1.1/24\n- DeviceB：Router ID 2.2.2.2，接口GigabitEthernet1/0/0配置IP地址192.168.1.2/24\n- DeviceC：Router ID 3.3.3.3，接口GigabitEthernet1/0/0配置IP地址192.168.1.3/24\n- DeviceD：Router ID 4.4.4.4，接口GigabitEthernet1/0/0配置IP地址192.168.1.4/24\n\n**网络分段：**\n所有设备接口归属同一网段192.168.1.0/24，通过交换设备或共享介质实现二层互通。\n\n**OSPF协议配置：**\n- 所有设备运行OSPF协议，统一归属Area 0.0.0.0（骨干区域）\n- 网络类型为广播型，支持DR/BDR选举机制\n- 启用BFD快速故障检测功能\n- 配置智能定时器优化LSA处理和SPF计算性能\n- 启用OSPF智能发现和Dead定时器功能\n\n**特殊特性：**\n网络中启用了OSPF智能发现机制，支持邻居关系的自动建立和维护，同时通过BFD技术实现毫秒级链路故障检测。",
+  "requirement": "组网需求如图1-48所示，广播网络类型中的四台设备运行OSPF协议，并同属一个OSPF区域。",
+  "steps": [
+    "在各路由器上配置OSPF基本功能，实现互连。",
+    "在各路由器上配置BFD功能。",
+    "在各路由器上调整相邻邻居的失效时间。",
+    "在各路由器上配置Smart-discover功能。",
+    "在各路由器上调整通过智能定时器控制配置更新、接收LSA，和SPF计算的时间间隔。"
+  ],
+  "configs": {
+    "DeviceA": "#\nsysname DeviceA\n#\nrouter id 1.1.1.1\n#\nbfd\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ip address 192.168.1.1 255.255.255.0\n ospf timer dead\n ospf smart-discover\n#\nospf\n bfd all-interfaces enable\n spf-schedule-interval intelligent-timer 3000 200\n lsa-arrival-interval intelligent-timer 3000 200\n lsa-originate-interval intelligent-timer 3000 200\n area 0.0.0.0\n  network 192.168.1.0 0.0.0.255\n#\nreturn",
+    "DeviceB": "#\nsysname DeviceB\n#\nrouter id 2.2.2.2\n#\nbfd\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ip address 192.168.1.2 255.255.255.0\n ospf timer dead\n ospf smart-discover\n#\nospf\n bfd all-interfaces enable\n spf-schedule-interval intelligent-timer 3000 200\n lsa-arrival-interval intelligent-timer 3000 200\n lsa-originate-interval intelligent-timer 3000 200\n area 0.0.0.0\n  network 192.168.1.0 0.0.0.255\n#\nreturn",
+    "DeviceC": "#\nsysname DeviceC\n#\nrouter id 3.3.3.3\n#\nbfd\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ip address 192.168.1.3 255.255.255.0\n ospf timer dead\n ospf smart-discover\n#\nospf\n bfd all-interfaces enable\n spf-schedule-interval intelligent-timer 3000 200\n lsa-arrival-interval intelligent-timer 3000 200\n lsa-originate-interval intelligent-timer 3000 200\n area 0.0.0.0\n  network 192.168.1.0 0.0.0.255\n#\nreturn",
+    "DeviceD": "#\nsysname DeviceD\n#\nrouter id 4.4.4.4\n#\nbfd\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ip address 192.168.1.4 255.255.255.0\n ospf timer dead\n ospf smart-discover\n#\nospf\n bfd all-interfaces enable\n spf-schedule-interval intelligent-timer 3000 200\n lsa-arrival-interval intelligent-timer 3000 200\n lsa-originate-interval intelligent-timer 3000 200\n area 0.0.0.0\n  network 192.168.1.0 0.0.0.255\n#\nreturn"
+  },
+  "related_images": [
+    "图1-48 配置OSPF快速收敛组网图.png"
+  ]
+}

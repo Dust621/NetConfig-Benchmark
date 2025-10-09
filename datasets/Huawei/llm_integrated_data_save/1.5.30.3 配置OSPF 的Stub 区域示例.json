@@ -1,0 +1,21 @@
+{
+  "topology": "DeviceA 和 DeviceB 作为ABR，连接区域0、区域1和区域2。DeviceC 和 DeviceE 位于区域1。DeviceD 和 DeviceF 位于区域2。DeviceD作为ASBR引入了外部路由（静态路由）。",
+  "requirement": "将Area1配置为Stub区域，减少通告到此区域内的LSA数量，但不影响路由的可达性。",
+  "steps": [
+    "在各路由器上配置OSPF基本功能，实现互连。",
+    "在DeviceD上配置静态路由，并在OSPF中引入。",
+    "配置Area1为Stub区域（需要在Area1内所有的路由器上配置`stub`命令），在DeviceC上查看OSPF路由信息。",
+    "在DeviceA上配置禁止向Stub区域通告Type3 LSA，在DeviceC上查看OSPF路由信息。"
+  ],
+  "configs": {
+    "DeviceA": "#\nsysname DeviceA\n#\nrouter id 1.1.1.1\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ip address 192.168.0.1 255.255.255.0\n#\ninterface GigabitEthernet2/0/0\n undo shutdown\n ip address 192.168.1.1 255.255.255.0\n#\nospf 1\n area 0.0.0.0\n  network 192.168.0.0 0.0.0.255\n area 0.0.0.1\n  network 192.168.1.0 0.0.0.255\n  stub no-summary\n#\nreturn",
+    "DeviceB": "#\nsysname DeviceB\n#\nrouter id 2.2.2.2\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ip address 192.168.0.2 255.255.255.0\n#\ninterface GigabitEthernet2/0/0\n undo shutdown\n ip address 192.168.2.1 255.255.255.0\n#\nospf 1\n area 0.0.0.0\n  network 192.168.0.0 0.0.0.255\n area 0.0.0.2\n  network 192.168.2.0 0.0.0.255\n#\nreturn",
+    "DeviceC": "#\nsysname DeviceC\n#\nrouter id 3.3.3.3\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ip address 192.168.1.2 255.255.255.0\n#\ninterface GigabitEthernet2/0/0\n undo shutdown\n ip address 172.16.1.1 255.255.255.0\n#\nospf 1\n area 0.0.0.1\n  network 192.168.1.0 0.0.0.255\n  network 172.16.1.0 0.0.0.255\n  stub\n#\nreturn",
+    "DeviceD": "#\nsysname DeviceD\n#\nrouter id 4.4.4.4\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ip address 192.168.2.2 255.255.255.0\n#\ninterface GigabitEthernet2/0/0\n undo shutdown\n ip address 172.17.1.1 255.255.255.0\n#\nospf 1\n import-route static type\n area 0.0.0.2\n  network 192.168.2.0 0.0.0.255\n  network 172.17.1.0 0.0.0.255\n#\nip route-static 10.0.0.0 255.0.0.0 NULL\n#\nreturn",
+    "DeviceE": "#\nsysname DeviceE\n#\nrouter id 5.5.5.5\n#\ninterface GigabitEthernet2/0/0\n undo shutdown\n ip address 172.16.1.2 255.255.255.0\n#\nospf 1\n area 0.0.0.1\n  network 172.16.1.0 0.0.0.255\n  stub\n#\nreturn",
+    "DeviceF": "#\nsysname DeviceF\n#\nrouter id 6.6.6.6\n#\ninterface GigabitEthernet2/0/0\n undo shutdown\n ip address 172.17.1.2 255.255.255.0\n#\nospf 1\n area 0.0.0.2\n  network 172.17.1.0 0.0.0.255\n#\nreturn"
+  },
+  "related_images": [
+    "图1-44 配置OSPF的Stub区域组网图.png"
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "topology": "该网络拓扑由三台路由器设备组成：DeviceA、DeviceB和DeviceC。\n\nDeviceA作为OSPF区域0.0.0.0的成员，通过GigabitEthernet1/0/0接口（IP地址192.168.1.1/24）与DeviceB的GigabitEthernet1/0/0接口（IP地址192.168.1.2/24）直连，形成192.168.1.0/24网段。\n\nDeviceB作为核心汇聚设备，同时运行OSPF 1和ISIS 1协议。其GigabitEthernet2/0/0接口（IP地址192.168.2.2/24）与DeviceC的GigabitEthernet1/0/1接口（IP地址192.168.2.1/24）直连，形成192.168.2.0/24网段，该链路启用ISIS协议。\n\nDeviceC运行ISIS 1协议，IS-Level为Level-1，通过三个GigabitEthernet接口分别连接三个子网：\n- GigabitEthernet1/0/0接口连接172.16.1.0/24网段（IP地址172.16.1.1/24）\n- GigabitEthernet2/0/0接口连接172.16.2.0/24网段（IP地址172.16.2.1/24）  \n- GigabitEthernet3/0/0接口连接172.16.3.0/24网段（IP地址172.16.3.1/24）\n\n网络采用混合路由协议架构：DeviceA与DeviceB之间运行OSPF协议交换路由信息，DeviceB与DeviceC之间运行IS-IS协议交换路由信息。DeviceB通过路由引入功能将IS-IS路由重分布到OSPF中，并应用路由策略对特定路由设置属性：172.16.1.0/24路由的开销设置为100，172.16.2.0/24路由的Tag属性设置为20。",
+  "requirement": "在DeviceB上配置路由引入，将IS-IS路由引入到OSPF中去，并同时使用路由策略设置路由的属性。其中，设置172.16.1.0/24的路由的开销为100，设置172.16.2.0/24的路由的Tag属性为20。",
+  "steps": [
+    "在DeviceB和DeviceC上配置IS-IS基本功能。",
+    "在DeviceA和DeviceB上配置OSPF，引入IS-IS路由。",
+    "在DeviceB上配置路由策略，并在OSPF引入IS-IS路由时应用路由策略，查看路由信息。"
+  ],
+  "configs": {
+    "DeviceA": "#\nsysname DeviceA\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ip address 192.168.1.1 255.255.255.0\n#\nospf 1\n area 0.0.0.0\n  network 192.168.1.0 0.0.0.255\n#\nreturn",
+    "DeviceB": "#\nsysname DeviceB\n#\nacl number 2002\n rule 5 permit source 172.16.2.0 0.0.0.255\n#\nisis 1\n is-level level-1\n network-entity 10.0000.0000.0002.00\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ip address 192.168.1.2 255.255.255.0\n#\ninterface GigabitEthernet2/0/0\n undo shutdown\n ip address 192.168.2.2 255.255.255.0\n isis enable\n#\nospf 1\n import-route isis 1 route-policy isis2ospf\n area 0.0.0.0\n  network 192.168.1.0 0.0.0.255\n#\nroute-policy isis2ospf permit node 10\n if-match ip-prefix prefix-a\n apply cost 100\n#\nroute-policy isis2ospf permit node 20\n if-match acl 2002\n apply tag 20\n#\nip ip-prefix prefix-a index 10 permit 172.16.1.0 24\n#\nreturn",
+    "DeviceC": "#\nsysname DeviceC\n#\nisis 1\n is-level level-1\n network-entity 10.0000.0000.0001.00\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ip address 172.16.1.1 255.255.255.0\n isis enable\n#\ninterface GigabitEthernet2/0/0\n undo shutdown\n ip address 172.16.2.1 255.255.255.0\n isis enable\n#\ninterface GigabitEthernet3/0/0\n undo shutdown\n ip address 172.16.3.1 255.255.255.0\n isis enable\n#\ninterface GigabitEthernet1/0/1\n undo shutdown\n ip address 192.168.2.1 255.255.255.0\n isis enable\n#\nreturn"
+  },
+  "related_images": [
+    "图1-186配置在路由引入时应用路由策略组网图.png"
+  ]
+}

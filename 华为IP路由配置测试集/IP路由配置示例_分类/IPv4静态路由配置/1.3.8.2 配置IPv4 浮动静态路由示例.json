@@ -1,0 +1,19 @@
+{
+  "topology": "**设备配置：**\n- DeviceA、DeviceB、DeviceC、DeviceD均为路由器设备\n- 所有设备使用GigabitEthernet接口进行互连\n\n**物理连接关系：**\n- DeviceA的GE1/0/1接口(10.1.1.1/24)连接DeviceB的GE1/0/1接口(10.1.1.2/24)\n- DeviceA的GE1/0/2接口(10.1.2.1/24)连接DeviceC的GE1/0/2接口(10.1.2.2/24)\n- DeviceB的GE1/0/3接口(10.1.3.1/24)连接DeviceD的GE1/0/3接口(10.1.3.2/24)\n- DeviceC的GE1/0/3接口(10.1.4.1/24)连接DeviceD的GE1/0/4接口(10.1.4.2/24)\n- DeviceD的GE1/0/5接口(10.1.5.1/24)连接目标网络10.1.5.0/24\n\n**网络分段：**\n- 10.1.1.0/24：DeviceA与DeviceB互连网段\n- 10.1.2.0/24：DeviceA与DeviceC互连网段  \n- 10.1.3.0/24：DeviceB与DeviceD互连网段\n- 10.1.4.0/24：DeviceC与DeviceD互连网段\n- 10.1.5.0/24：目标网络，通过DeviceD接入\n\n**路由配置：**\nDeviceA配置了双路径静态路由实现冗余备份：\n- 主路径：10.1.5.0/24 via 10.1.1.2（通过DeviceB，默认preference 60）\n- 备份路径：10.1.5.0/24 via 10.1.2.2 preference 100（通过DeviceC，浮动静态路由）\n\n各设备配置相应的静态路由确保端到端连通性，形成一个具有主备路径冗余的星型网络拓扑。",
+  "requirement": "利用IPv4浮动静态路由实现IPv4静态路由备份。在DeviceA上配置两条去往10.1.5.0/24的IPv4静态路由，其中优先级较高的主静态路由经过DeviceB，浮动静态路由经过DeviceC。",
+  "steps": [
+    "配置各路由器各接口的IPv4地址。",
+    "在DeviceB和DeviceC上配置到目的地址10.1.5.0/24的IPv4静态路由。",
+    "在DeviceA上配置两条去往10.1.5.0/24的优先级不同的IPv4静态路由。",
+    "在DeviceD上配置去往10.1.1.0/24和10.1.2.0/24的IPv4静态路由。"
+  ],
+  "configs": {
+    "DeviceA": "#\nsysname DeviceA\n#\ninterface GigabitEthernet1/0/1\n undo shutdown\n ip address 10.1.1.1 255.255.255.0\n#\ninterface GigabitEthernet1/0/2\n undo shutdown\n ip address 10.1.2.1 255.255.255.0\n#\nip route-static 10.1.5.0 24 10.1.1.2\n#\nip route-static 10.1.5.0 24 10.1.2.2 preference 100\n#\nreturn",
+    "DeviceB": "#\nsysname DeviceB\n#\ninterface GigabitEthernet1/0/1\n undo shutdown\n ip address 10.1.1.2 255.255.255.0\n#\ninterface GigabitEthernet1/0/3\n undo shutdown\n ip address 10.1.3.1 255.255.255.0\n#\nip route-static 10.1.5.0 24 10.1.3.2\n#\nreturn",
+    "DeviceC": "#\nsysname DeviceC\n#\ninterface GigabitEthernet1/0/2\n undo shutdown\n ip address 10.1.2.2 255.255.255.0\n#\ninterface GigabitEthernet1/0/3\n undo shutdown\n ip address 10.1.4.1 255.255.255.0\n#\nip route-static 10.1.5.0 24 10.1.4.2\n#\nreturn",
+    "DeviceD": "#\nsysname DeviceD\n#\ninterface GigabitEthernet1/0/3\n undo shutdown\n ip address 10.1.3.2 255.255.255.0\n#\ninterface GigabitEthernet1/0/4\n undo shutdown\n ip address 10.1.4.2 255.255.255.0\n#\ninterface GigabitEthernet1/0/5\n undo shutdown\n ip address 10.1.5.1 255.255.255.0\n#\nip route-static 10.1.1.0 24 10.1.3.1\n#\nip route-static 10.1.2.0 24 10.1.4.1\n#\nreturn"
+  },
+  "related_images": [
+    "图1-20 配置IPv4 浮动静态路由组网图.png"
+  ]
+}

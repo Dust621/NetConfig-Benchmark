@@ -1,0 +1,19 @@
+{
+  "topology": "所有的路由器都运行OSPFv3，整个自治系统划分为两个区域。其中DeviceA和DeviceB作为ABR来转发区域间的路由，DeviceD作为ASBR引入了外部静态路由2001:DB8:6::1/128。Area1被配置为NSSA区域。",
+  "requirement": "某些网络由于引入大量外部路由导致路由表的规模过大，网络资源浪费，CPU占用率较高。为了解决这个问题，可以将位于自治系统边缘的非骨干区域配置成NSSA区域。NSSA区域可以引入自治域外部路由并传播到整个OSPFv3自治域中，同时又不会学习来自OSPFv3网络其它区域的外部路由，这样可以避免大量外部路由对路由器带宽和存储资源的消耗。",
+  "steps": [
+    "在各路由器上配置OSPFv3基本功能，实现OSPFv3协议互连。",
+    "配置Area1为NSSA区域。",
+    "在DeviceC上配置引入静态路由2001:DB8:7::1/128。",
+    "在DeviceD上配置引入静态路由2001:DB8:6::1/128。"
+  ],
+  "configs": {
+    "DeviceA": "#\nsysname DeviceA\n#\nospfv3 1 router-id 1.1.1.1\n area 0.0.0.0\n area 0.0.0.1\n  nssa\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ipv6 enable\n ipv6 address 2001:DB8:1::2/64\n ospfv3 1 area 0.0.0.0\n#\ninterface GigabitEthernet2/0/0\n undo shutdown\n ipv6 enable\n ipv6 address 2001:DB8:4::1/64\n ospfv3 1 area 0.0.0.1\n#\ninterface GigabitEthernet3/0/0\n undo shutdown\n ipv6 enable\n ipv6 address 2001:DB8:2::1/64\n ospfv3 1 area 0.0.0.1\n#\nreturn",
+    "DeviceB": "#\nsysname DeviceB\n#\nospfv3 1 router-id 2.2.2.2\n area 0.0.0.0\n area 0.0.0.1\n  nssa\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ipv6 enable\n ipv6 address 2001:DB8:2::2/64\n ospfv3 1 area 0.0.0.1\n#\ninterface GigabitEthernet2/0/0\n undo shutdown\n ipv6 enable\n ipv6 address 2001:DB8:3::1/64\n ospfv3 1 area 0.0.0.0\n#\ninterface GigabitEthernet3/0/0\n undo shutdown\n ipv6 enable\n ipv6 address 2001:DB8:5::2/64\n ospfv3 1 area 0.0.0.1\n#\nreturn",
+    "DeviceC": "#\nsysname DeviceC\n#\nospfv3 1 router-id 3.3.3.3\n import-route static\n area 0.0.0.0\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ipv6 enable\n ipv6 address 2001:DB8:1::1/64\n ospfv3 1 area 0.0.0.0\n#\ninterface GigabitEthernet2/0/0\n undo shutdown\n ipv6 enable\n ipv6 address 2001:DB8:3::2/64\n ospfv3 1 area 0.0.0.0\n#\n ipv6 route-static 2001:DB8:7::1 128 NULL0\n#\nreturn",
+    "DeviceD": "#\nsysname DeviceD\n#\nospfv3 1 router-id 4.4.4.4\n import-route static\n area 0.0.0.1\n  nssa\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ipv6 enable\n ipv6 address 2001:DB8:4::2/64\n ospfv3 1 area 0.0.0.1\n#\ninterface GigabitEthernet2/0/0\n undo shutdown\n ipv6 enable\n ipv6 address 2001:DB8:5::1/64\n ospfv3 1 area 0.0.0.1\n#\n ipv6 route-static 2001:DB8:6::1 128 NULL0\n#\nreturn"
+  },
+  "related_images": [
+    "图1-68 配置OSPFv3的NSSA区域组网图.png"
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "topology": "运行OSPF协议的网络中，DeviceA通过interface1（192.168.1.1/24）连接到OSPF骨干区域（Area0），从Internet网络接收172.16.16.0/24至172.16.20.0/24共5条静态路由，通过路由过滤策略仅向OSPF域重分发172.16.17.0/24、172.16.18.0/24、172.16.19.0/24三条路由。\n\nDeviceB作为核心转发设备，具有三个接口：interface1（192.168.1.2/24）连接DeviceA，interface2（192.168.3.1/24）连接DeviceD，interface3（192.168.2.1/24）连接DeviceC，所有接口均运行在OSPF骨干区域内，负责在各设备间转发路由信息。\n\nDeviceC通过interface1（192.168.2.2/24）连接DeviceB，配置入向路由过滤策略，仅接收172.16.18.0/24路由，其他从DeviceA重分发的路由被过滤。\n\nDeviceD通过interface1（192.168.3.2/24）连接DeviceB，无路由过滤配置，可接收DeviceB提供的全部路由信息，包括来自DeviceA的三条Internet路由。\n\n整个网络基于三个网段构建：192.168.1.0/24（DeviceA-DeviceB链路）、192.168.2.0/24（DeviceB-DeviceC链路）、192.168.3.0/24（DeviceB-DeviceD链路），所有设备运行在OSPF进程1的骨干区域内。",
+  "requirement": "DeviceA仅提供172.16.17.0/24、172.16.18.0/24、172.16.19.0/24给DeviceB。DeviceC仅接收路由172.16.18.0/24。DeviceD接收DeviceB提供的全部路由。",
+  "steps": [
+    "在DeviceA、DeviceB、DeviceC和DeviceD上配置OSPF基本功能。",
+    "在DeviceA上配置静态路由，并将这些路由引入OSPF路由。",
+    "在DeviceA上配置路由发布策略，在DeviceB上查看过滤结果。",
+    "在DeviceC上配置路由接收策略，在DeviceC上查看过滤结果。"
+  ],
+  "configs": {
+    "DeviceA": "#\nsysname DeviceA\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ip address 192.168.1.1 255.255.255.0\n#\nospf 1\n filter-policy ip-prefix a2b export static\n import-route static\n area 0.0.0.0\n  network 192.168.1.0 0.0.0.255\n#\nip ip-prefix a2b index 10 permit 172.16.17.0\nip ip-prefix a2b index 20 permit 172.16.18.0\nip ip-prefix a2b index 30 permit 172.16.19.0\n#\nip route-static 172.16.16.0 255.255.255.0 NULL\nip route-static 172.16.17.0 255.255.255.0 NULL\nip route-static 172.16.18.0 255.255.255.0 NULL\nip route-static 172.16.19.0 255.255.255.0 NULL\nip route-static 172.16.20.0 255.255.255.0 NULL\n#\nreturn",
+    "DeviceB": "#\nsysname DeviceB\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ip address 192.168.1.2 255.255.255.0\n#\ninterface GigabitEthernet2/0/0\n undo shutdown\n ip address 192.168.3.1 255.255.255.0\n#\ninterface GigabitEthernet3/0/0\n undo shutdown\n ip address 192.168.2.1 255.255.255.0\n#\nospf 1\n area 0.0.0.0\n  network 192.168.1.0 0.0.0.255\n  network 192.168.2.0 0.0.0.255\n  network 192.168.3.0 0.0.0.255\n#\nreturn",
+    "DeviceC": "#\nsysname DeviceC\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ip address 192.168.2.2 255.255.255.0\n#\nospf 1\n filter-policy ip-prefix in import\n area 0.0.0.0\n  network 192.168.2.0 0.0.0.255\n#\nip ip-prefix in index 10 permit 172.16.18.0\n#\nreturn",
+    "DeviceD": "#\nsysname DeviceD\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ip address 192.168.3.2 255.255.255.0\n#\nospf 1\n area 0.0.0.0\n  network 192.168.3.0 0.0.0.255\n#\nreturn"
+  },
+  "related_images": [
+    "图1-185 配置对接收和发布的路由过滤组网图.png"
+  ]
+}

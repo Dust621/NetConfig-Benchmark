@@ -1,0 +1,21 @@
+{
+  "topology": "基于提供的网络拓扑图，以下是完善后的详细网络拓扑描述：\n\n## 物理拓扑结构\n网络由5台华为AR系列路由器组成，采用星型+链型混合拓扑：\n- **核心区域**：R1、R2、R3、R4通过交换机S5形成星型拓扑，构成公司总部网络骨干\n- **分支连接**：R5作为分支路由器，通过点对点链路与R4相连\n\n## 设备互联及接口配置\n**核心互联（Area 0）**：\n- R1 GE0/0/1 ↔ S5：10.0.123.1/24\n- R2 GE0/0/1 ↔ S5：10.0.123.2/24  \n- R3 GE0/0/1 ↔ S5：10.0.123.3/24\n- R4 GE0/0/1 ↔ S5：10.0.123.4/24\n\n**分支互联（Area 1）**：\n- R4 GE0/0/2 ↔ R5 GE0/0/3：10.0.45.4/24 ↔ 10.0.45.5/24\n\n## IP地址规划方案\n**Loopback接口配置**：\n- R1 Loopback0：10.0.1.1/24（Area 2）\n- R2 Loopback0：10.0.2.2/24（Area 0）\n- R3 Loopback0：10.0.3.3/24（Area 0）\n- R4 Loopback0：10.0.4.4/24（Area 0）\n- R5 Loopback0：10.0.5.5/24（非OSPF域）\n\n**业务网段配置**：\n- 核心交换网段：10.0.123.0/24\n- 分支互联网段：10.0.45.0/24\n\n## OSPF多区域架构设计\n**Area 0（骨干区域）**：\n- 设备：R1、R2、R3、R4的GE0/0/1接口\n- 网段：10.0.123.0/24交换网络\n- Loopback：R2、R3、R4的环回接口\n\n**Area 1（常规区域）**：\n- 设备：R4的GE0/0/2接口、R5的GE0/0/3接口\n- 网段：10.0.45.0/24点对点链路\n\n**Area 2（常规区域）**：\n- 设备：R1的Loopback0接口\n- 网段：10.0.1.0/24\n\n## 协议特殊配置\n**DR/BDR选举控制**（10.0.123.0/24网段）：\n- **DR设备**：R3（最高优先级配置）\n- **BDR设备**：R2（次高优先级配置）\n- **DROther设备**：R1、R4（低优先级或默认配置）\n\n**Router ID规划**：\n- 采用Loopback0地址作为固定Router ID\n- 确保网络中Router ID唯一性和稳定性\n\n**路由引入配置**：\n- R5设备将直连路由（10.0.5.5/24）引入OSPF域\n- 产生Type-5外部LSA，在Area 0和Area 2中可见\n\n## 网络功能角色划分\n- **R4**：ABR（Area Border Router），连接Area 0和Area 1\n- **R1**：ABR，连接Area 0和Area 2  \n- **R5**：ASBR（Autonomous System Border Router），执行路由引入\n- **R2、R3**：Area 0内部路由器，R3担任指定路由器角色\n- **S5**：二层交换设备，提供多点接入以太网环境\n\n## LSA类型分布预期\n- **Type-1 LSA**：各区域内路由器LSA\n- **Type-2 LSA**：R3作为DR产生的网络LSA（10.0.123.0/24）\n- **Type-3 LSA**：ABR产生的汇总LSA，用于区域间路由通告\n- **Type-4 LSA**：ABR产生的ASBR汇总LSA，指向R5\n- **Type-5 LSA**：R5产生的外部LSA，描述引入的外部路由",
+  "requirement": "你是公司的网络管理员。现在公司的网络中有五台AR 路由器，其中R1、R2、R3 和R4 在公司总部，通过以太网互联。R5 在公司分部，与公司总部的R4 相连。由于网络规模较大，为了控制LSA 的洪泛，你设计了多区域的OSPF。 同时为了明确设备的Router ID，你配置设备使用固定的地址作为Router ID。 在R1、R2、R3 与R4 之间互联的网络上，需要干预DR 与BDR 的选举。实际使用中将R3 定义为DR、R2 定义为BDR，R1、R4 定义为DROther。",
+  "steps": [
+    "设备IP 地址配置。",
+    "按照规划配置OSPF 多区域。",
+    "检查OSPF 配置结果，检查OSPF 邻居关系状态，检查OSPF 路由表，检查OSPF LSDB。",
+    "手动修改接口的DR 优先级，人工干预OSPF DR、BDR 的选举结果。",
+    "在R5 上将直连路由引入到OSPF 中，在R1 上观察Type-5 LSA。",
+    "单独观察Type-1 LSA、Type-2 LSA、Type-3 LSA、Type-4 LSA",
+    "R1 上通过debug 观察OSPF LSU、LSAck、LSR 报文。"
+  ],
+  "configs": {
+    "R1": "sysname R1\ninterface GigabitEthernet0/0/1\n ip address 10.0.123.1 255.255.255.0\ninterface LoopBack0\n ip address 10.0.1.1 255.255.255.0\n ospf network-type broadcast\nospf 1 router-id 10.0.1.1\n area 0.0.0.0\n  network 10.0.123.1 0.0.0.0\n area 0.0.0.2\n  network 10.0.1.1 0.0.0.0",
+    "R2": "sysname R2\ninterface GigabitEthernet0/0/1\n ip address 10.0.123.2 255.255.255.0\n ospf dr-priority 0\ninterface LoopBack0\n ip address 10.0.2.2 255.255.255.0\n ospf network-type broadcast\nospf 1 router-id 10.0.2.2\n area 0.0.0.0\n  network 10.0.123.2 0.0.0.0\n  network 10.0.2.2 0.0.0.0",
+    "R3": "sysname R3\ninterface GigabitEthernet0/0/1\n ip address 10.0.123.3 255.255.255.0\n ospf dr-priority 254\ninterface LoopBack0\n ip address 10.0.3.3 255.255.255.0\n ospf network-type broadcast\nospf 1 router-id 10.0.3.3\n area 0.0.0.0\n  network 10.0.123.3 0.0.0.0\n  network 10.0.3.3 0.0.0.0",
+    "R4": "sysname R4\ninterface GigabitEthernet0/0/1\n ip address 10.0.123.4 255.255.255.0\n ospf dr-priority 255\ninterface GigabitEthernet0/0/2\n ip address 10.0.45.4 255.255.255.0\ninterface LoopBack0\n ip address 10.0.4.4 255.255.255.0\n ospf network-type broadcast\nospf 1 router-id 10.0.4.4\n area 0.0.0.0\n  network 10.0.123.4 0.0.0.0\n  network 10.0.4.4 0.0.0.0\n area 0.0.0.1\n  network 10.0.45.4 0.0.0.0",
+    "R5": "sysname R5\ninterface GigabitEthernet0/0/3\n ip address 10.0.45.5 255.255.255.0\ninterface LoopBack0\n ip address 10.0.5.5 255.255.255.0\n ospf network-type broadcast\nospf 1 router-id 10.0.5.5\n import-route direct\n area 0.0.0.1\n  network 10.0.45.5 0.0.0.0"
+  },
+  "topology_original": "设备互联方式及IP 地址规划如图所示，其中R1 的Loopback0 接口属于OSPF 区域2，R4 的GE0/0/2 接口属于OSPF 区域1，R1、R2、R3、R4 的其他接口都属于OSPF 区域0。 R5 的GE0/0/3 属于OSPF 区域1，R5 的Loopback0 不属于OSPF 域内。"
+}

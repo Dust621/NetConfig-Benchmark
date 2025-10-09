@@ -1,0 +1,21 @@
+{
+  "topology": "基于图1-48所示的网络拓扑，四台路由器设备（DeviceA、DeviceB、DeviceC、DeviceD）通过广播网络（以太网段）互连，形成单一的OSPF区域。具体连接配置如下：\n\n**物理拓扑结构：**\n- DeviceA：interface1端口，IP地址192.168.1.1/24\n- DeviceB：interface1端口，IP地址192.168.1.2/24  \n- DeviceC：interface1端口，IP地址192.168.1.3/24\n- DeviceD：interface1端口，IP地址192.168.1.4/24\n\n**网络配置：**\n- 网络类型：广播型以太网络\n- 网络段：192.168.1.0/24子网\n- 所有设备通过各自的interface1端口连接至同一广播域\n- 四台设备均配置OSPF协议，同属一个OSPF区域\n- 在广播网络中将进行DR/BDR选举机制\n\n**协议特性：**\n该拓扑采用典型的OSPF广播网络模式，所有路由器在同一以太网段内直接通信，通过LSA泛洪实现路由信息同步，并通过Hello报文维持邻居关系。",
+  "requirement": "组网需求如图1-48所示，广播网络类型中的四台设备运行OSPF协议，并同属一个OSPF区域。",
+  "steps": [
+    "在各路由器上配置OSPF基本功能，实现互连。",
+    "在各路由器上配置BFD功能。",
+    "在各路由器上调整相邻邻居的失效时间。",
+    "在各路由器上配置Smart-discover功能。",
+    "在各路由器上调整通过智能定时器控制配置更新、接收LSA，和SPF计算的时间间隔。"
+  ],
+  "configs": {
+    "DeviceA": "#\nsysname DeviceA\n#\nrouter id 1.1.1.1\n#\nbfd\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ip address 192.168.1.1 255.255.255.0\n ospf timer dead\n ospf smart-discover\n#\nospf\n bfd all-interfaces enable\n spf-schedule-interval intelligent-timer 3000 200\n lsa-arrival-interval intelligent-timer 3000 200\n lsa-originate-interval intelligent-timer 3000 200\n area 0.0.0.0\n  network 192.168.1.0 0.0.0.255\n#\nreturn",
+    "DeviceB": "#\nsysname DeviceB\n#\nrouter id 2.2.2.2\n#\nbfd\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ip address 192.168.1.2 255.255.255.0\n ospf timer dead\n ospf smart-discover\n#\nospf\n bfd all-interfaces enable\n spf-schedule-interval intelligent-timer 3000 200\n lsa-arrival-interval intelligent-timer 3000 200\n lsa-originate-interval intelligent-timer 3000 200\n area 0.0.0.0\n  network 192.168.1.0 0.0.0.255\n#\nreturn",
+    "DeviceC": "#\nsysname DeviceC\n#\nrouter id 3.3.3.3\n#\nbfd\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ip address 192.168.1.3 255.255.255.0\n ospf timer dead\n ospf smart-discover\n#\nospf\n bfd all-interfaces enable\n spf-schedule-interval intelligent-timer 3000 200\n lsa-arrival-interval intelligent-timer 3000 200\n lsa-originate-interval intelligent-timer 3000 200\n area 0.0.0.0\n  network 192.168.1.0 0.0.0.255\n#\nreturn",
+    "DeviceD": "#\nsysname DeviceD\n#\nrouter id 4.4.4.4\n#\nbfd\n#\ninterface GigabitEthernet1/0/0\n undo shutdown\n ip address 192.168.1.4 255.255.255.0\n ospf timer dead\n ospf smart-discover\n#\nospf\n bfd all-interfaces enable\n spf-schedule-interval intelligent-timer 3000 200\n lsa-arrival-interval intelligent-timer 3000 200\n lsa-originate-interval intelligent-timer 3000 200\n area 0.0.0.0\n  network 192.168.1.0 0.0.0.255\n#\nreturn"
+  },
+  "related_images": [
+    "图1-48 配置OSPF快速收敛组网图.png"
+  ],
+  "topology_original": "广播网络类型中的四台设备（DeviceA、DeviceB、DeviceC、DeviceD）运行OSPF协议，并同属一个OSPF区域。"
+}
